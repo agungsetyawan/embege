@@ -9,7 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from "cmdk";
-import { Check, ChevronsUpDown, TriangleAlert } from "lucide-react";
+import { Check, ChevronsUpDown, Search, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
@@ -66,12 +66,21 @@ export function RegionCombobox({
       </PopoverPrimitive.Trigger>
       <PopoverPrimitive.Content
         align="start"
-        className="z-50 w-(--radix-popover-trigger-width) rounded-md border bg-card p-0 text-card-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+        sideOffset={4}
+        className="z-50 w-(--radix-popover-trigger-width) rounded-md border bg-card p-1 text-card-foreground shadow-md data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
       >
         <Command>
-          <CommandInput placeholder="Ketik nama daerah" />
+          <div className="flex items-center gap-2 border-b px-3">
+            <Search className="size-4 shrink-0 opacity-50" />
+            <CommandInput
+              placeholder="Ketik nama daerah"
+              className="flex h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
           <CommandList className="max-h-60 overflow-y-auto">
-            <CommandEmpty>Tidak ada daerah yang cocok.</CommandEmpty>
+            <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+              Tidak ada daerah yang cocok.
+            </CommandEmpty>
             <CommandGroup>
               {regions.map((r) => (
                 <CommandItem
@@ -81,11 +90,11 @@ export function RegionCombobox({
                     setValue(r.id);
                     setOpen(false);
                   }}
-                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm aria-selected:bg-accent"
+                  className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
                 >
                   <Check
                     className={cn(
-                      "shrink-0",
+                      "size-4 shrink-0",
                       value === r.id ? "opacity-100" : "opacity-0",
                     )}
                   />

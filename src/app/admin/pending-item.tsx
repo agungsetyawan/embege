@@ -4,6 +4,7 @@ import { Check, MapPin, Sparkles, TriangleAlert, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { DateField } from "@/components/ui/date-field";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -79,11 +80,10 @@ export function PendingItem({
           <div className="flex gap-3">
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor={`date-${item.id}`}>Tanggal kejadian</Label>
-              <Input
+              <DateField
                 id={`date-${item.id}`}
                 name="occurredOn"
-                type="date"
-                defaultValue={dateDefault}
+                defaultValue={dateDefault || undefined}
               />
             </div>
             <div className="flex w-32 flex-col gap-1.5">
