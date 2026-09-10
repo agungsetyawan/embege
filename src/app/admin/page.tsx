@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
@@ -13,7 +14,9 @@ export default async function AdminPage() {
   const [{ data: items }, { data: regions }] = await Promise.all([
     supabase
       .from("crawl_items")
-      .select("id,title,summary,url,media,published_at,guessed_region_id")
+      .select(
+        "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,geo_confidence",
+      )
       .eq("status", "pending")
       .order("published_at", { ascending: false, nullsFirst: false })
       .limit(50),
@@ -33,7 +36,13 @@ export default async function AdminPage() {
           </h1>
           <p className="text-sm text-zinc-500">{user.email}</p>
         </div>
-        <form action={signOut}>
+        <form action={signOut} className="flex items-center gap-3">
+          <Link
+            href="/admin/settings"
+            className="rounded border px-3 py-1.5 text-sm"
+          >
+            Pengaturan
+          </Link>
           <button type="submit" className="rounded border px-3 py-1.5 text-sm">
             Keluar
           </button>

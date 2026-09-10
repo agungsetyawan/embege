@@ -10,6 +10,8 @@ export type PendingItemData = {
   media: string;
   published_at: string | null;
   guessed_region_id: string | null;
+  llm_summary: string | null;
+  geo_confidence: number | null;
 };
 
 export type RegionOption = {
@@ -38,6 +40,13 @@ export function PendingItem({
           <span>
             Tebakan: {guessed.district}, {guessed.province}
             {!guessed.centroid_ok && " (koordinat perlu cek)"}
+            {item.geo_confidence !== null &&
+              ` · AI ${Math.round(item.geo_confidence * 100)}%`}
+          </span>
+        )}
+        {item.llm_summary && (
+          <span className="rounded bg-green-100 px-2 py-0.5 text-green-800">
+            Ringkasan AI
           </span>
         )}
       </div>
@@ -97,7 +106,7 @@ export function PendingItem({
             name="summary"
             required
             rows={2}
-            defaultValue={item.summary ?? ""}
+            defaultValue={item.llm_summary ?? item.summary ?? ""}
             className="rounded border px-2 py-1.5"
           />
         </label>
