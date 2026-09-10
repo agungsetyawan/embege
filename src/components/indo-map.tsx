@@ -10,7 +10,6 @@ import {
   TileLayer,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { createClient } from "@/lib/supabase/client";
 
 type CaseRow = {
   id: string;
@@ -41,19 +40,9 @@ async function fetchCases(): Promise<{
   cases: CaseRow[];
   regions: RegionRow[];
 }> {
-  const supabase = createClient();
-  const [{ data: cases, error: e1 }, { data: regions, error: e2 }] =
-    await Promise.all([
-      supabase
-        .from("cases")
-        .select(
-          "id,occurred_on,victims,summary,source_url,source_media,region_id",
-        )
-        .eq("published", true),
-      supabase.from("regions").select("id,province,district,lat,lng"),
-    ]);
-  if (e1 || e2) throw new Error("Gagal memuat data kasus");
-  return { cases: cases ?? [], regions: regions ?? [] };
+  const res = await fetch("/api/cases");
+  if (!res.ok) throw new Error("Gagal memuat data kasus");
+  return res.json();
 }
 
 function fillColor(count: number): string {
