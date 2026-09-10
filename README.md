@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MBG Poisoning Map Indonesia
+
+A map dashboard that tracks food poisoning cases linked to the MBG school meal program across Indonesia. A crawler collects news from credible outlets every hour. An admin reviews each item before it appears on the public map.
+
+Production: https://embege-poisoning.vercel.app
+
+## Features
+
+The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district. A popup lists each case with its date, victim count, and source link. The page supports dark mode.
+
+The crawler reads RSS feeds from four active outlets every hour. It filters items by keyword and stores matches for review. Duplicate URLs never create a second row.
+
+The admin dashboard lists pending items with an AI summary and a location guess for each item. The admin picks the district, edits the summary, then approves or rejects the item. Approved items appear on the public map.
+
+The enrichment step calls the Gemini API for pending items. It writes a short neutral summary and a district guess with a confidence score. The code checks the guess against the district table and drops guesses that do not match. Failures fall back to the RSS snippet and the text match.
+
+The settings page edits crawler sources, keywords, batch size, and cron schedules without a new deploy.
+
+## Tech Stack
+
+The list below names each layer and its role:
+
+- Next.js 16 App Router for the web app and the API routes
+- Supabase Postgres for data, auth, scheduled jobs, and secret storage
+- TanStack Query for client data cache
+- Leaflet for the map
+- shadcn/ui components with Tailwind CSS v4 for the interface
+- Gemini API for summaries and location guesses
+- Cheerio for article text extraction
+
+## How It Works
+
+News flows through five stages:
+
+1. The crawl job runs at minute 0 of each hour. It reads active RSS feeds, filters by active keywords, and inserts matches into `crawl_items` with status `pending`.
+2. The enrich job runs at minute 10. It takes up to five pending items without a summary, fetches each article page, and calls Gemini once per item.
+3. The admin opens `/admin`, checks each item, and approves or rejects it. Approval creates a row in `cases`.
+4. The public map reads published cases from `GET /api/cases`. The response stays cached for five minutes.
+5. New approvals appear on the map within five minutes.
+
+Two pg_cron jobs drive the schedule. The secret lives in Supabase Vault. The jobs call the Next.js endpoints with that secret.
 
 ## Getting Started
 
-First, run the development server:
+You need Node.js 20 or later, npm, and a Supabase project.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Clone the repo and run `npm install`.
+2. Copy the variables below into `.env.local`. The file is ignored by git. Do not commit it.
+3. Run `npm run dev` and open http://localhost:3030.
+4. Create one admin user in the Supabase dashboard under Authentication, then sign in at `/admin/login`.
+5. Turn off public sign-ups in the Supabase dashboard under Authentication providers. Only the admin signs in.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The table below lists each variable, its source, and its scope:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `NEXT_PUBLIC_SUPABASE_URL`: Project Settings, API in Supabase. Public.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: Project Settings, API in Supabase. Public.
+- `SUPABASE_SECRET_KEY`: Project Settings, API in Supabase. Server only.
+- `GEMINI_API_KEY`: Google AI Studio. Server only.
+- `CRON_SECRET`: Generate it with `openssl rand -hex 32`. Server only. It must match the secret stored in Supabase Vault under the name `crawl_cron_secret`.
 
-## Learn More
+## Database Schema
 
-To learn more about Next.js, take a look at the following resources:
+The schema has six tables:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `regions`: 514 districts with province, centroid coordinates, and a `centroid_ok` flag. The flag is false for 12 districts with weak source geometry. Those districts need manual coordinate checks.
+- `crawl_sources`: news outlets with RSS URL and active flag.
+- `crawl_keywords`: filter words with active flag. Words of five letters or fewer match whole words only. Longer words match substrings.
+- `crawl_items`: raw crawl results with status `pending`, `approved`, or `rejected`, plus AI summary, guessed district, and confidence score.
+- `cases`: approved public cases linked to a district.
+- `app_settings`: runtime configuration such as batch size and cron schedules.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Row Level Security allows public reads of `regions` and published `cases` only. All writes need an authenticated admin user. The `apply_cron_schedules()` function reads the schedule keys and updates both cron jobs. It rejects schedules that are not valid five-field cron strings.
 
-## Deploy on Vercel
+## API Contract
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The app exposes three JSON endpoints:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `GET /api/cases`: public. It returns published cases with district data. The response carries `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
+- `GET /api/cron/crawl`: needs `Authorization: Bearer <CRON_SECRET>`. It crawls active feeds and returns counts of sources, fetched items, and new rows.
+- `GET /api/cron/enrich`: needs `Authorization: Bearer <CRON_SECRET>`. It enriches pending items and returns counts of processed, enriched, and failed items.
+
+The `/admin` pages need a signed-in admin. They use Server Components and Server Actions. No browser code talks to Supabase with write access.
+
+## Scripts
+
+The list below describes each npm script:
+
+- `npm run dev`: starts the dev server on port 3030.
+- `npm run build`: creates the production build.
+- `npm run start`: serves the production build on port 3030.
+- `npm run lint`: runs Biome checks.
+- `npm run format`: rewrites files with Biome formatting.
+
+## Deployment
+
+The app runs on Vercel. Set the five environment variables in the Vercel dashboard. The cron jobs run in Supabase, not in Vercel, because the Vercel Hobby plan limits cron frequency.
+
+After deploy, point both pg_cron jobs at the production URL and test each endpoint with the secret. If the domain changes later, update the two job definitions and test again.
+
+## Troubleshooting
+
+The list below pairs each known problem with its fix:
+
+- Map shows "failed to load" in the browser with an env error: client code reads `process.env.NEXT_PUBLIC_*` through a fixed name only. A helper that takes the name as a variable breaks the build-time replacement. Use the fixed name.
+- Gemini returns 404 for a model name: the model retired for new accounts. List models with `GET /v1beta/models`, then pin a working flash model in `src/lib/enrich.ts`.
+- A cron job fails with "function does not exist": `pg_net` lives in the `net` schema, not in `extensions`. Call `net.http_get`.
+- A cron HTTP call times out at five seconds: the crawl takes longer. Set `timeout_milliseconds` to 60000 in the job definition.
+- A district marker sits in the wrong place: its `centroid_ok` flag is false. Fix the coordinates with one `UPDATE` on `regions`.
+- Kompas stays inactive: its RSS needs an API key. Add the feed URL in the settings page when one is available.
+
+## Backlog
+
+The list below holds planned work:
+
+- Vector tiles when the boundary file grows too large for a single download
+- Public auth if reporting or bookmark features arrive
+- X/Twitter crawler when API access exists
+
+## License
+
+All rights reserved.
