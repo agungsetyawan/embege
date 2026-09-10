@@ -6,7 +6,7 @@ const IndoMap = dynamic(
   () => import("@/components/indo-map").then((m) => m.IndoMap),
   {
     ssr: false,
-    loading: () => <p className="p-8 text-center">Memuat peta…</p>,
+    loading: () => <p className="p-8 text-center">Memuat peta</p>,
   },
 );
 

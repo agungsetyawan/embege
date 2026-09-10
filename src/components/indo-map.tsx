@@ -113,7 +113,7 @@ export function IndoMap() {
           {cases.length} kasus
         </Badge>
         <Badge variant="secondary" className="text-sm">
-          {totalVictims} korban tercatat
+          {totalVictims} korban
         </Badge>
       </div>
       <Card className="overflow-hidden p-0">
@@ -159,11 +159,11 @@ export function IndoMap() {
                 <Popup>
                   <div className="text-sm leading-relaxed">
                     <strong>
-                      {r.district}, {r.province} — {n} kasus
+                      {r.district}, {r.province} ({n} kasus)
                     </strong>
                     {list.map((c) => (
                       <div key={c.id} className="mt-2 border-t pt-2">
-                        {c.occurred_on ?? "Tanggal tidak diketahui"}
+                        {c.occurred_on ?? "Tanggal belum diketahui"}
                         {c.victims !== null && ` · ${c.victims} korban`}
                         <br />
                         {c.summary}
@@ -191,7 +191,7 @@ export function IndoMap() {
         </span>
         <span>
           <i className="mr-1 inline-block h-2 w-2 bg-[#f97316]" />
-          2–4 kasus
+          2-4 kasus
         </span>
         <span>
           <i className="mr-1 inline-block h-2 w-2 bg-[#dc2626]" />

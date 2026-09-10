@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { applySchedules } from "./actions";
 
 export function ApplyButton() {
@@ -22,7 +23,8 @@ export function ApplyButton() {
             setBusy(false);
           }}
         >
-          {busy ? "Menerapkan…" : "Terapkan jadwal ke cron"}
+          {busy ? "Menerapkan" : "Terapkan jadwal ke cron"}
+          {busy && <Spinner />}
         </Button>
       </div>
       {message && <p className="text-sm text-muted-foreground">{message}</p>}

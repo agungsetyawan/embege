@@ -56,7 +56,7 @@ export default async function AdminPage() {
       </header>
       {(items?.length ?? 0) === 0 && (
         <p className="text-muted-foreground">
-          Antrean kosong. Crawler berjalan tiap jam.
+          Antrean bersih. Berita baru masuk otomatis tiap jam.
         </p>
       )}
       {items?.map((item) => (

@@ -9,7 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from "cmdk";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
@@ -49,22 +49,29 @@ export function RegionCombobox({
           type="button"
           className="w-full justify-between font-normal"
         >
-          <span className="truncate">
-            {selected
-              ? `${selected.district}, ${selected.province}${selected.centroid_ok ? "" : " *"}`
-              : "— pilih daerah —"}
+          <span className="flex items-center gap-1 truncate">
+            {selected ? (
+              <>
+                {selected.district}, {selected.province}
+                {!selected.centroid_ok && (
+                  <TriangleAlert className="size-3.5 shrink-0 text-amber-500" />
+                )}
+              </>
+            ) : (
+              "Pilih kabupaten/kota"
+            )}
           </span>
           <ChevronsUpDown className="ml-2 shrink-0 opacity-50" />
         </Button>
       </PopoverPrimitive.Trigger>
       <PopoverPrimitive.Content
         align="start"
-        className="z-50 w-(--radix-popover-trigger-width) rounded-md border bg-card p-0 text-card-foreground"
+        className="z-50 w-(--radix-popover-trigger-width) rounded-md border bg-card p-0 text-card-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
       >
         <Command>
-          <CommandInput placeholder="Cari kabupaten/kota…" />
+          <CommandInput placeholder="Ketik nama daerah" />
           <CommandList className="max-h-60 overflow-y-auto">
-            <CommandEmpty>Daerah tidak ditemukan.</CommandEmpty>
+            <CommandEmpty>Tidak ada daerah yang cocok.</CommandEmpty>
             <CommandGroup>
               {regions.map((r) => (
                 <CommandItem
@@ -82,9 +89,11 @@ export function RegionCombobox({
                       value === r.id ? "opacity-100" : "opacity-0",
                     )}
                   />
-                  <span className="truncate">
+                  <span className="flex items-center gap-1 truncate">
                     {r.district}, {r.province}
-                    {!r.centroid_ok ? " *" : ""}
+                    {!r.centroid_ok && (
+                      <TriangleAlert className="size-3.5 shrink-0 text-amber-500" />
+                    )}
                   </span>
                 </CommandItem>
               ))}

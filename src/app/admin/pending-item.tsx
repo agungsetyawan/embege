@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, MapPin, Sparkles, TriangleAlert, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -41,13 +42,19 @@ export function PendingItem({
           {item.published_at && <span>{dateDefault}</span>}
           {guessed && (
             <Badge variant="outline">
-              Tebakan: {guessed.district}, {guessed.province}
-              {!guessed.centroid_ok && " (koordinat perlu cek)"}
+              <MapPin />
+              Lokasi: {guessed.district}, {guessed.province}
+              {!guessed.centroid_ok && " (perlu cek koordinat)"}
               {item.geo_confidence !== null &&
-                ` · AI ${Math.round(item.geo_confidence * 100)}%`}
+                ` · ${Math.round(item.geo_confidence * 100)}%`}
             </Badge>
           )}
-          {item.llm_summary && <Badge>Ringkasan AI</Badge>}
+          {item.llm_summary && (
+            <Badge>
+              <Sparkles />
+              Ringkasan otomatis
+            </Badge>
+          )}
         </div>
         <a
           href={item.url}
@@ -86,7 +93,6 @@ export function PendingItem({
                 name="victims"
                 type="number"
                 min={0}
-                placeholder="?"
               />
             </div>
           </div>
@@ -101,17 +107,22 @@ export function PendingItem({
             />
           </div>
           <div>
-            <Button type="submit">Approve → jadi kasus</Button>
+            <Button type="submit">
+              <Check data-icon="inline-start" />
+              Setujui sebagai kasus
+            </Button>
           </div>
         </form>
         <form action={rejectItem}>
           <input type="hidden" name="itemId" value={item.id} />
           <Button type="submit" variant="outline">
-            Reject
+            <X data-icon="inline-start" />
+            Tolak
           </Button>
         </form>
-        <p className="text-xs text-muted-foreground">
-          * koordinat daerah ini belum terverifikasi
+        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+          <TriangleAlert className="size-3.5 shrink-0 text-amber-500" />
+          Daerah bertanda butuh verifikasi koordinat manual.
         </p>
       </CardContent>
     </Card>

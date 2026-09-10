@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -20,7 +21,7 @@ import {
 import { ApplyButton } from "./apply-button";
 
 const HINTS: Record<string, string> = {
-  enrich_batch: "Jumlah berita per run enrich (1–20).",
+  enrich_batch: "Jumlah berita per run enrich (1-20).",
   crawl_schedule: "Jadwal crawl, format cron 5 kolom (mnt jam tgl bln hari).",
   enrich_schedule: "Jadwal enrich, format cron 5 kolom.",
 };
@@ -51,15 +52,17 @@ export default async function SettingsPage() {
         <div>
           <Link
             href="/admin"
-            className="text-sm text-muted-foreground underline underline-offset-4"
+            className="flex items-center gap-1 text-sm text-muted-foreground underline underline-offset-4"
           >
-            ← Kurasi
+            <ArrowLeft className="size-4" />
+            Kurasi
           </Link>
           <h1 className="mt-1 text-xl font-semibold tracking-tight">
             Pengaturan
           </h1>
           <p className="text-sm text-muted-foreground">
-            Berlaku tanpa deploy. Jadwal cron perlu tombol Terapkan di bawah.
+            Perubahan langsung aktif. Khusus jadwal, klik Terapkan setelah
+            menyimpan.
           </p>
         </div>
         <ThemeToggle />
@@ -91,7 +94,7 @@ export default async function SettingsPage() {
         ))}
         <Card>
           <CardContent className="flex flex-col gap-1.5 pt-6">
-            <span className="text-sm font-semibold">Tambah pengaturan</span>
+            <span className="text-sm font-semibold">Pengaturan baru</span>
             <form action={addSetting} className="flex gap-2">
               <Input
                 name="key"
@@ -132,7 +135,7 @@ export default async function SettingsPage() {
             <CardContent className="flex items-center gap-2 pt-6 text-sm">
               <span className="font-medium">{s.name}</span>
               <span className="flex-1 truncate font-mono text-xs text-muted-foreground">
-                {s.rss_url ?? "(belum ada URL)"}
+                {s.rss_url ?? "(URL belum diisi)"}
               </span>
               <Badge variant={s.active ? "secondary" : "outline"}>
                 {s.active ? "Aktif" : "Mati"}
@@ -162,7 +165,7 @@ export default async function SettingsPage() {
           <Input
             name="rss_url"
             required
-            placeholder="https://…/rss"
+            placeholder="https://contoh.id/rss"
             className="flex-1 font-mono"
           />
           <Button type="submit" variant="outline">

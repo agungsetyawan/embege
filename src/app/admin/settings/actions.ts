@@ -111,6 +111,6 @@ export async function applySchedules(): Promise<{
   const d = data as { crawl_schedule: string; enrich_schedule: string } | null;
   return {
     ok: true,
-    message: `Jadwal aktif — crawl: ${d?.crawl_schedule}, enrich: ${d?.enrich_schedule}`,
+    message: `Jadwal aktif: crawl ${d?.crawl_schedule}, enrich ${d?.enrich_schedule}`,
   };
 }
