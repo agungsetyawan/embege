@@ -26,6 +26,81 @@ export async function addSetting(formData: FormData) {
   revalidatePath("/admin/settings");
 }
 
+export async function addSource(formData: FormData) {
+  const supabase = await requireAdmin();
+  const name = String(formData.get("name") ?? "").trim();
+  const rssUrl = String(formData.get("rss_url") ?? "").trim();
+  if (!name || name.length > 100 || !isHttpUrl(rssUrl)) return;
+  await supabase.from("crawl_sources").insert({ name, rss_url: rssUrl });
+  revalidatePath("/admin/settings");
+}
+
+export async function toggleSource(formData: FormData) {
+  const supabase = await requireAdmin();
+  const id = String(formData.get("id"));
+  const { data } = await supabase
+    .from("crawl_sources")
+    .select("active")
+    .eq("id", id)
+    .single();
+  if (!data) return;
+  await supabase
+    .from("crawl_sources")
+    .update({ active: !data.active })
+    .eq("id", id);
+  revalidatePath("/admin/settings");
+}
+
+export async function deleteSource(formData: FormData) {
+  const supabase = await requireAdmin();
+  await supabase
+    .from("crawl_sources")
+    .delete()
+    .eq("id", String(formData.get("id")));
+  revalidatePath("/admin/settings");
+}
+
+export async function addKeyword(formData: FormData) {
+  const supabase = await requireAdmin();
+  const keyword = String(formData.get("keyword") ?? "").trim();
+  if (!keyword || keyword.length > 200) return;
+  await supabase.from("crawl_keywords").insert({ keyword });
+  revalidatePath("/admin/settings");
+}
+
+export async function toggleKeyword(formData: FormData) {
+  const supabase = await requireAdmin();
+  const id = String(formData.get("id"));
+  const { data } = await supabase
+    .from("crawl_keywords")
+    .select("active")
+    .eq("id", id)
+    .single();
+  if (!data) return;
+  await supabase
+    .from("crawl_keywords")
+    .update({ active: !data.active })
+    .eq("id", id);
+  revalidatePath("/admin/settings");
+}
+
+export async function deleteKeyword(formData: FormData) {
+  const supabase = await requireAdmin();
+  await supabase
+    .from("crawl_keywords")
+    .delete()
+    .eq("id", String(formData.get("id")));
+  revalidatePath("/admin/settings");
+}
+
+function isHttpUrl(s: string): boolean {
+  try {
+    const u = new URL(s);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 export async function applySchedules(): Promise<{
   ok: boolean;
   message: string;
