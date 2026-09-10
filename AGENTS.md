@@ -92,6 +92,18 @@ Lessons already paid for in debug time. Follow them.
 **Verification bar**
 - `npm run lint` and `npm run build` stay green. Check browser output with chrome-devtools (clean console plus screenshot). Test cron endpoints with and without the secret.
 
+## 6. Tech Stack (pinned)
+
+`package.json` is the final source for version numbers. This list exists so agents pick the right APIs and do not silently change architecture.
+
+- Runtime: Next.js 16 App Router (Turbopack), React 19, Tailwind CSS v4. Theme tokens live in `@theme`, dark mode runs on class via next-themes.
+- Data: Supabase Postgres plus Auth, `pg_cron`/`pg_net`, and Vault. TanStack Query v5 caches client reads.
+- Map: Leaflet plus react-leaflet plus one static GeoJSON file. Not MapLibre and not vector tiles. See the backlog.
+- UI: shadcn components in the classic Radix pattern, not the newer Base-UI generation. Lucide icons. `react-day-picker` v10 with the `date-fns` Indonesian locale.
+- LLM: Gemini through plain REST, no SDK. The model name is pinned in `src/lib/enrich.ts`.
+
+Do not change these without asking: cron lives in Supabase, public reads use the anon key under RLS, and human curation stays required before anything publishes.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
