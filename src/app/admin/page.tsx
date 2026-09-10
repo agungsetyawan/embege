@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 import { PendingItem } from "./pending-item";
@@ -29,27 +32,30 @@ export default async function AdminPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">
-            Kurasi Berita ({items?.length ?? 0})
+      <header className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold tracking-tight">
+            Kurasi Berita
           </h1>
-          <p className="text-sm text-zinc-500">{user.email}</p>
+          <Badge variant="secondary">{items?.length ?? 0} antre</Badge>
         </div>
-        <form action={signOut} className="flex items-center gap-3">
-          <Link
-            href="/admin/settings"
-            className="rounded border px-3 py-1.5 text-sm"
-          >
-            Pengaturan
-          </Link>
-          <button type="submit" className="rounded border px-3 py-1.5 text-sm">
-            Keluar
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-sm text-muted-foreground sm:inline">
+            {user.email}
+          </span>
+          <ThemeToggle />
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/settings">Pengaturan</Link>
+          </Button>
+          <form action={signOut}>
+            <Button variant="outline" size="sm" type="submit">
+              Keluar
+            </Button>
+          </form>
+        </div>
       </header>
       {(items?.length ?? 0) === 0 && (
-        <p className="text-zinc-500">
+        <p className="text-muted-foreground">
           Antrean kosong. Crawler berjalan tiap jam.
         </p>
       )}

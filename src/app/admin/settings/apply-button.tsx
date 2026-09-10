@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { applySchedules } from "./actions";
 
 export function ApplyButton() {
@@ -10,7 +11,7 @@ export function ApplyButton() {
   return (
     <div className="flex flex-col gap-2">
       <div>
-        <button
+        <Button
           type="button"
           disabled={busy}
           onClick={async () => {
@@ -20,12 +21,11 @@ export function ApplyButton() {
             setMessage(res.message);
             setBusy(false);
           }}
-          className="rounded bg-zinc-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
         >
           {busy ? "Menerapkan…" : "Terapkan jadwal ke cron"}
-        </button>
+        </Button>
       </div>
-      {message && <p className="text-sm text-zinc-600">{message}</p>}
+      {message && <p className="text-sm text-muted-foreground">{message}</p>}
     </div>
   );
 }

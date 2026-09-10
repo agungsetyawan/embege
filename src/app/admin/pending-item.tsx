@@ -1,5 +1,14 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input, Textarea } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  RegionCombobox,
+  type RegionOption,
+} from "@/components/ui/region-combobox";
 import { approveItem, rejectItem } from "./actions";
 
 export type PendingItemData = {
@@ -14,13 +23,6 @@ export type PendingItemData = {
   geo_confidence: number | null;
 };
 
-export type RegionOption = {
-  id: string;
-  province: string;
-  district: string;
-  centroid_ok: boolean;
-};
-
 export function PendingItem({
   item,
   regions,
@@ -32,102 +34,86 @@ export function PendingItem({
   const dateDefault = item.published_at ? item.published_at.slice(0, 10) : "";
 
   return (
-    <article className="flex flex-col gap-2 rounded border p-4">
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
-        <span className="rounded bg-zinc-100 px-2 py-0.5">{item.media}</span>
-        {item.published_at && <span>{dateDefault}</span>}
-        {guessed && (
-          <span>
-            Tebakan: {guessed.district}, {guessed.province}
-            {!guessed.centroid_ok && " (koordinat perlu cek)"}
-            {item.geo_confidence !== null &&
-              ` · AI ${Math.round(item.geo_confidence * 100)}%`}
-          </span>
-        )}
-        {item.llm_summary && (
-          <span className="rounded bg-green-100 px-2 py-0.5 text-green-800">
-            Ringkasan AI
-          </span>
-        )}
-      </div>
-      <a
-        href={item.url}
-        target="_blank"
-        rel="noreferrer"
-        className="font-medium underline"
-      >
-        {item.title}
-      </a>
-      <form action={approveItem} className="flex flex-col gap-2">
-        <input type="hidden" name="itemId" value={item.id} />
-        <label className="flex flex-col gap-1 text-sm">
-          Kabupaten/Kota
-          <select
-            name="regionId"
-            required
-            defaultValue={item.guessed_region_id ?? ""}
-            className="rounded border px-2 py-1.5"
-          >
-            <option value="" disabled>
-              — pilih daerah —
-            </option>
-            {regions.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.district}, {r.province}
-                {!r.centroid_ok ? " *" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="flex gap-2">
-          <label className="flex flex-1 flex-col gap-1 text-sm">
-            Tanggal kejadian
-            <input
-              name="occurredOn"
-              type="date"
-              defaultValue={dateDefault}
-              className="rounded border px-2 py-1.5"
-            />
-          </label>
-          <label className="flex w-32 flex-col gap-1 text-sm">
-            Korban
-            <input
-              name="victims"
-              type="number"
-              min={0}
-              placeholder="?"
-              className="rounded border px-2 py-1.5"
-            />
-          </label>
+    <Card>
+      <CardHeader className="gap-2">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <Badge variant="secondary">{item.media}</Badge>
+          {item.published_at && <span>{dateDefault}</span>}
+          {guessed && (
+            <Badge variant="outline">
+              Tebakan: {guessed.district}, {guessed.province}
+              {!guessed.centroid_ok && " (koordinat perlu cek)"}
+              {item.geo_confidence !== null &&
+                ` · AI ${Math.round(item.geo_confidence * 100)}%`}
+            </Badge>
+          )}
+          {item.llm_summary && <Badge>Ringkasan AI</Badge>}
         </div>
-        <label className="flex flex-col gap-1 text-sm">
-          Ringkasan kurasi
-          <textarea
-            name="summary"
-            required
-            rows={2}
-            defaultValue={item.llm_summary ?? item.summary ?? ""}
-            className="rounded border px-2 py-1.5"
-          />
-        </label>
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            className="rounded bg-green-700 px-3 py-1.5 text-sm text-white"
-          >
-            Approve → jadi kasus
-          </button>
-        </div>
-      </form>
-      <form action={rejectItem}>
-        <input type="hidden" name="itemId" value={item.id} />
-        <button type="submit" className="rounded border px-3 py-1.5 text-sm">
-          Reject
-        </button>
-      </form>
-      <p className="text-xs text-zinc-400">
-        * koordinat daerah ini belum terverifikasi
-      </p>
-    </article>
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium underline underline-offset-4"
+        >
+          {item.title}
+        </a>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <form action={approveItem} className="flex flex-col gap-3">
+          <input type="hidden" name="itemId" value={item.id} />
+          <div className="flex flex-col gap-1.5">
+            <Label>Kabupaten/Kota</Label>
+            <RegionCombobox
+              regions={regions}
+              defaultValue={item.guessed_region_id}
+              name="regionId"
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor={`date-${item.id}`}>Tanggal kejadian</Label>
+              <Input
+                id={`date-${item.id}`}
+                name="occurredOn"
+                type="date"
+                defaultValue={dateDefault}
+              />
+            </div>
+            <div className="flex w-32 flex-col gap-1.5">
+              <Label htmlFor={`victims-${item.id}`}>Korban</Label>
+              <Input
+                id={`victims-${item.id}`}
+                name="victims"
+                type="number"
+                min={0}
+                placeholder="?"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`summary-${item.id}`}>Ringkasan kurasi</Label>
+            <Textarea
+              id={`summary-${item.id}`}
+              name="summary"
+              required
+              rows={2}
+              defaultValue={item.llm_summary ?? item.summary ?? ""}
+            />
+          </div>
+          <div>
+            <Button type="submit">Approve → jadi kasus</Button>
+          </div>
+        </form>
+        <form action={rejectItem}>
+          <input type="hidden" name="itemId" value={item.id} />
+          <Button type="submit" variant="outline">
+            Reject
+          </Button>
+        </form>
+        <p className="text-xs text-muted-foreground">
+          * koordinat daerah ini belum terverifikasi
+        </p>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/server";
 import {
   addKeyword,
@@ -40,177 +46,173 @@ export default async function SettingsPage() {
     ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
-      <header>
-        <Link href="/admin" className="text-sm underline">
-          ← Kurasi
-        </Link>
-        <h1 className="mt-1 text-xl font-semibold">Pengaturan</h1>
-        <p className="text-sm text-zinc-500">
-          Berlaku tanpa deploy. Jadwal cron perlu tombol Terapkan di bawah.
-        </p>
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4">
+      <header className="flex items-center justify-between gap-4">
+        <div>
+          <Link
+            href="/admin"
+            className="text-sm text-muted-foreground underline underline-offset-4"
+          >
+            ← Kurasi
+          </Link>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight">
+            Pengaturan
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Berlaku tanpa deploy. Jadwal cron perlu tombol Terapkan di bawah.
+          </p>
+        </div>
+        <ThemeToggle />
       </header>
 
-      {settings?.map((s) => (
-        <form
-          key={s.key}
-          action={updateSetting}
-          className="flex flex-col gap-1 rounded border p-3"
-        >
-          <input type="hidden" name="key" value={s.key} />
-          <code className="text-sm font-semibold">{s.key}</code>
-          {HINTS[s.key] && (
-            <p className="text-xs text-zinc-500">{HINTS[s.key]}</p>
-          )}
-          <div className="flex gap-2">
-            <input
-              name="value"
-              required
-              defaultValue={s.value}
-              className="flex-1 rounded border px-2 py-1.5 font-mono text-sm"
-            />
-            <button
-              type="submit"
-              className="rounded border px-3 py-1.5 text-sm"
-            >
-              Simpan
-            </button>
-          </div>
-        </form>
-      ))}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Umum</h2>
+        {settings?.map((s) => (
+          <Card key={s.key}>
+            <CardContent className="flex flex-col gap-1.5 pt-6">
+              <code className="text-sm font-semibold">{s.key}</code>
+              {HINTS[s.key] && (
+                <p className="text-xs text-muted-foreground">{HINTS[s.key]}</p>
+              )}
+              <form action={updateSetting} className="flex gap-2">
+                <input type="hidden" name="key" value={s.key} />
+                <Input
+                  name="value"
+                  required
+                  defaultValue={s.value}
+                  className="font-mono"
+                />
+                <Button type="submit" variant="outline">
+                  Simpan
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        ))}
+        <Card>
+          <CardContent className="flex flex-col gap-1.5 pt-6">
+            <span className="text-sm font-semibold">Tambah pengaturan</span>
+            <form action={addSetting} className="flex gap-2">
+              <Input
+                name="key"
+                required
+                placeholder="nama_kunci"
+                className="font-mono"
+              />
+              <Input
+                name="value"
+                required
+                placeholder="nilai"
+                className="font-mono"
+              />
+              <Button type="submit" variant="outline">
+                Tambah
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <ApplyButton />
+          </CardContent>
+        </Card>
+      </section>
 
-      <form
-        action={addSetting}
-        className="flex flex-col gap-1 rounded border p-3"
-      >
-        <span className="text-sm font-semibold">Tambah pengaturan</span>
-        <div className="flex gap-2">
-          <input
-            name="key"
-            required
-            placeholder="nama_kunci"
-            className="flex-1 rounded border px-2 py-1.5 font-mono text-sm"
-          />
-          <input
-            name="value"
-            required
-            placeholder="nilai"
-            className="flex-1 rounded border px-2 py-1.5 font-mono text-sm"
-          />
-          <button type="submit" className="rounded border px-3 py-1.5 text-sm">
-            Tambah
-          </button>
+      <Separator />
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Sumber berita</h2>
+          <p className="text-xs text-muted-foreground">
+            Berlaku di crawl berikutnya. Sumber mati otomatis dilewati crawler.
+          </p>
         </div>
-      </form>
-
-      <div className="rounded border p-3">
-        <ApplyButton />
-      </div>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold">Sumber berita</h2>
-        <p className="text-xs text-zinc-500">
-          Berlaku di crawl berikutnya. Sumber mati otomatis dilewati crawler.
-        </p>
         {sources?.map((s) => (
-          <div
-            key={s.id}
-            className="flex items-center gap-2 rounded border p-3 text-sm"
-          >
-            <span className="font-medium">{s.name}</span>
-            <span className="flex-1 truncate font-mono text-xs text-zinc-500">
-              {s.rss_url ?? "(belum ada URL)"}
-            </span>
-            <span
-              className={`rounded px-2 py-0.5 text-xs ${s.active ? "bg-green-100 text-green-800" : "bg-zinc-100 text-zinc-500"}`}
-            >
-              {s.active ? "Aktif" : "Mati"}
-            </span>
-            <form action={toggleSource}>
-              <input type="hidden" name="id" value={s.id} />
-              <button
-                type="submit"
-                className="rounded border px-2 py-1 text-xs"
-              >
-                {s.active ? "Matikan" : "Aktifkan"}
-              </button>
-            </form>
-            <form action={deleteSource}>
-              <input type="hidden" name="id" value={s.id} />
-              <button
-                type="submit"
-                className="rounded border px-2 py-1 text-xs"
-              >
-                Hapus
-              </button>
-            </form>
-          </div>
+          <Card key={s.id}>
+            <CardContent className="flex items-center gap-2 pt-6 text-sm">
+              <span className="font-medium">{s.name}</span>
+              <span className="flex-1 truncate font-mono text-xs text-muted-foreground">
+                {s.rss_url ?? "(belum ada URL)"}
+              </span>
+              <Badge variant={s.active ? "secondary" : "outline"}>
+                {s.active ? "Aktif" : "Mati"}
+              </Badge>
+              <form action={toggleSource}>
+                <input type="hidden" name="id" value={s.id} />
+                <Button type="submit" variant="outline" size="sm">
+                  {s.active ? "Matikan" : "Aktifkan"}
+                </Button>
+              </form>
+              <form action={deleteSource}>
+                <input type="hidden" name="id" value={s.id} />
+                <Button type="submit" variant="outline" size="sm">
+                  Hapus
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         ))}
         <form action={addSource} className="flex gap-2">
-          <input
+          <Input
             name="name"
             required
             placeholder="Nama media"
-            className="w-40 rounded border px-2 py-1.5 text-sm"
+            className="w-40"
           />
-          <input
+          <Input
             name="rss_url"
             required
             placeholder="https://…/rss"
-            className="flex-1 rounded border px-2 py-1.5 font-mono text-sm"
+            className="flex-1 font-mono"
           />
-          <button type="submit" className="rounded border px-3 py-1.5 text-sm">
+          <Button type="submit" variant="outline">
             Tambah
-          </button>
+          </Button>
         </form>
       </section>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold">Keyword</h2>
-        <p className="text-xs text-zinc-500">
-          ≤5 huruf match utuh (MBG tidak match “lambung”), selebihnya substring.
-        </p>
+      <Separator />
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Keyword</h2>
+          <p className="text-xs text-muted-foreground">
+            ≤5 huruf match utuh (MBG tidak match “lambung”), selebihnya
+            substring.
+          </p>
+        </div>
         {keywords?.map((k) => (
-          <div
-            key={k.id}
-            className="flex items-center gap-2 rounded border p-3 text-sm"
-          >
-            <code className="flex-1 font-semibold">{k.keyword}</code>
-            <span
-              className={`rounded px-2 py-0.5 text-xs ${k.active ? "bg-green-100 text-green-800" : "bg-zinc-100 text-zinc-500"}`}
-            >
-              {k.active ? "Aktif" : "Mati"}
-            </span>
-            <form action={toggleKeyword}>
-              <input type="hidden" name="id" value={k.id} />
-              <button
-                type="submit"
-                className="rounded border px-2 py-1 text-xs"
-              >
-                {k.active ? "Matikan" : "Aktifkan"}
-              </button>
-            </form>
-            <form action={deleteKeyword}>
-              <input type="hidden" name="id" value={k.id} />
-              <button
-                type="submit"
-                className="rounded border px-2 py-1 text-xs"
-              >
-                Hapus
-              </button>
-            </form>
-          </div>
+          <Card key={k.id}>
+            <CardContent className="flex items-center gap-2 pt-6 text-sm">
+              <code className="flex-1 font-semibold">{k.keyword}</code>
+              <Badge variant={k.active ? "secondary" : "outline"}>
+                {k.active ? "Aktif" : "Mati"}
+              </Badge>
+              <form action={toggleKeyword}>
+                <input type="hidden" name="id" value={k.id} />
+                <Button type="submit" variant="outline" size="sm">
+                  {k.active ? "Matikan" : "Aktifkan"}
+                </Button>
+              </form>
+              <form action={deleteKeyword}>
+                <input type="hidden" name="id" value={k.id} />
+                <Button type="submit" variant="outline" size="sm">
+                  Hapus
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         ))}
         <form action={addKeyword} className="flex gap-2">
-          <input
+          <Input
             name="keyword"
             required
             placeholder="keyword baru"
-            className="flex-1 rounded border px-2 py-1.5 font-mono text-sm"
+            className="flex-1 font-mono"
           />
-          <button type="submit" className="rounded border px-3 py-1.5 text-sm">
+          <Button type="submit" variant="outline">
             Tambah
-          </button>
+          </Button>
         </form>
       </section>
     </main>

@@ -2,6 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLoginPage() {
@@ -27,32 +37,46 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 p-4">
-      <h1 className="text-xl font-semibold">Login Admin</h1>
-      <form action={onSubmit} className="flex flex-col gap-3">
-        <input
-          name="email"
-          type="email"
-          required
-          placeholder="Email"
-          className="rounded border px-3 py-2"
-        />
-        <input
-          name="password"
-          type="password"
-          required
-          placeholder="Password"
-          className="rounded border px-3 py-2"
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="rounded bg-zinc-900 px-3 py-2 text-white disabled:opacity-50"
-        >
-          {busy ? "Memeriksa…" : "Masuk"}
-        </button>
-      </form>
+    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center p-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Login Admin</CardTitle>
+          <CardDescription>Kurasi berita & pengaturan crawler.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={onSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="admin@contoh.id"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+              />
+            </div>
+            {error && (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
+            <Button type="submit" disabled={busy}>
+              {busy ? "Memeriksa…" : "Masuk"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }
