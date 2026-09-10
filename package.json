@@ -3,16 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3030",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3030",
     "lint": "biome check",
     "format": "biome format --write"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
+    "@tanstack/react-query": "^5.102.8",
+    "@types/leaflet": "^1.9.22",
+    "leaflet": "^1.9.4",
     "next": "16.3.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "react-leaflet": "^5.0.0",
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.2",

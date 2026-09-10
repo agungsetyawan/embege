@@ -1,0 +1,162 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import type { FeatureCollection } from "geojson";
+import {
+  CircleMarker,
+  GeoJSON,
+  MapContainer,
+  Popup,
+  TileLayer,
+} from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import { createClient } from "@/lib/supabase/client";
+
+type CaseRow = {
+  id: string;
+  occurred_on: string | null;
+  victims: number | null;
+  summary: string;
+  source_url: string;
+  source_media: string;
+  region_id: string;
+};
+
+type RegionRow = {
+  id: string;
+  province: string;
+  district: string;
+  lat: number;
+  lng: number;
+};
+
+// TODO(future): ganti GeoJSON statis dengan vector tiles kalau sudah terlalu berat.
+async function fetchKabupaten(): Promise<FeatureCollection> {
+  const res = await fetch("/geojson/kabupaten.geojson");
+  if (!res.ok) throw new Error("Gagal memuat batas kab/kota");
+  return res.json();
+}
+
+async function fetchCases(): Promise<{
+  cases: CaseRow[];
+  regions: RegionRow[];
+}> {
+  const supabase = createClient();
+  const [{ data: cases, error: e1 }, { data: regions, error: e2 }] =
+    await Promise.all([
+      supabase
+        .from("cases")
+        .select(
+          "id,occurred_on,victims,summary,source_url,source_media,region_id",
+        )
+        .eq("published", true),
+      supabase.from("regions").select("id,province,district,lat,lng"),
+    ]);
+  if (e1 || e2) throw new Error("Gagal memuat data kasus");
+  return { cases: cases ?? [], regions: regions ?? [] };
+}
+
+function fillColor(count: number): string {
+  if (count >= 5) return "#dc2626";
+  if (count >= 2) return "#f97316";
+  if (count >= 1) return "#eab308";
+  return "transparent";
+}
+
+export function IndoMap() {
+  const geo = useQuery({
+    queryKey: ["batas-kabupaten"],
+    queryFn: fetchKabupaten,
+    staleTime: Infinity,
+  });
+  const data = useQuery({ queryKey: ["cases"], queryFn: fetchCases });
+
+  if (geo.isLoading || data.isLoading)
+    return <p className="p-8 text-center">Memuat peta…</p>;
+  if (geo.isError || data.isError || !geo.data || !data.data) {
+    return <p className="p-8 text-center">Peta gagal dimuat.</p>;
+  }
+
+  const { cases, regions } = data.data;
+  const byId = new Map(regions.map((r) => [r.id, r]));
+  const counts = new Map<string, number>();
+  for (const c of cases)
+    counts.set(c.region_id, (counts.get(c.region_id) ?? 0) + 1);
+  const totalVictims = cases.reduce((s, c) => s + (c.victims ?? 0), 0);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm text-zinc-600">
+        {cases.length} kasus · {totalVictims} korban tercatat
+      </p>
+      <MapContainer
+        center={[-2.5, 118]}
+        zoom={5}
+        scrollWheelZoom
+        className="h-[70vh] w-full"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <GeoJSON
+          key="kabupaten"
+          data={geo.data}
+          style={(feature) => {
+            const id = feature?.properties?.id as string | undefined;
+            const region = regions.find(
+              (r) => `${r.province}/${r.district}` === id,
+            );
+            const n = region ? (counts.get(region.id) ?? 0) : 0;
+            return {
+              color: "#2563eb",
+              weight: 0.5,
+              fillColor: fillColor(n),
+              fillOpacity: n > 0 ? 0.5 : 0.05,
+            };
+          }}
+        />
+        {cases.map((c) => {
+          const r = byId.get(c.region_id);
+          if (!r) return null;
+          return (
+            <CircleMarker
+              key={c.id}
+              center={[r.lat, r.lng]}
+              radius={6 + Math.min(c.victims ?? 0, 100) / 10}
+              pathOptions={{ color: "#dc2626", fillOpacity: 0.7 }}
+            >
+              <Popup>
+                <strong>
+                  {r.district}, {r.province}
+                </strong>
+                <br />
+                {c.occurred_on ?? "Tanggal tidak diketahui"}
+                {c.victims !== null && ` · ${c.victims} korban`}
+                <br />
+                {c.summary}
+                <br />
+                <a href={c.source_url} target="_blank" rel="noreferrer">
+                  Sumber: {c.source_media}
+                </a>
+              </Popup>
+            </CircleMarker>
+          );
+        })}
+      </MapContainer>
+      <div className="flex gap-4 text-xs text-zinc-500">
+        <span>
+          <i className="mr-1 inline-block h-2 w-2 bg-[#eab308]" />1 kasus
+        </span>
+        <span>
+          <i className="mr-1 inline-block h-2 w-2 bg-[#f97316]" />
+          2–4 kasus
+        </span>
+        <span>
+          <i className="mr-1 inline-block h-2 w-2 bg-[#dc2626]" />
+          5+ kasus
+        </span>
+      </div>
+    </div>
+  );
+}
