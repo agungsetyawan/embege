@@ -105,29 +105,34 @@ export function IndoMap() {
             };
           }}
         />
-        {cases.map((c) => {
-          const r = byId.get(c.region_id);
+        {[...counts.entries()].map(([regionId, n]) => {
+          const r = byId.get(regionId);
           if (!r) return null;
+          const list = cases.filter((c) => c.region_id === regionId);
+          const victims = list.reduce((s, c) => s + (c.victims ?? 0), 0);
           return (
             <CircleMarker
-              key={c.id}
+              key={regionId}
               center={[r.lat, r.lng]}
-              radius={6 + Math.min(c.victims ?? 0, 100) / 10}
+              radius={6 + Math.min(n * 4 + victims / 20, 14)}
               pathOptions={{ color: "#dc2626", fillOpacity: 0.7 }}
             >
               <Popup>
                 <strong>
-                  {r.district}, {r.province}
+                  {r.district}, {r.province} — {n} kasus
                 </strong>
-                <br />
-                {c.occurred_on ?? "Tanggal tidak diketahui"}
-                {c.victims !== null && ` · ${c.victims} korban`}
-                <br />
-                {c.summary}
-                <br />
-                <a href={c.source_url} target="_blank" rel="noreferrer">
-                  Sumber: {c.source_media}
-                </a>
+                {list.map((c) => (
+                  <div key={c.id} className="mt-2 border-t pt-2">
+                    {c.occurred_on ?? "Tanggal tidak diketahui"}
+                    {c.victims !== null && ` · ${c.victims} korban`}
+                    <br />
+                    {c.summary}
+                    <br />
+                    <a href={c.source_url} target="_blank" rel="noreferrer">
+                      Sumber: {c.source_media}
+                    </a>
+                  </div>
+                ))}
               </Popup>
             </CircleMarker>
           );
