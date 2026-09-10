@@ -63,6 +63,35 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Project Conventions (MBG SIG)
+
+Lessons already paid for in debug time. Follow them.
+
+**Env vars**
+- In browser code, read `process.env.NEXT_PUBLIC_*` with a fixed name only. A helper that takes the name as a parameter breaks the build-time replacement and throws at runtime.
+
+**Cron**
+- Cron runs in Supabase (`pg_cron` + `pg_net`), not in Vercel. `pg_net` lives in the `net` schema, not `extensions`.
+- Cron endpoints must be idempotent (`url_hash` dedup) and answer in under 60 seconds. Cap enrich batch size via `app_settings.enrich_batch`.
+
+**Database**
+- RLS: public reads `regions` and published `cases` only. All writes need an authenticated admin.
+- Public server-side queries use the anon key so RLS still applies. Service-role is for cron only.
+- `centroid_ok=false` means coordinates are unverified. Never treat them as facts.
+- Keywords of five letters or fewer match whole words only. Longer ones match substrings.
+
+**LLM**
+- Pin the working Gemini model name in `src/lib/enrich.ts`. Models retire without warning.
+- Validate every LLM output against the `regions` table before saving. Drop what does not match.
+- Human curation stays required before anything publishes.
+
+**UI**
+- shadcn-style primitives in `src/components/ui`, tokens in `globals.css`. Admin routes are Server Components + Server Actions.
+- Labels in natural Indonesian, Lucide icons only (no emoji, no text arrows, no em dashes in UI copy).
+
+**Verification bar**
+- `npm run lint` and `npm run build` stay green. Check browser output with chrome-devtools (clean console plus screenshot). Test cron endpoints with and without the secret.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
@@ -100,6 +129,8 @@ For every request:
 2. Load the skill with `skill({ name: "<skill-name>" })`.
 3. Follow the skill workflow exactly.
 4. Only proceed to implementation once required steps are complete.
+
+---
 
 <!-- graphify -->
 
