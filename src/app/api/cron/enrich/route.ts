@@ -92,9 +92,14 @@ export async function GET(req: Request) {
       const update: {
         llm_summary: string;
         llm_is_relevant: boolean;
+        llm_victims: number | null;
         guessed_region_id?: string | null;
         geo_confidence?: number | null;
-      } = { llm_summary: result.summary, llm_is_relevant: true };
+      } = {
+        llm_summary: result.summary,
+        llm_is_relevant: true,
+        llm_victims: result.victims,
+      };
       if (candidate) {
         update.geo_confidence = result.confidence;
         // Overwrite tebakan substring hanya jika: belum ada tebakan, atau LLM yakin.

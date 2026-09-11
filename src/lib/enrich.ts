@@ -36,6 +36,7 @@ export type LlmResult = {
   isPoisonRelated: boolean;
   relevanceConfidence: number;
   rejectReason: string | null;
+  victims: number | null;
 };
 
 // Satu call Gemini: ringkasan + lokasi + relevansi keracunan MBG. Gagal apa pun -> null (fallback perilaku lama).
@@ -53,7 +54,7 @@ export async function enrichWithGemini(
           system_instruction: {
             parts: [
               {
-                text: "Kamu kurator berita Indonesia tentang keracunan program MBG (Makan Bergizi Gratis). Relevan (is_poison_related=true) HANYA jika berita melaporkan peristiwa keracunan atau dugaan keracunan yang dikaitkan dengan MBG: korban mual/muntah/diare/dirawat usai makan MBG, jumlah korban, hasil lab, penanganan korban. Tolak (false) untuk kebijakan/anggaran/sosialisasi/pemasok, pernyataan politik, opini/usulan tanpa peristiwa korban baru, klarifikasi hoaks tanpa korban, menu/prestasi umum MBG. Jika ragu, pilih true dengan relevance_confidence rendah. Jawab HANYA JSON valid, tanpa markdown.",
+                text: "Kamu kurator berita Indonesia tentang keracunan program MBG (Makan Bergizi Gratis). Relevan (is_poison_related=true) HANYA jika berita melaporkan peristiwa keracunan atau dugaan keracunan yang dikaitkan dengan MBG: korban mual/muntah/diare/dirawat usai makan MBG, jumlah korban, hasil lab, penanganan korban. Tolak (false) untuk kebijakan/anggaran/sosialisasi/pemasok, pernyataan politik, opini/usulan tanpa peristiwa korban baru, klarifikasi hoaks tanpa korban, menu/prestasi umum MBG. Jika ragu, pilih true dengan relevance_confidence rendah. victims = jumlah korban peristiwa keracunan MBG dalam berita, HANYA jika disebut angka eksplisit (contoh: 748 santri, 16 siswa dirawat); null jika tidak disebut atau samar (puluhan, banyak, sejumlah). Jika beberapa angka muncul, ambil total korban peristiwanya (5 intensif dari 100 terdampak berarti 100); jika ada update angka, ambil yang terbaru. Jawab HANYA JSON valid, tanpa markdown.",
               },
             ],
           },
@@ -70,6 +71,7 @@ export async function enrichWithGemini(
                 is_poison_related: { type: "BOOLEAN" },
                 relevance_confidence: { type: "NUMBER" },
                 reject_reason: { type: "STRING", nullable: true },
+                victims: { type: "INTEGER", nullable: true },
               },
               required: [
                 "summary",
@@ -91,6 +93,7 @@ export async function enrichWithGemini(
     if (!summary) return null;
     const conf = Number(parsed.confidence);
     const relConf = Number(parsed.relevance_confidence);
+    const victimsRaw = Number(parsed.victims);
     return {
       summary: summary.slice(0, 1000),
       province: parsed.province ? String(parsed.province).trim() : null,
@@ -103,6 +106,13 @@ export async function enrichWithGemini(
       rejectReason: parsed.reject_reason
         ? String(parsed.reject_reason).trim().slice(0, 500)
         : null,
+      victims:
+        parsed.victims === null ||
+        parsed.victims === undefined ||
+        Number.isNaN(victimsRaw) ||
+        victimsRaw < 0
+          ? null
+          : Math.trunc(victimsRaw),
     };
   } catch {
     return null;

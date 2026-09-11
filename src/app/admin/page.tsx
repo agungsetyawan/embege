@@ -57,7 +57,7 @@ export default async function AdminPage({
       : supabase
           .from("crawl_items")
           .select(
-            "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,geo_confidence",
+            "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,geo_confidence",
           )
           .eq("status", "pending")
           .order("published_at", { ascending: false, nullsFirst: false })

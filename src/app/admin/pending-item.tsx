@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, MapPin, Sparkles, TriangleAlert, X } from "lucide-react";
+import { Check, MapPin, Sparkles, TriangleAlert, Users, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -22,6 +22,7 @@ export type PendingItemData = {
   published_at: string | null;
   guessed_region_id: string | null;
   llm_summary: string | null;
+  llm_victims: number | null;
   geo_confidence: number | null;
 };
 
@@ -54,6 +55,12 @@ export function PendingItem({
             <Badge>
               <Sparkles />
               Ringkasan otomatis
+            </Badge>
+          )}
+          {item.llm_victims !== null && (
+            <Badge variant="outline">
+              <Users />
+              {item.llm_victims} korban otomatis
             </Badge>
           )}
         </div>
@@ -97,6 +104,7 @@ export function PendingItem({
                 name="victims"
                 type="number"
                 min={0}
+                defaultValue={item.llm_victims ?? undefined}
               />
             </div>
           </div>
