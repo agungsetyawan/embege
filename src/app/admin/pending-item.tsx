@@ -37,8 +37,8 @@ export function PendingItem({
 
   return (
     <Card>
-      <CardHeader className="gap-2">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      <CardHeader className="gap-1.5 p-4 pb-2">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           <Badge variant="secondary">{item.media}</Badge>
           {item.published_at && <span>{dateDefault}</span>}
           {guessed && (
@@ -61,13 +61,17 @@ export function PendingItem({
           href={item.url}
           target="_blank"
           rel="noreferrer"
-          className="font-medium underline underline-offset-4"
+          className="text-[15px] font-medium leading-snug underline underline-offset-4"
         >
           {item.title}
         </a>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <form action={approveItem} className="flex flex-col gap-3">
+      <CardContent className="flex flex-col gap-2 p-4 pt-0">
+        <form
+          id={`approve-${item.id}`}
+          action={approveItem}
+          className="flex flex-col gap-2"
+        >
           <input type="hidden" name="itemId" value={item.id} />
           <div className="flex flex-col gap-1.5">
             <Label>Kabupaten/Kota</Label>
@@ -106,24 +110,26 @@ export function PendingItem({
               defaultValue={item.llm_summary ?? item.summary ?? ""}
             />
           </div>
-          <div>
-            <Button type="submit">
-              <Check data-icon="inline-start" />
-              Setujui sebagai kasus
-            </Button>
-          </div>
         </form>
-        <form action={rejectItem}>
+        <form id={`reject-${item.id}`} action={rejectItem}>
           <input type="hidden" name="itemId" value={item.id} />
-          <Button type="submit" variant="outline">
+        </form>
+        <div className="flex gap-2">
+          <Button type="submit" form={`approve-${item.id}`}>
+            <Check data-icon="inline-start" />
+            Setujui sebagai kasus
+          </Button>
+          <Button type="submit" variant="outline" form={`reject-${item.id}`}>
             <X data-icon="inline-start" />
             Tolak
           </Button>
-        </form>
-        <p className="flex items-center gap-1 text-xs text-muted-foreground">
-          <TriangleAlert className="size-3.5 shrink-0 text-amber-500" />
-          Daerah bertanda butuh verifikasi koordinat manual.
-        </p>
+        </div>
+        {guessed && !guessed.centroid_ok && (
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <TriangleAlert className="size-3.5 shrink-0 text-amber-500" />
+            Koordinat perlu cek manual.
+          </p>
+        )}
       </CardContent>
     </Card>
   );
