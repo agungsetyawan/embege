@@ -33,9 +33,12 @@ export type LlmResult = {
   province: string | null;
   district: string | null;
   confidence: number;
+  isPoisonRelated: boolean;
+  relevanceConfidence: number;
+  rejectReason: string | null;
 };
 
-// Satu call Gemini: ringkasan + lokasi. Gagal apa pun -> null (fallback perilaku lama).
+// Satu call Gemini: ringkasan + lokasi + relevansi keracunan MBG. Gagal apa pun -> null (fallback perilaku lama).
 export async function enrichWithGemini(
   title: string,
   text: string,
@@ -50,7 +53,7 @@ export async function enrichWithGemini(
           system_instruction: {
             parts: [
               {
-                text: "Kamu mengekstrak info dari berita Indonesia tentang program MBG (Makan Bergizi Gratis). Jawab HANYA JSON valid, tanpa markdown.",
+                text: "Kamu kurator berita Indonesia tentang keracunan program MBG (Makan Bergizi Gratis). Relevan (is_poison_related=true) HANYA jika berita melaporkan peristiwa keracunan atau dugaan keracunan yang dikaitkan dengan MBG: korban mual/muntah/diare/dirawat usai makan MBG, jumlah korban, hasil lab, penanganan korban. Tolak (false) untuk kebijakan/anggaran/sosialisasi/pemasok, pernyataan politik, opini/usulan tanpa peristiwa korban baru, klarifikasi hoaks tanpa korban, menu/prestasi umum MBG. Jika ragu, pilih true dengan relevance_confidence rendah. Jawab HANYA JSON valid, tanpa markdown.",
               },
             ],
           },
@@ -64,8 +67,16 @@ export async function enrichWithGemini(
                 province: { type: "STRING", nullable: true },
                 district: { type: "STRING", nullable: true },
                 confidence: { type: "NUMBER" },
+                is_poison_related: { type: "BOOLEAN" },
+                relevance_confidence: { type: "NUMBER" },
+                reject_reason: { type: "STRING", nullable: true },
               },
-              required: ["summary", "confidence"],
+              required: [
+                "summary",
+                "confidence",
+                "is_poison_related",
+                "relevance_confidence",
+              ],
             },
           },
         }),
@@ -79,11 +90,19 @@ export async function enrichWithGemini(
     const summary = String(parsed.summary ?? "").trim();
     if (!summary) return null;
     const conf = Number(parsed.confidence);
+    const relConf = Number(parsed.relevance_confidence);
     return {
       summary: summary.slice(0, 1000),
       province: parsed.province ? String(parsed.province).trim() : null,
       district: parsed.district ? String(parsed.district).trim() : null,
       confidence: Number.isNaN(conf) ? 0 : Math.min(1, Math.max(0, conf)),
+      isPoisonRelated: parsed.is_poison_related !== false,
+      relevanceConfidence: Number.isNaN(relConf)
+        ? 0
+        : Math.min(1, Math.max(0, relConf)),
+      rejectReason: parsed.reject_reason
+        ? String(parsed.reject_reason).trim().slice(0, 500)
+        : null,
     };
   } catch {
     return null;

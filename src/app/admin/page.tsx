@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
-import { PendingItem } from "./pending-item";
+import { PendingItem, type PendingItemData } from "./pending-item";
+import { RejectedItem, type RejectedItemData } from "./rejected-item";
 
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; tab?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -18,34 +19,57 @@ export default async function AdminPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/admin/login");
 
+  const params = await searchParams;
+  const tab = params.tab === "auto" ? "auto" : "pending";
   const PAGE_SIZE = 20;
-  const rawPage = Number((await searchParams).page);
+  const rawPage = Number(params.page);
   const wantPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-  const { count } = await supabase
-    .from("crawl_items")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pending");
+  const [{ count: pendingCount }, { count: autoCount }] = await Promise.all([
+    supabase
+      .from("crawl_items")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase
+      .from("crawl_items")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "rejected")
+      .eq("llm_is_relevant", false),
+  ]);
 
-  const total = count ?? 0;
+  const total = tab === "auto" ? (autoCount ?? 0) : (pendingCount ?? 0);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(wantPage, totalPages);
 
+  const rangeFrom = (page - 1) * PAGE_SIZE;
+  const rangeTo = page * PAGE_SIZE - 1;
   const [{ data: items }, { data: regions }] = await Promise.all([
-    supabase
-      .from("crawl_items")
-      .select(
-        "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,geo_confidence",
-      )
-      .eq("status", "pending")
-      .order("published_at", { ascending: false, nullsFirst: false })
-      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
+    tab === "auto"
+      ? supabase
+          .from("crawl_items")
+          .select(
+            "id,title,summary,url,media,published_at,llm_summary,llm_reject_reason",
+          )
+          .eq("status", "rejected")
+          .eq("llm_is_relevant", false)
+          .order("published_at", { ascending: false, nullsFirst: false })
+          .range(rangeFrom, rangeTo)
+      : supabase
+          .from("crawl_items")
+          .select(
+            "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,geo_confidence",
+          )
+          .eq("status", "pending")
+          .order("published_at", { ascending: false, nullsFirst: false })
+          .range(rangeFrom, rangeTo),
     supabase
       .from("regions")
       .select("id,province,district,centroid_ok")
       .order("province")
       .order("district"),
   ]);
+  const pageQuery = (p: number) =>
+    tab === "auto" ? `/admin?tab=auto&page=${p}` : `/admin?page=${p}`;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
@@ -54,7 +78,8 @@ export default async function AdminPage({
           <h1 className="text-xl font-semibold tracking-tight">
             Kurasi Berita
           </h1>
-          <Badge variant="secondary">{total} antre</Badge>
+          <Badge variant="secondary">{pendingCount ?? 0} antre</Badge>
+          <Badge variant="outline">{autoCount ?? 0} ditolak otomatis</Badge>
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden text-sm text-muted-foreground sm:inline">
@@ -71,14 +96,36 @@ export default async function AdminPage({
           </form>
         </div>
       </header>
+      <nav aria-label="Tab kurasi" className="flex gap-2">
+        <Button
+          variant={tab === "pending" ? "default" : "outline"}
+          size="sm"
+          asChild
+        >
+          <Link href="/admin">Antrean</Link>
+        </Button>
+        <Button
+          variant={tab === "auto" ? "default" : "outline"}
+          size="sm"
+          asChild
+        >
+          <Link href="/admin?tab=auto">Ditolak otomatis</Link>
+        </Button>
+      </nav>
       {(items?.length ?? 0) === 0 && (
         <p className="text-muted-foreground">
-          Antrean bersih. Berita baru masuk otomatis tiap jam.
+          {tab === "auto"
+            ? "Belum ada berita yang ditolak otomatis."
+            : "Antrean bersih. Berita baru masuk otomatis tiap jam."}
         </p>
       )}
-      {items?.map((item) => (
-        <PendingItem key={item.id} item={item} regions={regions ?? []} />
-      ))}
+      {tab === "auto"
+        ? (items as RejectedItemData[] | undefined)?.map((item) => (
+            <RejectedItem key={item.id} item={item} />
+          ))
+        : (items as PendingItemData[] | undefined)?.map((item) => (
+            <PendingItem key={item.id} item={item} regions={regions ?? []} />
+          ))}
       {totalPages > 1 && (
         <nav
           aria-label="Halaman antrean"
@@ -86,7 +133,7 @@ export default async function AdminPage({
         >
           {page > 1 ? (
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/admin?page=${page - 1}`}>Sebelumnya</Link>
+              <Link href={pageQuery(page - 1)}>Sebelumnya</Link>
             </Button>
           ) : (
             <Button variant="outline" size="sm" disabled>
@@ -98,7 +145,7 @@ export default async function AdminPage({
           </span>
           {page < totalPages ? (
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/admin?page=${page + 1}`}>Berikutnya</Link>
+              <Link href={pageQuery(page + 1)}>Berikutnya</Link>
             </Button>
           ) : (
             <Button variant="outline" size="sm" disabled>

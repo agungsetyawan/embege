@@ -62,6 +62,17 @@ export async function rejectItem(formData: FormData) {
   revalidatePath("/admin");
 }
 
+export async function restoreItem(formData: FormData) {
+  const supabase = await requireAdmin();
+  // llm_summary dibiarkan terisi supaya tidak di-enrich ulang dan tidak
+  // kena auto-reject loop; kurator tinggal setujui/tolak manual.
+  await supabase
+    .from("crawl_items")
+    .update({ status: "pending", llm_is_relevant: null })
+    .eq("id", String(formData.get("itemId")));
+  revalidatePath("/admin");
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

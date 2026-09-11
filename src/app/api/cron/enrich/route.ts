@@ -7,6 +7,8 @@ export const maxDuration = 60;
 
 const DEFAULT_BATCH = 5;
 const MAX_BATCH = 20;
+// LLM hanya boleh auto-reject jika yakin tinggi. Ragu = tetap antre.
+const AUTO_REJECT_MIN_CONFIDENCE = 0.8;
 
 // Cocokkan output LLM ke tabel regions (uppercase, toleran prefix KOTA).
 function matchRegion(
@@ -58,6 +60,7 @@ export async function GET(req: Request) {
   }
 
   let enriched = 0;
+  let autoRejected = 0;
   let failed = 0;
   for (const item of items) {
     try {
@@ -67,12 +70,31 @@ export async function GET(req: Request) {
         failed++;
         continue;
       }
+      // Berita bukan keracunan MBG dengan keyakinan tinggi: tolak otomatis.
+      if (
+        !result.isPoisonRelated &&
+        result.relevanceConfidence >= AUTO_REJECT_MIN_CONFIDENCE
+      ) {
+        const { error } = await supabase
+          .from("crawl_items")
+          .update({
+            status: "rejected",
+            llm_summary: result.summary,
+            llm_is_relevant: false,
+            llm_reject_reason: result.rejectReason,
+          })
+          .eq("id", item.id);
+        if (error) failed++;
+        else autoRejected++;
+        continue;
+      }
       const candidate = matchRegion(result.district, regions);
       const update: {
         llm_summary: string;
+        llm_is_relevant: boolean;
         guessed_region_id?: string | null;
         geo_confidence?: number | null;
-      } = { llm_summary: result.summary };
+      } = { llm_summary: result.summary, llm_is_relevant: true };
       if (candidate) {
         update.geo_confidence = result.confidence;
         // Overwrite tebakan substring hanya jika: belum ada tebakan, atau LLM yakin.
@@ -90,5 +112,10 @@ export async function GET(req: Request) {
       failed++;
     }
   }
-  return Response.json({ processed: items.length, enriched, failed });
+  return Response.json({
+    processed: items.length,
+    enriched,
+    autoRejected,
+    failed,
+  });
 }
