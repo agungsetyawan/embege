@@ -217,7 +217,7 @@ export function IndoMap() {
             <CircleMarker
               key={s.region_id}
               center={[s.lat, s.lng]}
-              radius={6 + Math.min(s.count * 4 + s.victims / 20, 14)}
+              radius={4 + Math.min(s.count * 1.5 + s.victims / 60, 6)}
               pathOptions={{ color: "#dc2626", fillOpacity: 0.7 }}
             >
               <Popup>
