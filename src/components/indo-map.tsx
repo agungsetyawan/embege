@@ -3,12 +3,14 @@
 import { useQuery } from "@tanstack/react-query";
 import type { FeatureCollection } from "geojson";
 import { TriangleAlert } from "lucide-react";
+import { useEffect } from "react";
 import {
   CircleMarker,
   GeoJSON,
   MapContainer,
   Popup,
   TileLayer,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +65,26 @@ function fillColor(count: number): string {
   if (count >= 2) return "#f97316";
   if (count >= 1) return "#eab308";
   return "transparent";
+}
+
+// Terbang ke kotak daerah berkasus. Nol kasus = biarkan default se-Indonesia.
+function FitToCases({ summary }: { summary: SummaryRow[] }) {
+  const map = useMap();
+  useEffect(() => {
+    const active = summary.filter((s) => s.count > 0);
+    if (active.length === 0) return;
+    const lats = active.map((s) => s.lat);
+    const lngs = active.map((s) => s.lng);
+    const pad = active.length === 1 ? 1.5 : 0.5;
+    map.fitBounds(
+      [
+        [Math.min(...lats) - pad, Math.min(...lngs) - pad],
+        [Math.max(...lats) + pad, Math.max(...lngs) + pad],
+      ],
+      { padding: [20, 20], animate: false },
+    );
+  }, [map, summary]);
+  return null;
 }
 
 function RegionPopup({ region }: { region: SummaryRow }) {
@@ -161,13 +183,22 @@ export function IndoMap() {
         <MapContainer
           center={[-2.5, 118]}
           zoom={5}
+          minZoom={5}
+          maxZoom={12}
+          maxBounds={[
+            [-11, 94],
+            [6.5, 142],
+          ]}
+          maxBoundsViscosity={1.0}
           scrollWheelZoom
           className="h-[70vh] w-full"
         >
+          {/* Esri WorldStreetMap: label Inggris, tanpa API key. */}
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://www.esri.com/">Esri</a>'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
           />
+          <FitToCases summary={summary} />
           <GeoJSON
             key="kabupaten"
             data={geo.data}
