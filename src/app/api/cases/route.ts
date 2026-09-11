@@ -14,7 +14,9 @@ export async function GET() {
         .select(
           "id,occurred_on,victims,summary,source_url,source_media,region_id",
         )
-        .eq("published", true),
+        .eq("published", true)
+        .order("occurred_on", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false }),
       supabase.from("regions").select("id,province,district,lat,lng"),
     ]);
   if (e1 || e2) {
