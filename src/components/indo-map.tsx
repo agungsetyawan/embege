@@ -135,8 +135,13 @@ export function IndoMap() {
     queryKey: ["batas-kabupaten"],
     queryFn: fetchKabupaten,
     staleTime: Infinity,
+    gcTime: Infinity,
   });
-  const data = useQuery({ queryKey: ["case-summary"], queryFn: fetchSummary });
+  const data = useQuery({
+    queryKey: ["case-summary"],
+    queryFn: fetchSummary,
+    staleTime: 5 * 60 * 1000,
+  });
 
   if (geo.isLoading || data.isLoading)
     return (
