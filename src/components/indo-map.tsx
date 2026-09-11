@@ -2,13 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { FeatureCollection } from "geojson";
+import type { Map as LeafletMap } from "leaflet";
 import { TriangleAlert } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CircleMarker,
   GeoJSON,
   MapContainer,
-  Popup,
   TileLayer,
   useMap,
 } from "react-leaflet";
@@ -16,6 +16,13 @@ import "leaflet/dist/leaflet.css";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type CaseRow = {
@@ -87,32 +94,31 @@ function FitToCases({ summary }: { summary: SummaryRow[] }) {
   return null;
 }
 
-function RegionPopup({ region }: { region: SummaryRow }) {
+function CaseList({ regionId }: { regionId: string }) {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["cases", region.region_id],
-    queryFn: () => fetchRegionCases(region.region_id),
+    queryKey: ["cases", regionId],
+    queryFn: () => fetchRegionCases(regionId),
     staleTime: 5 * 60 * 1000,
   });
 
+  if (isLoading) return <p className="text-sm">Memuat daftar kasus</p>;
+  if (isError || !data)
+    return <p className="text-sm">Daftar kasus gagal dimuat.</p>;
+
   return (
-    <div className="text-sm leading-relaxed">
-      <strong>
-        {region.district}, {region.province} ({region.count} kasus)
-      </strong>
-      {isLoading && <p className="mt-2">Memuat daftar kasus</p>}
-      {isError && <p className="mt-2">Daftar kasus gagal dimuat.</p>}
-      {data?.cases.map((c) => (
-        <div key={c.id} className="mt-2 border-t pt-2">
-          {c.occurred_on ?? "Tanggal belum diketahui"}
-          {c.victims !== null && ` · ${c.victims} korban`}
-          <br />
-          {c.summary}
-          <br />
+    <div className="flex flex-col">
+      {data.cases.map((c) => (
+        <div key={c.id} className="border-t py-3 first:border-t-0 first:pt-0">
+          <p className="text-xs text-muted-foreground">
+            {c.occurred_on ?? "Tanggal belum diketahui"}
+            {c.victims !== null && ` · ${c.victims} korban`}
+          </p>
+          <p className="mt-1 text-sm leading-relaxed">{c.summary}</p>
           <a
             href={c.source_url}
             target="_blank"
             rel="noreferrer"
-            className="font-medium underline"
+            className="mt-1 inline-block text-sm font-medium underline underline-offset-4"
           >
             Sumber: {c.source_media}
           </a>
@@ -123,6 +129,8 @@ function RegionPopup({ region }: { region: SummaryRow }) {
 }
 
 export function IndoMap() {
+  const [selected, setSelected] = useState<SummaryRow | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
   const geo = useQuery({
     queryKey: ["batas-kabupaten"],
     queryFn: fetchKabupaten,
@@ -181,6 +189,7 @@ export function IndoMap() {
       </div>
       <Card className="overflow-hidden p-0">
         <MapContainer
+          ref={mapRef}
           center={[-2.5, 118]}
           zoom={5}
           minZoom={5}
@@ -219,14 +228,38 @@ export function IndoMap() {
               center={[s.lat, s.lng]}
               radius={4 + Math.min(s.count * 1.5 + s.victims / 60, 6)}
               pathOptions={{ color: "#dc2626", fillOpacity: 0.7 }}
-            >
-              <Popup>
-                <RegionPopup region={s} />
-              </Popup>
-            </CircleMarker>
+              eventHandlers={{
+                click: () => {
+                  setSelected(s);
+                  mapRef.current?.panTo([s.lat, s.lng]);
+                },
+              }}
+            />
           ))}
         </MapContainer>
       </Card>
+      <Sheet
+        open={selected !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null);
+        }}
+      >
+        {selected && (
+          <SheetContent className="z-[1001] w-full overflow-y-auto sm:max-w-md">
+            <SheetHeader className="text-left">
+              <SheetTitle>
+                {selected.district}, {selected.province}
+              </SheetTitle>
+              <SheetDescription>
+                {selected.count} kasus · {selected.victims} korban
+              </SheetDescription>
+            </SheetHeader>
+            <div className="px-4 pb-4">
+              <CaseList regionId={selected.region_id} />
+            </div>
+          </SheetContent>
+        )}
+      </Sheet>
       <div className="flex gap-4 text-xs text-muted-foreground">
         <span>
           <i className="mr-1 inline-block h-2 w-2 bg-[#eab308]" />1 kasus
