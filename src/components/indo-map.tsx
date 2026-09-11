@@ -26,12 +26,14 @@ type CaseRow = {
   region_id: string;
 };
 
-type RegionRow = {
-  id: string;
+type SummaryRow = {
+  region_id: string;
   province: string;
   district: string;
   lat: number;
   lng: number;
+  count: number;
+  victims: number;
 };
 
 // TODO(future): ganti GeoJSON statis dengan vector tiles kalau sudah terlalu berat.
@@ -41,11 +43,17 @@ async function fetchKabupaten(): Promise<FeatureCollection> {
   return res.json();
 }
 
-async function fetchCases(): Promise<{
-  cases: CaseRow[];
-  regions: RegionRow[];
-}> {
+// Ringkasan per daerah saja (kecil dan tetap). Detail kasus diambil per daerah saat popup dibuka.
+async function fetchSummary(): Promise<{ summary: SummaryRow[] }> {
   const res = await fetch("/api/cases");
+  if (!res.ok) throw new Error("Gagal memuat data kasus");
+  return res.json();
+}
+
+async function fetchRegionCases(
+  regionId: string,
+): Promise<{ cases: CaseRow[] }> {
+  const res = await fetch(`/api/cases?region_id=${regionId}`);
   if (!res.ok) throw new Error("Gagal memuat data kasus");
   return res.json();
 }
@@ -57,13 +65,48 @@ function fillColor(count: number): string {
   return "transparent";
 }
 
+function RegionPopup({ region }: { region: SummaryRow }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["cases", region.region_id],
+    queryFn: () => fetchRegionCases(region.region_id),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  return (
+    <div className="text-sm leading-relaxed">
+      <strong>
+        {region.district}, {region.province} ({region.count} kasus)
+      </strong>
+      {isLoading && <p className="mt-2">Memuat daftar kasus</p>}
+      {isError && <p className="mt-2">Daftar kasus gagal dimuat.</p>}
+      {data?.cases.map((c) => (
+        <div key={c.id} className="mt-2 border-t pt-2">
+          {c.occurred_on ?? "Tanggal belum diketahui"}
+          {c.victims !== null && ` · ${c.victims} korban`}
+          <br />
+          {c.summary}
+          <br />
+          <a
+            href={c.source_url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium underline"
+          >
+            Sumber: {c.source_media}
+          </a>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function IndoMap() {
   const geo = useQuery({
     queryKey: ["batas-kabupaten"],
     queryFn: fetchKabupaten,
     staleTime: Infinity,
   });
-  const data = useQuery({ queryKey: ["cases"], queryFn: fetchCases });
+  const data = useQuery({ queryKey: ["case-summary"], queryFn: fetchSummary });
 
   if (geo.isLoading || data.isLoading)
     return (
@@ -99,18 +142,16 @@ export function IndoMap() {
     );
   }
 
-  const { cases, regions } = data.data;
-  const byId = new Map(regions.map((r) => [r.id, r]));
-  const counts = new Map<string, number>();
-  for (const c of cases)
-    counts.set(c.region_id, (counts.get(c.region_id) ?? 0) + 1);
-  const totalVictims = cases.reduce((s, c) => s + (c.victims ?? 0), 0);
+  const summary = data.data.summary.filter((s) => s.count > 0);
+  const byKey = new Map(summary.map((s) => [`${s.province}/${s.district}`, s]));
+  const totalCases = summary.reduce((t, s) => t + s.count, 0);
+  const totalVictims = summary.reduce((t, s) => t + s.victims, 0);
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
         <Badge variant="secondary" className="text-sm">
-          {cases.length} kasus
+          {totalCases} kasus
         </Badge>
         <Badge variant="secondary" className="text-sm">
           {totalVictims} korban
@@ -132,10 +173,7 @@ export function IndoMap() {
             data={geo.data}
             style={(feature) => {
               const id = feature?.properties?.id as string | undefined;
-              const region = regions.find(
-                (r) => `${r.province}/${r.district}` === id,
-              );
-              const n = region ? (counts.get(region.id) ?? 0) : 0;
+              const n = id ? (byKey.get(id)?.count ?? 0) : 0;
               return {
                 color: "#2563eb",
                 weight: 0.5,
@@ -144,45 +182,18 @@ export function IndoMap() {
               };
             }}
           />
-          {[...counts.entries()].map(([regionId, n]) => {
-            const r = byId.get(regionId);
-            if (!r) return null;
-            const list = cases.filter((c) => c.region_id === regionId);
-            const victims = list.reduce((s, c) => s + (c.victims ?? 0), 0);
-            return (
-              <CircleMarker
-                key={regionId}
-                center={[r.lat, r.lng]}
-                radius={6 + Math.min(n * 4 + victims / 20, 14)}
-                pathOptions={{ color: "#dc2626", fillOpacity: 0.7 }}
-              >
-                <Popup>
-                  <div className="text-sm leading-relaxed">
-                    <strong>
-                      {r.district}, {r.province} ({n} kasus)
-                    </strong>
-                    {list.map((c) => (
-                      <div key={c.id} className="mt-2 border-t pt-2">
-                        {c.occurred_on ?? "Tanggal belum diketahui"}
-                        {c.victims !== null && ` · ${c.victims} korban`}
-                        <br />
-                        {c.summary}
-                        <br />
-                        <a
-                          href={c.source_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-medium underline"
-                        >
-                          Sumber: {c.source_media}
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </Popup>
-              </CircleMarker>
-            );
-          })}
+          {summary.map((s) => (
+            <CircleMarker
+              key={s.region_id}
+              center={[s.lat, s.lng]}
+              radius={6 + Math.min(s.count * 4 + s.victims / 20, 14)}
+              pathOptions={{ color: "#dc2626", fillOpacity: 0.7 }}
+            >
+              <Popup>
+                <RegionPopup region={s} />
+              </Popup>
+            </CircleMarker>
+          ))}
         </MapContainer>
       </Card>
       <div className="flex gap-4 text-xs text-muted-foreground">
