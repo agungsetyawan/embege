@@ -1,9 +1,14 @@
 "use client";
 
-import { Check, MapPin, Sparkles, TriangleAlert, Users, X } from "lucide-react";
+import { MapPin, Sparkles, TriangleAlert, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { DateField } from "@/components/ui/date-field";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,15 +43,14 @@ export function PendingItem({
 
   return (
     <Card>
-      <CardHeader className="gap-1.5 p-4 pb-2">
+      <CardHeader className="gap-1.5">
         <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           <Badge variant="secondary">{item.media}</Badge>
           {item.published_at && <span>{dateDefault}</span>}
           {guessed && (
             <Badge variant="outline">
               <MapPin />
-              Lokasi: {guessed.district}, {guessed.province}
-              {!guessed.centroid_ok && " (perlu cek koordinat)"}
+              {guessed.district}, {guessed.province}
               {item.geo_confidence !== null &&
                 ` · ${Math.round(item.geo_confidence * 100)}%`}
             </Badge>
@@ -73,7 +77,7 @@ export function PendingItem({
           {item.title}
         </a>
       </CardHeader>
-      <CardContent className="flex flex-col gap-2 p-4 pt-0">
+      <CardContent className="flex flex-col gap-2">
         <form
           id={`approve-${item.id}`}
           action={approveItem}
@@ -122,16 +126,6 @@ export function PendingItem({
         <form id={`reject-${item.id}`} action={rejectItem}>
           <input type="hidden" name="itemId" value={item.id} />
         </form>
-        <div className="flex gap-2">
-          <Button type="submit" form={`approve-${item.id}`}>
-            <Check data-icon="inline-start" />
-            Setujui sebagai kasus
-          </Button>
-          <Button type="submit" variant="outline" form={`reject-${item.id}`}>
-            <X data-icon="inline-start" />
-            Tolak
-          </Button>
-        </div>
         {guessed && !guessed.centroid_ok && (
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
             <TriangleAlert className="size-3.5 shrink-0 text-amber-500" />
@@ -139,6 +133,14 @@ export function PendingItem({
           </p>
         )}
       </CardContent>
+      <CardFooter className="justify-end gap-2">
+        <Button type="submit" variant="outline" form={`reject-${item.id}`}>
+          Tolak
+        </Button>
+        <Button type="submit" form={`approve-${item.id}`}>
+          Setuju
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
