@@ -2,13 +2,13 @@
 
 import { Bot, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { restoreItem } from "./actions";
 
 export type RejectedItemData = {
@@ -50,19 +50,15 @@ export function RejectedItem({ item }: { item: RejectedItemData }) {
             {item.llm_reject_reason}
           </p>
         )}
-        <form
-          id={`restore-${item.id}`}
-          action={restoreItem}
-          className="flex gap-2"
-        >
-          <input type="hidden" name="itemId" value={item.id} />
-        </form>
       </CardContent>
       <CardFooter className="justify-end gap-2">
-        <Button type="submit" variant="outline" form={`restore-${item.id}`}>
-          <RotateCcw data-icon="inline-start" />
-          Kembalikan ke antrean
-        </Button>
+        <form action={restoreItem}>
+          <input type="hidden" name="itemId" value={item.id} />
+          <SubmitButton type="submit" variant="outline">
+            <RotateCcw data-icon="inline-start" />
+            Kembalikan ke antrean
+          </SubmitButton>
+        </form>
       </CardFooter>
     </Card>
   );

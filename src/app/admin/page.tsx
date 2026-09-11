@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 import { PendingItem, type PendingItemData } from "./pending-item";
@@ -90,9 +91,9 @@ export default async function AdminPage({
             <Link href="/admin/settings">Pengaturan</Link>
           </Button>
           <form action={signOut}>
-            <Button variant="outline" size="sm" type="submit">
+            <SubmitButton variant="outline" size="sm" type="submit">
               Keluar
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       </header>

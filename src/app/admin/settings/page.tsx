@@ -3,10 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { createClient } from "@/lib/supabase/server";
 import {
   addKeyword,
@@ -85,9 +85,9 @@ export default async function SettingsPage() {
                   defaultValue={s.value}
                   className="font-mono"
                 />
-                <Button type="submit" variant="outline">
+                <SubmitButton type="submit" variant="outline">
                   Simpan
-                </Button>
+                </SubmitButton>
               </form>
             </CardContent>
           </Card>
@@ -108,9 +108,9 @@ export default async function SettingsPage() {
                 placeholder="nilai"
                 className="font-mono"
               />
-              <Button type="submit" variant="outline">
+              <SubmitButton type="submit" variant="outline">
                 Tambah
-              </Button>
+              </SubmitButton>
             </form>
           </CardContent>
         </Card>
@@ -142,15 +142,15 @@ export default async function SettingsPage() {
               </Badge>
               <form action={toggleSource}>
                 <input type="hidden" name="id" value={s.id} />
-                <Button type="submit" variant="outline" size="sm">
+                <SubmitButton type="submit" variant="outline" size="sm">
                   {s.active ? "Matikan" : "Aktifkan"}
-                </Button>
+                </SubmitButton>
               </form>
               <form action={deleteSource}>
                 <input type="hidden" name="id" value={s.id} />
-                <Button type="submit" variant="outline" size="sm">
+                <SubmitButton type="submit" variant="outline" size="sm">
                   Hapus
-                </Button>
+                </SubmitButton>
               </form>
             </CardContent>
           </Card>
@@ -168,9 +168,9 @@ export default async function SettingsPage() {
             placeholder="https://contoh.id/rss"
             className="flex-1 font-mono"
           />
-          <Button type="submit" variant="outline">
+          <SubmitButton type="submit" variant="outline">
             Tambah
-          </Button>
+          </SubmitButton>
         </form>
       </section>
 
@@ -193,15 +193,15 @@ export default async function SettingsPage() {
               </Badge>
               <form action={toggleKeyword}>
                 <input type="hidden" name="id" value={k.id} />
-                <Button type="submit" variant="outline" size="sm">
+                <SubmitButton type="submit" variant="outline" size="sm">
                   {k.active ? "Matikan" : "Aktifkan"}
-                </Button>
+                </SubmitButton>
               </form>
               <form action={deleteKeyword}>
                 <input type="hidden" name="id" value={k.id} />
-                <Button type="submit" variant="outline" size="sm">
+                <SubmitButton type="submit" variant="outline" size="sm">
                   Hapus
-                </Button>
+                </SubmitButton>
               </form>
             </CardContent>
           </Card>
@@ -213,9 +213,9 @@ export default async function SettingsPage() {
             placeholder="keyword baru"
             className="flex-1 font-mono"
           />
-          <Button type="submit" variant="outline">
+          <SubmitButton type="submit" variant="outline">
             Tambah
-          </Button>
+          </SubmitButton>
         </form>
       </section>
     </main>

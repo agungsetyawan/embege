@@ -2,7 +2,6 @@
 
 import { MapPin, Sparkles, TriangleAlert, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,6 +15,7 @@ import {
   RegionCombobox,
   type RegionOption,
 } from "@/components/ui/region-combobox";
+import { FormSubmitButton } from "@/components/ui/submit-button";
 import { approveItem, rejectItem } from "./actions";
 
 export type PendingItemData = {
@@ -134,12 +134,16 @@ export function PendingItem({
         )}
       </CardContent>
       <CardFooter className="justify-end gap-2">
-        <Button type="submit" variant="outline" form={`reject-${item.id}`}>
+        <FormSubmitButton
+          variant="outline"
+          formId={`reject-${item.id}`}
+          action={rejectItem}
+        >
           Tolak
-        </Button>
-        <Button type="submit" form={`approve-${item.id}`}>
+        </FormSubmitButton>
+        <FormSubmitButton formId={`approve-${item.id}`} action={approveItem}>
           Setuju
-        </Button>
+        </FormSubmitButton>
       </CardFooter>
     </Card>
   );
