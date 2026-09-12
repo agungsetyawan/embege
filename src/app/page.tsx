@@ -43,8 +43,8 @@ export default function Home() {
           </h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
             Kasus keracunan program Makan Bergizi Gratis per kabupaten dan kota
-            di Indonesia. Setiap kasus dikurasi manusia dari pemberitaan
-            kredibel sebelum tayang.
+            di Indonesia. Setiap kasus dikurasi dari pemberitaan kredibel
+            sebelum tayang.
           </p>
           <p className="text-xs text-muted-foreground">
             Diperbarui berkala tiap jam
