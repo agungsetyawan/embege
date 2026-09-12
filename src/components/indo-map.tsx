@@ -92,6 +92,45 @@ function dotIcon(count: number): L.DivIcon {
   });
 }
 
+// Dim everything outside Indonesia: one world-sized polygon with all
+// kabupaten rings as holes. Sits above the tiles but below the overlays.
+function DimOutsideIndonesia({ geo }: { geo: FeatureCollection }) {
+  const map = useMap();
+  useEffect(() => {
+    const toLatLng = ([lng, lat]: number[]) => [lat, lng] as [number, number];
+    const holes: [number, number][][] = [];
+    for (const feature of geo.features) {
+      const geometry = feature.geometry;
+      if (geometry?.type === "Polygon") {
+        for (const ring of geometry.coordinates) holes.push(ring.map(toLatLng));
+      } else if (geometry?.type === "MultiPolygon") {
+        for (const poly of geometry.coordinates)
+          for (const ring of poly) holes.push(ring.map(toLatLng));
+      }
+    }
+    // World-sized outer ring with all kabupaten rings as holes.
+    const mask = L.polygon(
+      [
+        [
+          [-90, -180],
+          [90, -180],
+          [90, 180],
+          [-90, 180],
+        ],
+        ...holes,
+      ],
+      {
+        interactive: false,
+        stroke: false,
+        fillOpacity: 0.65,
+        className: "mbg-outside-dim",
+      },
+    ).addTo(map);
+    return () => void map.removeLayer(mask);
+  }, [map, geo]);
+  return null;
+}
+
 // Fly to the bounding box of regions with cases once on load.
 // Zero cases = keep the default Indonesia-wide view. After the user zooms/clicks,
 // never steal the frame back (marker clicks re-render the page).
@@ -238,6 +277,7 @@ export function IndoMap() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://www.esri.com/">Esri</a>'
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
           />
+          <DimOutsideIndonesia geo={geo.data} />
           <FitToCases summary={summary} />
           <GeoJSON
             key="kabupaten"

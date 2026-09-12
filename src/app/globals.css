@@ -80,6 +80,10 @@
 }
 
 /* Lencana angka peta: dot per daerah dan lingkaran cluster. */
+/* Mask that dims everything outside Indonesia. Follows the theme background. */
+.mbg-outside-dim {
+  fill: var(--color-background);
+}
 .mbg-dot-wrap,
 .mbg-cluster-wrap {
   background: none;
