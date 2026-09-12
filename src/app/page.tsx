@@ -1,4 +1,5 @@
 import { IndoMapLazy } from "@/components/indo-map-lazy";
+import { StatsCards } from "@/components/stats-cards";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const jsonLd = {
@@ -37,11 +38,12 @@ export default function Home() {
               Peta Kasus Keracunan MBG
             </h1>
             <p className="text-sm text-muted-foreground">
-              Data dikurasi dari pemberitaan kredibel. Klik titik untuk detail.
+              Data dikurasi dari pemberitaan kredibel
             </p>
           </div>
           <ThemeToggle />
         </header>
+        <StatsCards />
         <IndoMapLazy />
       </main>
     </>
