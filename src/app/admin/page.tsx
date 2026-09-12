@@ -7,8 +7,10 @@ import { IconStack } from "@/components/reui/icon-stack";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { AdminHeader } from "./admin-header";
+import { DeletedItem, type DeletedItemData } from "./deleted-item";
 import { PendingItem, type PendingItemData } from "./pending-item";
 import { RejectedItem, type RejectedItemData } from "./rejected-item";
+import { type CaseTwin, ReportItem, type ReportItemData } from "./report-item";
 
 export default async function AdminPage({
   searchParams,
@@ -22,12 +24,24 @@ export default async function AdminPage({
   if (!user) redirect("/admin/login");
 
   const params = await searchParams;
-  const tab = params.tab === "auto" ? "auto" : "pending";
+  const tab =
+    params.tab === "auto"
+      ? "auto"
+      : params.tab === "reports"
+        ? "reports"
+        : params.tab === "deleted"
+          ? "deleted"
+          : "pending";
   const PAGE_SIZE = 20;
   const rawPage = Number(params.page);
   const wantPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-  const [{ count: pendingCount }, { count: autoCount }] = await Promise.all([
+  const [
+    { count: pendingCount },
+    { count: autoCount },
+    { count: reportCount },
+    { count: deletedCount },
+  ] = await Promise.all([
     supabase
       .from("crawl_items")
       .select("id", { count: "exact", head: true })
@@ -37,9 +51,24 @@ export default async function AdminPage({
       .select("id", { count: "exact", head: true })
       .eq("status", "rejected")
       .eq("llm_is_relevant", false),
+    supabase
+      .from("case_reports")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "open"),
+    supabase
+      .from("cases")
+      .select("id", { count: "exact", head: true })
+      .not("deleted_at", "is", null),
   ]);
 
-  const total = tab === "auto" ? (autoCount ?? 0) : (pendingCount ?? 0);
+  const total =
+    tab === "auto"
+      ? (autoCount ?? 0)
+      : tab === "reports"
+        ? (reportCount ?? 0)
+        : tab === "deleted"
+          ? (deletedCount ?? 0)
+          : (pendingCount ?? 0);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(wantPage, totalPages);
 
@@ -56,22 +85,90 @@ export default async function AdminPage({
           .eq("llm_is_relevant", false)
           .order("published_at", { ascending: false, nullsFirst: false })
           .range(rangeFrom, rangeTo)
-      : supabase
-          .from("crawl_items")
-          .select(
-            "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,geo_confidence",
-          )
-          .eq("status", "pending")
-          .order("published_at", { ascending: false, nullsFirst: false })
-          .range(rangeFrom, rangeTo),
+      : tab === "reports"
+        ? supabase
+            .from("case_reports")
+            .select(
+              "id,reason,reported_victims,reported_date,note,evidence_url,created_at,case:cases!inner(id,region_id,summary,victims,occurred_on,source_url,region:regions(province,district))",
+            )
+            .eq("status", "open")
+            .order("created_at", { ascending: false })
+            .range(rangeFrom, rangeTo)
+        : tab === "deleted"
+          ? supabase
+              .from("cases")
+              .select(
+                "id,summary,victims,occurred_on,source_media,source_url,deleted_at,region:regions(province,district)",
+              )
+              .not("deleted_at", "is", null)
+              .order("deleted_at", { ascending: false })
+              .range(rangeFrom, rangeTo)
+          : supabase
+              .from("crawl_items")
+              .select(
+                "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,geo_confidence",
+              )
+              .eq("status", "pending")
+              .order("published_at", { ascending: false, nullsFirst: false })
+              .range(rangeFrom, rangeTo),
     supabase
       .from("regions")
       .select("id,province,district,centroid_ok")
       .order("province")
       .order("district"),
   ]);
+
+  // Candidate duplicates for "berita ganda" reports: same source URL
+  // (classic double-approve) or same region + same date.
+  const twinsByReport = new Map<string, CaseTwin[]>();
+  if (tab === "reports") {
+    const dupReports = (
+      (items as unknown as ReportItemData[] | undefined) ?? []
+    ).filter((r) => r.reason === "duplicate");
+    await Promise.all(
+      dupReports.map(async (r) => {
+        const c = r.case;
+        const [byUrl, byEvent] = await Promise.all([
+          supabase
+            .from("cases")
+            .select("id,summary,victims,occurred_on,source_media,source_url")
+            .eq("source_url", c.source_url)
+            .neq("id", c.id)
+            .is("deleted_at", null)
+            .limit(5),
+          c.occurred_on
+            ? supabase
+                .from("cases")
+                .select(
+                  "id,summary,victims,occurred_on,source_media,source_url",
+                )
+                .eq("region_id", c.region_id)
+                .eq("occurred_on", c.occurred_on)
+                .neq("id", c.id)
+                .is("deleted_at", null)
+                .limit(5)
+            : Promise.resolve({ data: [] as CaseTwin[] }),
+        ]);
+        const seen = new Set<string>();
+        const twins: CaseTwin[] = [];
+        for (const row of [...(byUrl.data ?? []), ...(byEvent.data ?? [])]) {
+          if (seen.has(row.id) || twins.length >= 5) continue;
+          seen.add(row.id);
+          twins.push(row);
+        }
+        twinsByReport.set(r.id, twins);
+      }),
+    );
+  }
+
   const pageQuery = (p: number) =>
-    tab === "auto" ? `/admin?tab=auto&page=${p}` : `/admin?page=${p}`;
+    tab === "auto"
+      ? `/admin?tab=auto&page=${p}`
+      : tab === "reports"
+        ? `/admin?tab=reports&page=${p}`
+        : tab === "deleted"
+          ? `/admin?tab=deleted&page=${p}`
+          : `/admin?page=${p}`;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
@@ -82,6 +179,8 @@ export default async function AdminPage({
           <>
             <Badge variant="secondary">{pendingCount ?? 0} antre</Badge>
             <Badge variant="outline">{autoCount ?? 0} ditolak otomatis</Badge>
+            <Badge variant="outline">{reportCount ?? 0} laporan</Badge>
+            <Badge variant="outline">{deletedCount ?? 0} terhapus</Badge>
           </>
         }
         email={user.email}
@@ -95,9 +194,13 @@ export default async function AdminPage({
             <p className="font-medium">
               {tab === "auto"
                 ? "Belum ada berita yang ditolak otomatis."
-                : "Antrean bersih."}
+                : tab === "reports"
+                  ? "Belum ada laporan masuk."
+                  : tab === "deleted"
+                    ? "Tidak ada case yang dihapus."
+                    : "Antrean bersih."}
             </p>
-            {tab !== "auto" && (
+            {tab === "pending" && (
               <p className="text-sm text-muted-foreground">
                 Berita baru masuk otomatis tiap jam.
               </p>
@@ -110,13 +213,28 @@ export default async function AdminPage({
             ? (items as RejectedItemData[] | undefined)?.map((item) => (
                 <RejectedItem key={item.id} item={item} />
               ))
-            : (items as PendingItemData[] | undefined)?.map((item) => (
-                <PendingItem
-                  key={item.id}
-                  item={item}
-                  regions={regions ?? []}
-                />
-              ))}
+            : tab === "reports"
+              ? (items as unknown as ReportItemData[] | undefined)?.map(
+                  (report) => (
+                    <ReportItem
+                      key={report.id}
+                      report={report}
+                      regions={regions ?? []}
+                      twins={twinsByReport.get(report.id) ?? []}
+                    />
+                  ),
+                )
+              : tab === "deleted"
+                ? (items as unknown as DeletedItemData[] | undefined)?.map(
+                    (item) => <DeletedItem key={item.id} item={item} />,
+                  )
+                : (items as PendingItemData[] | undefined)?.map((item) => (
+                    <PendingItem
+                      key={item.id}
+                      item={item}
+                      regions={regions ?? []}
+                    />
+                  ))}
         </Frame>
       )}
       {totalPages > 1 && (

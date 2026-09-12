@@ -51,7 +51,7 @@ export type PendingItemData = {
 
 type RegionNode = CascaderNode<{ centroidOk: boolean }>;
 
-function buildRegionTree(regions: RegionOption[]): RegionNode[] {
+export function buildRegionTree(regions: RegionOption[]): RegionNode[] {
   const byProvince = new Map<string, RegionNode>();
   for (const r of regions) {
     let province = byProvince.get(r.province);
@@ -73,7 +73,7 @@ function buildRegionTree(regions: RegionOption[]): RegionNode[] {
   return [...byProvince.values()];
 }
 
-function renderRegionLabel(node: RegionNode) {
+export function renderRegionLabel(node: RegionNode) {
   if (node.data && !node.data.centroidOk) {
     return (
       <span className="flex items-center gap-1">

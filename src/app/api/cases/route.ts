@@ -30,6 +30,7 @@ export async function GET(req: Request) {
         "id,occurred_on,victims,summary,source_url,source_media,region_id",
       )
       .eq("published", true)
+      .is("deleted_at", null)
       .eq("region_id", regionId)
       .order("occurred_on", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });

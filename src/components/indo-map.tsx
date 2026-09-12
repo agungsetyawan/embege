@@ -17,6 +17,7 @@ import {
 import MarkerClusterGroup from "react-leaflet-cluster";
 import "leaflet/dist/leaflet.css";
 import "react-leaflet-cluster/dist/assets/MarkerCluster.css";
+import { ReportDialog } from "@/components/report-dialog";
 import { Alert, AlertAction, AlertTitle } from "@/components/reui/alert";
 import { Badge } from "@/components/reui/badge";
 import { Button } from "@/components/ui/button";
@@ -224,15 +225,18 @@ function CaseList({ regionId }: { regionId: string }) {
             )}
           </div>
           <p className="text-sm leading-relaxed">{c.summary}</p>
-          <a
-            href={c.source_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-sm font-medium underline underline-offset-4"
-          >
-            <ExternalLink className="size-3.5" />
-            Sumber: {c.source_media}
-          </a>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <a
+              href={c.source_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium underline underline-offset-4"
+            >
+              <ExternalLink className="size-3.5" />
+              Sumber: {c.source_media}
+            </a>
+            <ReportDialog caseId={c.id} />
+          </div>
         </li>
       ))}
     </ul>
@@ -332,17 +336,11 @@ export function IndoMap() {
           <MarkerClusterGroup
             chunkedLoading
             showCoverageOnHover={false}
-            iconCreateFunction={(cluster: {
-              // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-              getAllChildMarkers: () => any[];
-            }) => {
-              const total = cluster
-                .getAllChildMarkers()
-                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-                .reduce((t: number, m: { getLatLng: () => any }) => {
-                  const ll = m.getLatLng();
-                  return t + (countByLatLng.get(`${ll.lat},${ll.lng}`) ?? 0);
-                }, 0);
+            iconCreateFunction={(cluster) => {
+              const total = cluster.getAllChildMarkers().reduce((t, m) => {
+                const ll = m.getLatLng();
+                return t + (countByLatLng.get(`${ll.lat},${ll.lng}`) ?? 0);
+              }, 0);
               const size = total >= 100 ? 46 : total >= 10 ? 40 : 34;
               return L.divIcon({
                 html: `<div class="mbg-cluster ${sevClass(total)}"><span>${total}</span></div>`,

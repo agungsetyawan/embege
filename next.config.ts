@@ -1,3 +1,4 @@
+import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 
 // React/Next butuh eval() untuk debugging di dev. Prod tetap ketat tanpa unsafe-eval.
@@ -39,4 +40,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBotId(nextConfig);

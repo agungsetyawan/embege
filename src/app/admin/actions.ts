@@ -92,6 +92,127 @@ export async function restoreItem(formData: FormData) {
   revalidatePath("/admin");
 }
 
+export async function resolveReport(formData: FormData) {
+  const supabase = await requireAdmin();
+  const reportId = String(formData.get("reportId"));
+  if (!isUuid(reportId)) return;
+  await supabase
+    .from("case_reports")
+    .update({ status: "resolved" })
+    .eq("id", reportId);
+  revalidatePath("/admin");
+}
+
+export async function dismissReport(formData: FormData) {
+  const supabase = await requireAdmin();
+  const reportId = String(formData.get("reportId"));
+  if (!isUuid(reportId)) return;
+  await supabase
+    .from("case_reports")
+    .update({ status: "dismissed" })
+    .eq("id", reportId);
+  revalidatePath("/admin");
+}
+
+// Move the reported case to the region the reporter says is correct.
+export async function moveReportCase(formData: FormData) {
+  const supabase = await requireAdmin();
+  const reportId = String(formData.get("reportId"));
+  const regionId = String(formData.get("regionId"));
+  if (!isUuid(reportId) || !isUuid(regionId)) return;
+
+  const { data: report } = await supabase
+    .from("case_reports")
+    .select("case_id")
+    .eq("id", reportId)
+    .single();
+  if (!report) return;
+
+  const { error } = await supabase
+    .from("cases")
+    .update({ region_id: regionId })
+    .eq("id", report.case_id);
+  if (error) return;
+
+  await supabase
+    .from("case_reports")
+    .update({ status: "resolved" })
+    .eq("id", reportId);
+  revalidatePath("/admin");
+}
+
+// Soft-delete the reported duplicate so it can be restored from the
+// Terhapus tab if the call turns out to be wrong.
+export async function deleteReportedCase(formData: FormData) {
+  const supabase = await requireAdmin();
+  const caseId = String(formData.get("caseId"));
+  const reportId = String(formData.get("reportId"));
+  if (!isUuid(caseId)) return;
+  const { error } = await supabase
+    .from("cases")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", caseId);
+  if (error) return;
+  if (isUuid(reportId)) {
+    await supabase
+      .from("case_reports")
+      .update({ status: "resolved" })
+      .eq("id", reportId);
+  }
+  revalidatePath("/admin");
+}
+
+export async function restoreCase(formData: FormData) {
+  const supabase = await requireAdmin();
+  const caseId = String(formData.get("caseId"));
+  if (!isUuid(caseId)) return;
+  await supabase.from("cases").update({ deleted_at: null }).eq("id", caseId);
+  revalidatePath("/admin");
+}
+
+// Apply the reporter's suggested values to the case, then mark the report
+// resolved. Empty inputs clear the field, same semantics as approveItem.
+export async function applyReportFix(formData: FormData) {
+  const supabase = await requireAdmin();
+  const reportId = String(formData.get("reportId"));
+  if (!isUuid(reportId)) return;
+  const victimsRaw = String(formData.get("victims") ?? "");
+  const occurredRaw = String(formData.get("occurredOn") ?? "");
+  const victims = victimsRaw === "" ? null : Number(victimsRaw);
+  if (
+    victims !== null &&
+    (!Number.isInteger(victims) || victims < 0 || victims > 1000000)
+  )
+    return;
+  const occurredOn =
+    occurredRaw === ""
+      ? null
+      : /^\d{4}-\d{2}-\d{2}$/.test(occurredRaw) &&
+          !Number.isNaN(Date.parse(occurredRaw))
+        ? occurredRaw
+        : undefined;
+  if (occurredOn === undefined) return;
+
+  const { data: report } = await supabase
+    .from("case_reports")
+    .select("case_id")
+    .eq("id", reportId)
+    .single();
+  if (!report) return;
+
+  const { error } = await supabase
+    .from("cases")
+    .update({ victims, occurred_on: occurredOn })
+    .eq("id", report.case_id);
+  if (error) return;
+
+  await supabase
+    .from("case_reports")
+    .update({ status: "resolved" })
+    .eq("id", reportId);
+  revalidatePath("/admin");
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

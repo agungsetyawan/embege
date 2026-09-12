@@ -5,11 +5,18 @@ import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { signOut } from "./actions";
 
-export type AdminNavKey = "pending" | "auto" | "settings";
+export type AdminNavKey =
+  | "pending"
+  | "auto"
+  | "reports"
+  | "deleted"
+  | "settings";
 
 const NAV_ITEMS: { key: AdminNavKey; label: string; href: string }[] = [
   { key: "pending", label: "Antrean", href: "/admin" },
   { key: "auto", label: "Ditolak otomatis", href: "/admin?tab=auto" },
+  { key: "reports", label: "Laporan", href: "/admin?tab=reports" },
+  { key: "deleted", label: "Terhapus", href: "/admin?tab=deleted" },
   { key: "settings", label: "Pengaturan", href: "/admin/settings" },
 ];
 

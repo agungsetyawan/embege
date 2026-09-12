@@ -29,6 +29,7 @@ export async function GET(req: Request) {
     .from("cases")
     .select("occurred_on,victims,regions(province,district)")
     .eq("published", true)
+    .is("deleted_at", null)
     .order("occurred_on", { ascending: false, nullsFirst: false });
   if (regionId) query = query.eq("region_id", regionId);
   const { data: rows, error } = await query;
