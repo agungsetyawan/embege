@@ -4,19 +4,20 @@ import { Flag } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 export const REPORT_REASONS = [
   { value: "victims", label: "Jumlah korban salah" },
@@ -38,11 +39,122 @@ const initialState = {
   evidence: "",
 };
 
+function ReportTrigger(props: React.ComponentProps<typeof Button>) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="text-muted-foreground"
+      {...props}
+    >
+      <Flag className="size-3.5" />
+      Laporkan
+    </Button>
+  );
+}
+
+function ReportFields({
+  form,
+  onChange,
+}: {
+  form: typeof initialState;
+  onChange: (patch: Partial<typeof initialState>) => void;
+}) {
+  return (
+    <>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-sm font-medium">Apa yang salah?</legend>
+        {REPORT_REASONS.map((r) => (
+          <label
+            key={r.value}
+            className="flex items-center gap-2 text-sm font-normal"
+          >
+            <input
+              type="radio"
+              name="reason"
+              value={r.value}
+              checked={form.reason === r.value}
+              onChange={() => onChange({ reason: r.value })}
+              className="accent-primary"
+            />
+            {r.label}
+          </label>
+        ))}
+      </fieldset>
+      {form.reason === "victims" && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="report-victims">Jumlah korban yang benar</Label>
+          <Input
+            id="report-victims"
+            name="reportedVictims"
+            type="number"
+            min={0}
+            required
+            value={form.victims}
+            onChange={(e) => onChange({ victims: e.target.value })}
+          />
+        </div>
+      )}
+      {form.reason === "date" && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="report-date">Tanggal yang benar</Label>
+          <Input
+            id="report-date"
+            name="reportedDate"
+            type="date"
+            required
+            value={form.date}
+            onChange={(e) => onChange({ date: e.target.value })}
+          />
+        </div>
+      )}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="report-note">
+          Catatan{" "}
+          <span className="font-normal text-muted-foreground">(opsional)</span>
+        </Label>
+        <Textarea
+          id="report-note"
+          name="note"
+          rows={3}
+          maxLength={1000}
+          value={form.note}
+          onChange={(e) => onChange({ note: e.target.value })}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="report-evidence">
+          Tautan bukti{" "}
+          <span className="font-normal text-muted-foreground">(opsional)</span>
+        </Label>
+        <Input
+          id="report-evidence"
+          name="evidenceUrl"
+          type="url"
+          placeholder="https://"
+          value={form.evidence}
+          onChange={(e) => onChange({ evidence: e.target.value })}
+        />
+      </div>
+      {/* Honeypot: hidden from humans, bots fill it and get a fake 201. */}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="hidden"
+      />
+    </>
+  );
+}
+
 export function ReportDialog({ caseId }: { caseId: string }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(initialState);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   function reset() {
     setForm(initialState);
@@ -85,156 +197,65 @@ export function ReportDialog({ caseId }: { caseId: string }) {
     }
   }
 
+  const update = (patch: Partial<typeof initialState>) =>
+    setForm((f) => ({ ...f, ...patch }));
+
+  const onOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) reset();
+  };
+
   return (
-    <Dialog
+    <Drawer
       open={open}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (!nextOpen) reset();
-      }}
+      onOpenChange={onOpenChange}
+      swipeDirection={isDesktop ? "right" : "down"}
+      showSwipeHandle={!isDesktop}
     >
-      <DialogTrigger
-        render={
-          <Button variant="ghost" size="sm" className="text-muted-foreground" />
-        }
-      >
-        <Flag className="size-3.5" />
-        Laporkan
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Laporkan kesalahan</DialogTitle>
-          <DialogDescription>
+      <DrawerTrigger render={<ReportTrigger />} />
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Laporkan kesalahan</DrawerTitle>
+          <DrawerDescription>
             Bantu perbaiki data kasus ini. Laporanmu akan ditinjau kurator
             sebelum diterapkan.
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
         {status === "sent" ? (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-1 flex-col gap-3 px-4 py-2">
             <p className="text-sm">
               Terima kasih. Laporanmu sudah kami terima dan akan ditinjau.
             </p>
-            <DialogFooter>
-              <DialogClose render={<Button variant="outline" />}>
+            <DrawerFooter className="px-0">
+              <DrawerClose render={<Button variant="outline" />}>
                 Tutup
-              </DialogClose>
-            </DialogFooter>
+              </DrawerClose>
+            </DrawerFooter>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <fieldset className="flex flex-col gap-2">
-              <legend className="text-sm font-medium">Apa yang salah?</legend>
-              {REPORT_REASONS.map((r) => (
-                <label
-                  key={r.value}
-                  className="flex items-center gap-2 text-sm font-normal"
-                >
-                  <input
-                    type="radio"
-                    name="reason"
-                    value={r.value}
-                    checked={form.reason === r.value}
-                    onChange={() => setForm((f) => ({ ...f, reason: r.value }))}
-                    className="accent-primary"
-                  />
-                  {r.label}
-                </label>
-              ))}
-            </fieldset>
-            {form.reason === "victims" && (
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="report-victims">Jumlah korban yang benar</Label>
-                <Input
-                  id="report-victims"
-                  name="reportedVictims"
-                  type="number"
-                  min={0}
-                  required
-                  value={form.victims}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, victims: e.target.value }))
-                  }
-                />
-              </div>
-            )}
-            {form.reason === "date" && (
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="report-date">Tanggal yang benar</Label>
-                <Input
-                  id="report-date"
-                  name="reportedDate"
-                  type="date"
-                  required
-                  value={form.date}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, date: e.target.value }))
-                  }
-                />
-              </div>
-            )}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="report-note">
-                Catatan{" "}
-                <span className="font-normal text-muted-foreground">
-                  (opsional)
-                </span>
-              </Label>
-              <Textarea
-                id="report-note"
-                name="note"
-                rows={3}
-                maxLength={1000}
-                value={form.note}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, note: e.target.value }))
-                }
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="report-evidence">
-                Tautan bukti{" "}
-                <span className="font-normal text-muted-foreground">
-                  (opsional)
-                </span>
-              </Label>
-              <Input
-                id="report-evidence"
-                name="evidenceUrl"
-                type="url"
-                placeholder="https://"
-                value={form.evidence}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, evidence: e.target.value }))
-                }
-              />
-            </div>
-            {/* Honeypot: hidden from humans, bots fill it and get a fake 201. */}
-            <input
-              type="text"
-              name="website"
-              tabIndex={-1}
-              autoComplete="off"
-              aria-hidden="true"
-              className="hidden"
-            />
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-1 flex-col gap-3 px-4 py-2"
+          >
+            <ReportFields form={form} onChange={update} />
             {error && (
               <p role="alert" className="text-sm text-destructive">
                 {error}
               </p>
             )}
-            <DialogFooter>
+            <DrawerFooter className="px-0">
               <Button
                 type="submit"
                 disabled={status === "sending"}
                 aria-busy={status === "sending"}
               >
-                Kirim laporan
+                Kirim
                 {status === "sending" && <Spinner />}
               </Button>
-            </DialogFooter>
+            </DrawerFooter>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }
