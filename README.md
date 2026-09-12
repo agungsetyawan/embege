@@ -6,7 +6,7 @@ Production: https://embege-poisoning.vercel.app
 
 ## Features
 
-The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district. A popup lists each case with its date, victim count, and source link. The page supports dark mode.
+The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district, and nearby markers cluster by zoom level. Clicking a marker opens a side sheet that lists each case with its date, victim count, and source link. The page supports dark mode.
 
 The crawler reads RSS feeds from four active outlets every hour. It filters items by keyword and stores matches for review. Duplicate URLs never create a second row.
 
@@ -25,8 +25,8 @@ The list below names each layer and its role:
 - Next.js 16 App Router for the web app and the API routes
 - Supabase Postgres for data, auth, scheduled jobs, and secret storage
 - TanStack Query for client data cache
-- Leaflet for the map
-- shadcn/ui components with Tailwind CSS v4 for the interface
+- Leaflet and react-leaflet-cluster for the map
+- shadcn/ui components on the Base UI generation, ReUI components for admin surfaces, and Tailwind CSS v4 for the interface
 - Gemini API for summaries and location guesses
 - Cheerio for article text extraction
 - Vercel BotID for the invisible bot check on the public report endpoint
