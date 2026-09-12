@@ -227,7 +227,7 @@ export function StatsCards() {
                                 >
                                   <span>{name}</span>
                                   <span className="text-muted-foreground tabular-nums">
-                                    {a.victims.toLocaleString("id-ID")} korban
+                                    {a.victims.toLocaleString("id-ID")}
                                   </span>
                                 </li>
                               );
