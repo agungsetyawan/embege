@@ -83,8 +83,8 @@ export async function restoreItem(formData: FormData) {
   const supabase = await requireAdmin();
   const itemId = String(formData.get("itemId"));
   if (!isUuid(itemId)) return;
-  // llm_summary dibiarkan terisi supaya tidak di-enrich ulang dan tidak
-  // kena auto-reject loop; kurator tinggal setujui/tolak manual.
+  // Keep llm_summary filled so the item is not re-enriched and does not
+  // hit the auto-reject loop; the curator just approves/rejects manually.
   await supabase
     .from("crawl_items")
     .update({ status: "pending", llm_is_relevant: null })

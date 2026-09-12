@@ -47,14 +47,14 @@ type SummaryRow = {
   victims: number;
 };
 
-// TODO(future): ganti GeoJSON statis dengan vector tiles kalau sudah terlalu berat.
+// TODO(future): swap the static GeoJSON for vector tiles once it gets too heavy.
 async function fetchKabupaten(): Promise<FeatureCollection> {
   const res = await fetch("/geojson/kabupaten.geojson");
   if (!res.ok) throw new Error("Gagal memuat batas kab/kota");
   return res.json();
 }
 
-// Ringkasan per daerah saja (kecil dan tetap). Detail kasus diambil per daerah saat popup dibuka.
+// Per-region summary only (small and stable). Case details are fetched per region when the popup opens.
 async function fetchSummary(): Promise<{ summary: SummaryRow[] }> {
   const res = await fetch("/api/cases");
   if (!res.ok) throw new Error("Gagal memuat data kasus");
@@ -76,14 +76,14 @@ function fillColor(count: number): string {
   return "transparent";
 }
 
-// Kelas severity yang sama untuk dot dan cluster, selaras dengan legenda.
+// Same severity classes for dots and clusters, aligned with the legend.
 function sevClass(count: number): string {
   if (count >= 5) return "mbg-sev-5";
   if (count >= 2) return "mbg-sev-2";
   return "mbg-sev-1";
 }
 
-// Satu dot per daerah. Angka = jumlah kasus daerah itu.
+// One dot per region. Number = that region's case count.
 function dotIcon(count: number): L.DivIcon {
   return L.divIcon({
     html: `<div class="mbg-dot ${sevClass(count)}"><span>${count}</span></div>`,
@@ -92,9 +92,9 @@ function dotIcon(count: number): L.DivIcon {
   });
 }
 
-// Terbang ke kotak daerah berkasus sekali saja saat peta dimuat.
-// Nol kasus = biarkan default se-Indonesia. Setelah user zoom/klik,
-// bingkai jangan direbut lagi (klik marker me-render ulang halaman).
+// Fly to the bounding box of regions with cases once on load.
+// Zero cases = keep the default Indonesia-wide view. After the user zooms/clicks,
+// never steal the frame back (marker clicks re-render the page).
 function FitToCases({ summary }: { summary: SummaryRow[] }) {
   const map = useMap();
   const fitted = useRef(false);
@@ -233,7 +233,7 @@ export function IndoMap() {
           scrollWheelZoom
           className="h-[70vh] w-full"
         >
-          {/* Esri WorldStreetMap: label Inggris, tanpa API key. */}
+          {/* Esri WorldStreetMap: English labels, no API key. */}
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://www.esri.com/">Esri</a>'
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"

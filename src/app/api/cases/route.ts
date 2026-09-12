@@ -1,12 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/validate";
 
-// Data publik peta. RLS tetap berlaku (anon key), hasil di-cache 5 menit
-// supaya DB tidak kena tembak tiap pengunjung.
+// Public map data. RLS still applies (anon key), results cached 5 minutes
+// so the DB is not hit on every visit.
 //
-// Dua mode agar payload awal tetap kecil selamanya:
-// - tanpa param: ringkasan per daerah (514 baris pendek, untuk choropleth + marker)
-// - ?region_id=: kasus daerah itu saja, diambil saat popup dibuka
+// Modes to keep the initial payload small forever:
+// - no param: per-region summary (514 short rows, for choropleth + markers)
+// - ?region_id=: cases of that region only, fetched when the popup opens
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     return Response.json({ cases: cases ?? [] }, CACHE);
   }
 
-  // Hanya daerah berkasus yang dikirim. Di client, daerah tak dikenal = 0 kasus.
+  // Only regions with cases are sent. Client-side, unknown regions = 0 cases.
   const { data: summary, error } = await supabase
     .from("case_summary")
     .select("*")

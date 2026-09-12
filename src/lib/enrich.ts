@@ -50,7 +50,7 @@ export type LlmResult = {
   victims: number | null;
 };
 
-// Satu call Gemini: ringkasan + lokasi + relevansi keracunan MBG. Gagal apa pun -> null (fallback perilaku lama).
+// One Gemini call: summary + location + MBG poisoning relevance. Any failure -> null (legacy fallback behavior).
 export async function enrichWithGemini(
   title: string,
   text: string,

@@ -21,8 +21,8 @@ function parseISODate(s: string | null | undefined): Date | undefined {
   return Number.isNaN(d.getTime()) ? undefined : d;
 }
 
-// Pilihan tanggal berbahasa Indonesia. Nilai ISO disalurkan ke Server Action
-// lewat input hidden. Kosong berarti tanggal tidak diketahui.
+// Indonesian date picker. The ISO value flows to the Server Action
+// via a hidden input. Empty means the date is unknown.
 export function DateField({
   defaultValue,
   name,

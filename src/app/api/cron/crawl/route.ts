@@ -12,7 +12,7 @@ type Region = { id: string; province: string; district: string };
 
 function guessRegion(text: string, regions: Region[]): string | null {
   const upper = text.toUpperCase();
-  // Nama terpanjang dulu supaya "KOTA BANDUNG" menang atas "BANDUNG".
+  // Longest names first so "KOTA BANDUNG" wins over "BANDUNG".
   const sorted = [...regions].sort(
     (a, b) => b.district.length - a.district.length,
   );
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
     );
   }
   const kws = keywords.map((k) => k.keyword.toLowerCase());
-  // Kata pendek seperti "MBG" wajib utuh (word boundary) supaya tidak match "lambung", dsb.
+  // Short words like "MBG" must match whole (word boundary) to avoid matching e.g. "lambung".
   const tests = kws.map((k) =>
     k.length <= 5
       ? (t: string) => new RegExp(`\\b${k.replace(/[^\w\s]/g, "")}\\b`).test(t)
@@ -60,7 +60,7 @@ export async function GET(req: Request) {
   let fetched = 0;
   let inserted = 0;
   for (const src of sources) {
-    // Satu feed mati tidak menggagalkan yang lain.
+    // One dead feed must not fail the others.
     const feed = await parser.parseURL(src.rss_url as string).catch(() => null);
     if (!feed) continue;
     const rows = [];

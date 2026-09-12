@@ -21,8 +21,8 @@ export type RegionOption = {
   centroid_ok: boolean;
 };
 
-// Combobox searchable untuk ratusan daerah. Berdiri sendiri (client),
-// nilainya disalurkan ke Server Action lewat input hidden.
+// Searchable combobox for hundreds of regions. Standalone (client),
+// its value flows to the Server Action via a hidden input.
 export function RegionCombobox({
   regions,
   defaultValue,

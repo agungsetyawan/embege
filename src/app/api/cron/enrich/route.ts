@@ -7,10 +7,10 @@ export const maxDuration = 60;
 
 const DEFAULT_BATCH = 5;
 const MAX_BATCH = 20;
-// LLM hanya boleh auto-reject jika yakin tinggi. Ragu = tetap antre.
+// The LLM may only auto-reject when highly confident. In doubt = keep queued.
 const AUTO_REJECT_MIN_CONFIDENCE = 0.8;
 
-// Cocokkan output LLM ke tabel regions (uppercase, toleran prefix KOTA).
+// Match the LLM output against the regions table (uppercase, KOTA-prefix tolerant).
 function matchRegion(
   district: string | null,
   regions: { id: string; district: string }[],
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
         failed++;
         continue;
       }
-      // Berita bukan keracunan MBG dengan keyakinan tinggi: tolak otomatis.
+      // High-confidence non-MBG-poisoning news: auto-reject.
       if (
         !result.isPoisonRelated &&
         result.relevanceConfidence >= AUTO_REJECT_MIN_CONFIDENCE
@@ -102,7 +102,7 @@ export async function GET(req: Request) {
       };
       if (candidate) {
         update.geo_confidence = result.confidence;
-        // Overwrite tebakan substring hanya jika: belum ada tebakan, atau LLM yakin.
+        // Overwrite the substring guess only when: no guess yet, or the LLM is confident.
         if (!item.guessed_region_id || result.confidence >= 0.7) {
           update.guessed_region_id = candidate;
         }

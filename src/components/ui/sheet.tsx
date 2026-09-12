@@ -33,7 +33,7 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        // z-1000: harus di atas panel Leaflet (z-200..1000), kalau tidak peta menembus overlay.
+        // z-1000: must sit above Leaflet panes (z-200..1000), otherwise the map bleeds through the overlay.
         "fixed inset-0 z-[1000] bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className,
       )}
