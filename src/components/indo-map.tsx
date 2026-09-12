@@ -3,9 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import type { FeatureCollection } from "geojson";
+import type { Feature, FeatureCollection } from "geojson";
 import L, { type Map as LeafletMap } from "leaflet";
-import { ExternalLink, TriangleAlert } from "lucide-react";
+import { Ambulance, ExternalLink, TriangleAlert, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   GeoJSON,
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { IconTile } from "./reui/icon-tile";
 
 type CaseRow = {
   id: string;
@@ -167,6 +168,56 @@ function formatCaseDate(iso: string | null): string {
   return format(parsed, "d MMMM yyyy", { locale: localeId });
 }
 
+function FocusRegion({ feature }: { feature?: Feature }) {
+  const map = useMap();
+  useEffect(() => {
+    if (feature) {
+      map.fitBounds(L.geoJSON(feature).getBounds(), { padding: [12, 12] });
+    }
+  }, [map, feature]);
+  return null;
+}
+
+function RegionPreview({
+  selected,
+  geo,
+}: {
+  selected: SummaryRow;
+  geo: FeatureCollection;
+}) {
+  const id = `${selected.province}/${selected.district}`;
+  const feature = geo.features.find((f) => f.properties?.id === id);
+  return (
+    <MapContainer
+      center={[selected.lat, selected.lng]}
+      zoom={9}
+      dragging={false}
+      scrollWheelZoom={false}
+      doubleClickZoom={false}
+      touchZoom={false}
+      zoomControl={false}
+      attributionControl={false}
+      className="h-40 w-full"
+    >
+      <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" />
+      <GeoJSON
+        data={geo}
+        interactive={false}
+        style={(f) => {
+          const isSelected = f?.properties?.id === id;
+          return {
+            color: "#2563eb",
+            weight: 0.5,
+            fillColor: fillColor(selected.count),
+            fillOpacity: isSelected ? 0.5 : 0.05,
+          };
+        }}
+      />
+      <FocusRegion feature={feature} />
+    </MapContainer>
+  );
+}
+
 function CaseList({ regionId }: { regionId: string }) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["cases", regionId],
@@ -217,9 +268,12 @@ function CaseList({ regionId }: { regionId: string }) {
           className="flex flex-col gap-1 border-t py-3 first:border-t-0 first:pt-0"
         >
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <IconTile variant="soft" size="xs" className="text-destructive">
+              <Ambulance />
+            </IconTile>
             <span>{formatCaseDate(c.occurred_on)}</span>
             {c.victims !== null && (
-              <Badge variant="destructive-light" size="sm">
+              <Badge variant="secondary" size="sm">
                 {c.victims.toLocaleString("id-ID")} korban
               </Badge>
             )}
@@ -381,16 +435,21 @@ export function IndoMap() {
               <DrawerTitle>
                 {selected.district}, {selected.province}
               </DrawerTitle>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                <Badge variant="destructive-light" size="sm">
+              <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
+                <Badge variant="destructive-light">
+                  <Ambulance />
                   {selected.count.toLocaleString("id-ID")} kasus
                 </Badge>
-                <Badge variant="secondary" size="sm">
+                <Badge variant="secondary">
+                  <Users />
                   {selected.victims.toLocaleString("id-ID")} korban
                 </Badge>
               </div>
             </DrawerHeader>
             <div className="min-h-0 overflow-y-auto px-4 py-4">
+              <div className="mb-4 overflow-hidden rounded-lg border">
+                <RegionPreview selected={selected} geo={geo.data} />
+              </div>
               <CaseList regionId={selected.region_id} />
             </div>
           </DrawerContent>
