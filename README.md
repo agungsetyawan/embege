@@ -12,6 +12,8 @@ The crawler reads RSS feeds from four active outlets every hour. It filters item
 
 The admin dashboard lists pending items with an AI summary and a location guess for each item. The admin picks the district, edits the summary, then approves or rejects the item. Approved items appear on the public map.
 
+Anyone can report a wrong victim count or a wrong date on a published case from a dialog on the map. Reports are anonymous. The submit endpoint runs an invisible bot check, a honeypot field, and an hourly per-case rate limit. The admin reviews reports in a Laporan tab and can apply the suggested values, move the case to another district, or soft-delete a reported duplicate. Soft-deleted cases stay recoverable in a Terhapus tab.
+
 The enrichment step calls the Gemini API for pending items. It writes a short neutral summary and a district guess with a confidence score. The code checks the guess against the district table and drops guesses that do not match. Failures fall back to the RSS snippet and the text match.
 
 The settings page edits crawler sources, keywords, batch size, and cron schedules without a new deploy.
@@ -27,6 +29,7 @@ The list below names each layer and its role:
 - shadcn/ui components with Tailwind CSS v4 for the interface
 - Gemini API for summaries and location guesses
 - Cheerio for article text extraction
+- Vercel BotID for the invisible bot check on the public report endpoint
 
 ## How It Works
 
@@ -37,6 +40,8 @@ News flows through five stages:
 3. The admin opens `/admin`, checks each item, and approves or rejects it. Approval creates a row in `cases`.
 4. The public map reads published cases from `GET /api/cases`. The response stays cached for five minutes.
 5. New approvals appear on the map within five minutes.
+
+Visitors can also report a wrong count or date on any published case. The report lands in the admin Laporan tab for review.
 
 Two pg_cron jobs drive the schedule. The secret lives in Supabase Vault. The jobs call the Next.js endpoints with that secret.
 
@@ -62,22 +67,24 @@ The table below lists each variable, its source, and its scope:
 
 ## Database Schema
 
-The schema has six tables:
+The schema has seven tables:
 
 - `regions`: 514 districts with province, centroid coordinates, and a `centroid_ok` flag. The flag is false for 12 districts with weak source geometry. Those districts need manual coordinate checks.
 - `crawl_sources`: news outlets with RSS URL and active flag.
 - `crawl_keywords`: filter words with active flag. Words of five letters or fewer match whole words only. Longer words match substrings.
 - `crawl_items`: raw crawl results with status `pending`, `approved`, or `rejected`, plus AI summary, guessed district, and confidence score.
-- `cases`: approved public cases linked to a district.
+- `cases`: approved public cases linked to a district. A soft delete through `deleted_at` hides a case from the map without removing the row.
+- `case_reports`: public correction reports per case, with a reason, suggested values, and a status of `open`, `resolved`, or `dismissed`.
 - `app_settings`: runtime configuration such as batch size and cron schedules.
 
-Row Level Security allows public reads of `regions` and published `cases` only. All writes need an authenticated admin user. The `apply_cron_schedules()` function reads the schedule keys and updates both cron jobs. It rejects schedules that are not valid five-field cron strings.
+Row Level Security allows public reads of `regions` and published `cases` only. The public writes only through the `submit_case_report()` function, which validates the target case and allows one report per case per visitor per hour. Every other write needs an authenticated admin user. The `apply_cron_schedules()` function reads the schedule keys and updates both cron jobs. It rejects schedules that are not valid five-field cron strings.
 
 ## API Contract
 
-The app exposes three JSON endpoints:
+The app exposes four JSON endpoints:
 
 - `GET /api/cases`: public. It returns published cases with district data. The response carries `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
+- `POST /api/reports`: public. It stores a correction report for a published case after a bot check. It returns 201 on success, 400 for invalid input, 403 for bots, and 429 when the same visitor already reported the case within an hour.
 - `GET /api/cron/crawl`: needs `Authorization: Bearer <CRON_SECRET>`. It crawls active feeds and returns counts of sources, fetched items, and new rows.
 - `GET /api/cron/enrich`: needs `Authorization: Bearer <CRON_SECRET>`. It enriches pending items and returns counts of processed, enriched, and failed items.
 
@@ -115,7 +122,7 @@ The list below pairs each known problem with its fix:
 The list below holds planned work:
 
 - Vector tiles when the boundary file grows too large for a single download
-- Public auth if reporting or bookmark features arrive
+- Public auth if bookmark features arrive
 - X/Twitter crawler when API access exists
 
 ## License
