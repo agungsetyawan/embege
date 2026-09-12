@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const IndoMap = dynamic(
   () => import("@/components/indo-map").then((m) => m.IndoMap),
   {
     ssr: false,
-    loading: () => <p className="p-8 text-center">Memuat peta</p>,
+    loading: () => <Skeleton className="h-[70vh] w-full" />,
   },
 );
 
