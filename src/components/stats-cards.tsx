@@ -16,7 +16,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 type TimelineArea = {
   province: string;
@@ -61,12 +60,10 @@ function countSafeDays(first: string, poisoned: Set<string>): number {
   let safe = 0;
   const d = toLocalDate(first);
   const today = toLocalDate(todayWIB());
-  let guard = 0;
-  while (d <= today && guard < 5000) {
-    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  while (d <= today) {
+    const iso = format(d, "yyyy-MM-dd");
     if (d.getDay() !== 0 && !poisoned.has(iso)) safe += 1;
     d.setDate(d.getDate() + 1);
-    guard += 1;
   }
   return safe;
 }
@@ -111,7 +108,7 @@ export function StatsCards() {
 
   const { timeline, unknownDate, future } = data;
   const poisoned = new Set(timeline.map((t) => t.date));
-  const first = timeline.length > 0 ? timeline[timeline.length - 1].date : null;
+  const first = timeline.at(-1)?.date ?? null;
   const poisonedDays = timeline.length;
   const safeDays = first ? countSafeDays(first, poisoned) : 0;
   const footnote = buildFootnote(unknownDate, future);
@@ -200,10 +197,7 @@ export function StatsCards() {
                           className="flex items-center gap-1 font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                         >
                           <ChevronDown
-                            className={cn(
-                              "size-4 transition-transform",
-                              open && "rotate-180",
-                            )}
+                            className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
                           />
                           {formatDate(day.date)}
                         </button>
