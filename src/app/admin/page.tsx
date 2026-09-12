@@ -25,8 +25,8 @@ export default async function AdminPage({
 
   const params = await searchParams;
   const tab =
-    params.tab === "auto"
-      ? "auto"
+    params.tab === "rejected"
+      ? "rejected"
       : params.tab === "reports"
         ? "reports"
         : params.tab === "deleted"
@@ -62,7 +62,7 @@ export default async function AdminPage({
   ]);
 
   const total =
-    tab === "auto"
+    tab === "rejected"
       ? (autoCount ?? 0)
       : tab === "reports"
         ? (reportCount ?? 0)
@@ -75,7 +75,7 @@ export default async function AdminPage({
   const rangeFrom = (page - 1) * PAGE_SIZE;
   const rangeTo = page * PAGE_SIZE - 1;
   const [{ data: items }, { data: regions }] = await Promise.all([
-    tab === "auto"
+    tab === "rejected"
       ? supabase
           .from("crawl_items")
           .select(
@@ -162,8 +162,8 @@ export default async function AdminPage({
   }
 
   const pageQuery = (p: number) =>
-    tab === "auto"
-      ? `/admin?tab=auto&page=${p}`
+    tab === "rejected"
+      ? `/admin?tab=rejected&page=${p}`
       : tab === "reports"
         ? `/admin?tab=reports&page=${p}`
         : tab === "deleted"
@@ -192,7 +192,7 @@ export default async function AdminPage({
               <Inbox className="size-4" />
             </IconStack>
             <p className="font-medium">
-              {tab === "auto"
+              {tab === "rejected"
                 ? "Belum ada berita yang ditolak otomatis."
                 : tab === "reports"
                   ? "Belum ada laporan masuk."
@@ -209,7 +209,7 @@ export default async function AdminPage({
         </Frame>
       ) : (
         <Frame stacked>
-          {tab === "auto"
+          {tab === "rejected"
             ? (items as RejectedItemData[] | undefined)?.map((item) => (
                 <RejectedItem key={item.id} item={item} />
               ))
