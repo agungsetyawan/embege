@@ -85,6 +85,9 @@ Lessons already paid for in debug time. Follow them.
 - Validate every LLM output against the `regions` table before saving. Drop what does not match.
 - Human curation stays required before anything publishes.
 
+**Language**
+- Identifiers and code comments in English. User-facing strings (UI copy, aria-labels, metadata, LLM prompts) stay in natural Indonesian.
+
 **UI**
 - shadcn-style primitives in `src/components/ui`, tokens in `globals.css`. Admin routes are Server Components + Server Actions.
 - Labels in natural Indonesian, Lucide icons only (no emoji, no text arrows, no em dashes in UI copy).
