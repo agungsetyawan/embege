@@ -42,12 +42,6 @@ export default function AdminLoginPage() {
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center p-4">
       <Frame>
         <FramePanel>
-          <FrameHeader>
-            <FrameTitle>Login Admin</FrameTitle>
-            <FrameDescription>
-              Kurasi berita & pengaturan crawler.
-            </FrameDescription>
-          </FrameHeader>
           <form action={onSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
@@ -57,7 +51,6 @@ export default function AdminLoginPage() {
                 type="email"
                 required
                 autoComplete="email"
-                placeholder="admin@contoh.id"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -76,7 +69,7 @@ export default function AdminLoginPage() {
               </Alert>
             )}
             <Button type="submit" disabled={busy}>
-              {busy ? "Memeriksa" : "Masuk"}
+              Masuk
               {busy && <Spinner />}
             </Button>
           </form>
