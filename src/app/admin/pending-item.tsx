@@ -187,7 +187,7 @@ export function PendingItem({
               </CascaderContent>
             </Cascader>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor={`date-${item.id}`}>Tanggal kejadian</Label>
               <DateField
@@ -196,7 +196,7 @@ export function PendingItem({
                 defaultValue={dateDefault || undefined}
               />
             </div>
-            <div className="flex w-32 flex-col gap-1.5">
+            <div className="flex w-full flex-col gap-1.5 sm:w-32">
               <Label htmlFor={`victims-${item.id}`}>Korban</Label>
               <Input
                 id={`victims-${item.id}`}
@@ -213,7 +213,7 @@ export function PendingItem({
               id={`summary-${item.id}`}
               name="summary"
               required
-              rows={2}
+              rows={3}
               defaultValue={item.llm_summary ?? item.summary ?? ""}
             />
           </div>

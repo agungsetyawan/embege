@@ -4,11 +4,9 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/reui/badge";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { IconStack } from "@/components/reui/icon-stack";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "./actions";
+import { AdminHeader } from "./admin-header";
 import { PendingItem, type PendingItemData } from "./pending-item";
 import { RejectedItem, type RejectedItemData } from "./rejected-item";
 
@@ -77,52 +75,17 @@ export default async function AdminPage({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
-      <header className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold tracking-tight">
-            Kurasi Berita
-          </h1>
-          <Badge variant="secondary">{pendingCount ?? 0} antre</Badge>
-          <Badge variant="outline">{autoCount ?? 0} ditolak otomatis</Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden text-sm text-muted-foreground sm:inline">
-            {user.email}
-          </span>
-          <ThemeToggle />
-          <Button
-            variant="outline"
-            size="sm"
-            nativeButton={false}
-            render={<Link href="/admin/settings" />}
-          >
-            Pengaturan
-          </Button>
-          <form action={signOut}>
-            <SubmitButton variant="outline" size="sm" type="submit">
-              Keluar
-            </SubmitButton>
-          </form>
-        </div>
-      </header>
-      <nav aria-label="Tab kurasi" className="flex gap-2">
-        <Button
-          variant={tab === "pending" ? "default" : "outline"}
-          size="sm"
-          nativeButton={false}
-          render={<Link href="/admin" />}
-        >
-          Antrean
-        </Button>
-        <Button
-          variant={tab === "auto" ? "default" : "outline"}
-          size="sm"
-          nativeButton={false}
-          render={<Link href="/admin?tab=auto" />}
-        >
-          Ditolak otomatis
-        </Button>
-      </nav>
+      <AdminHeader
+        active={tab}
+        title="Kurasi Berita"
+        meta={
+          <>
+            <Badge variant="secondary">{pendingCount ?? 0} antre</Badge>
+            <Badge variant="outline">{autoCount ?? 0} ditolak otomatis</Badge>
+          </>
+        }
+        email={user.email}
+      />
       {(items?.length ?? 0) === 0 ? (
         <Frame>
           <FramePanel className="flex flex-col items-center gap-1.5 py-8 text-center">

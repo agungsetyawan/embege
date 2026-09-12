@@ -1,9 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import type { FeatureCollection } from "geojson";
 import L, { type Map as LeafletMap } from "leaflet";
-import { TriangleAlert } from "lucide-react";
+import { ExternalLink, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   GeoJSON,
@@ -157,37 +159,83 @@ function FitToCases({ summary }: { summary: SummaryRow[] }) {
   return null;
 }
 
+function formatCaseDate(iso: string | null): string {
+  if (!iso) return "Tanggal belum diketahui";
+  const parsed = new Date(`${iso.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return iso;
+  return format(parsed, "d MMMM yyyy", { locale: localeId });
+}
+
 function CaseList({ regionId }: { regionId: string }) {
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["cases", regionId],
     queryFn: () => fetchRegionCases(regionId),
     staleTime: 5 * 60 * 1000,
   });
 
-  if (isLoading) return <p className="text-sm">Memuat daftar kasus</p>;
+  if (isLoading)
+    return (
+      <output
+        className="flex flex-col gap-4"
+        aria-busy="true"
+        aria-label="Memuat daftar kasus"
+      >
+        {["kasus-1", "kasus-2", "kasus-3"].map((id) => (
+          <div key={id} className="flex flex-col gap-1.5">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        ))}
+      </output>
+    );
   if (isError || !data)
-    return <p className="text-sm">Daftar kasus gagal dimuat.</p>;
+    return (
+      <Alert variant="destructive">
+        <TriangleAlert />
+        <AlertTitle>Daftar kasus gagal dimuat.</AlertTitle>
+        <AlertAction>
+          <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            Coba lagi
+          </Button>
+        </AlertAction>
+      </Alert>
+    );
+  if (data.cases.length === 0)
+    return (
+      <p className="py-4 text-center text-sm text-muted-foreground">
+        Belum ada kasus untuk daerah ini.
+      </p>
+    );
 
   return (
-    <div className="flex flex-col">
+    <ul className="flex flex-col">
       {data.cases.map((c) => (
-        <div key={c.id} className="border-t py-3 first:border-t-0 first:pt-0">
-          <p className="text-xs text-muted-foreground">
-            {c.occurred_on ?? "Tanggal belum diketahui"}
-            {c.victims !== null && ` · ${c.victims} korban`}
-          </p>
-          <p className="mt-1 text-sm leading-relaxed">{c.summary}</p>
+        <li
+          key={c.id}
+          className="flex flex-col gap-1 border-t py-3 first:border-t-0 first:pt-0"
+        >
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <span>{formatCaseDate(c.occurred_on)}</span>
+            {c.victims !== null && (
+              <Badge variant="destructive-light" size="sm">
+                {c.victims.toLocaleString("id-ID")} korban
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm leading-relaxed">{c.summary}</p>
           <a
             href={c.source_url}
             target="_blank"
             rel="noreferrer"
-            className="mt-1 inline-block text-sm font-medium underline underline-offset-4"
+            className="inline-flex items-center gap-1 text-sm font-medium underline underline-offset-4"
           >
+            <ExternalLink className="size-3.5" />
             Sumber: {c.source_media}
           </a>
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
@@ -213,7 +261,6 @@ export function IndoMap() {
         aria-busy="true"
         aria-label="Memuat peta"
       >
-        <Skeleton className="h-5 w-56" />
         <Skeleton className="h-[70vh] w-full" />
       </output>
     );
@@ -243,19 +290,9 @@ export function IndoMap() {
   const countByLatLng = new Map(
     summary.map((s) => [`${s.lat},${s.lng}`, s.count]),
   );
-  const totalCases = summary.reduce((t, s) => t + s.count, 0);
-  const totalVictims = summary.reduce((t, s) => t + s.victims, 0);
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        <Badge variant="secondary" className="text-sm">
-          {totalCases} kasus
-        </Badge>
-        <Badge variant="secondary" className="text-sm">
-          {totalVictims} korban
-        </Badge>
-      </div>
       <Card className="overflow-hidden p-0">
         <MapContainer
           ref={mapRef}
@@ -295,11 +332,17 @@ export function IndoMap() {
           <MarkerClusterGroup
             chunkedLoading
             showCoverageOnHover={false}
-            iconCreateFunction={(cluster) => {
-              const total = cluster.getAllChildMarkers().reduce((t, m) => {
-                const ll = m.getLatLng();
-                return t + (countByLatLng.get(`${ll.lat},${ll.lng}`) ?? 0);
-              }, 0);
+            iconCreateFunction={(cluster: {
+              // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+              getAllChildMarkers: () => any[];
+            }) => {
+              const total = cluster
+                .getAllChildMarkers()
+                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                .reduce((t: number, m: { getLatLng: () => any }) => {
+                  const ll = m.getLatLng();
+                  return t + (countByLatLng.get(`${ll.lat},${ll.lng}`) ?? 0);
+                }, 0);
               const size = total >= 100 ? 46 : total >= 10 ? 40 : 34;
               return L.divIcon({
                 html: `<div class="mbg-cluster ${sevClass(total)}"><span>${total}</span></div>`,
@@ -338,8 +381,16 @@ export function IndoMap() {
                 {selected.district}, {selected.province}
               </SheetTitle>
               <SheetDescription>
-                {selected.count} kasus · {selected.victims} korban
+                Rincian kasus terkurasi untuk daerah ini.
               </SheetDescription>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <Badge variant="destructive-light" size="sm">
+                  {selected.count.toLocaleString("id-ID")} kasus
+                </Badge>
+                <Badge variant="secondary" size="sm">
+                  {selected.victims.toLocaleString("id-ID")} korban
+                </Badge>
+              </div>
             </SheetHeader>
             <div className="px-4 pb-4">
               <CaseList regionId={selected.region_id} />

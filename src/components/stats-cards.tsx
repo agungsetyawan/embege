@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef, useTable } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { ChevronDown, ShieldCheck, Siren } from "lucide-react";
+import { ChevronDown, FileText, ShieldCheck, Siren, Users } from "lucide-react";
 import { useMemo } from "react";
 import { Alert, AlertAction, AlertTitle } from "@/components/reui/alert";
 import { Badge } from "@/components/reui/badge";
@@ -219,7 +219,7 @@ function MonthGrid({ days }: { days: TimelineDay[] }) {
     <DataGrid
       table={table}
       recordCount={days.length}
-      tableLayout={{ headerBackground: false }}
+      tableLayout={{ headerBackground: false, width: "auto" }}
     >
       <DataGridContainer>
         <DataGridScrollArea>
@@ -240,12 +240,14 @@ export function StatsCards() {
   if (isLoading)
     return (
       <output
-        className="grid grid-cols-2 gap-3"
+        className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
         aria-busy="true"
         aria-label="Memuat penghitung hari"
       >
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
       </output>
     );
 
@@ -267,30 +269,63 @@ export function StatsCards() {
   const first = timeline.at(-1)?.date ?? null;
   const poisonedDays = timeline.length;
   const safeDays = first ? countSafeDays(first, poisoned) : 0;
+  const totalCases = timeline.reduce((t, d) => t + d.cases, 0);
+  const totalVictims = timeline.reduce((t, d) => t + d.victims, 0);
   const footnote = buildFootnote(unknownDate, future);
 
   const cardBase =
-    "flex flex-col gap-1.5 rounded-xl bg-card p-4 text-left ring-1 ring-border transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden";
+    "flex flex-col gap-1 rounded-xl bg-card p-3 text-left ring-1 ring-border transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden";
   const poisonCardClass = `${cardBase} hover:bg-destructive/5`;
   const safeCardClass = `${cardBase} hover:bg-success/5`;
+  const staticCardClass = `${cardBase}`;
+  const numberClass =
+    "text-xl font-semibold tracking-tight tabular-nums sm:text-2xl";
 
   return (
     <Dialog>
       <div className="flex flex-col gap-1">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+          <div className={staticCardClass}>
+            <span className="flex items-center gap-2">
+              <IconTile variant="soft" size="xs" className="text-info">
+                <FileText />
+              </IconTile>
+              <span className="text-sm text-muted-foreground">Kasus</span>
+            </span>
+            <span className={numberClass}>
+              {totalCases.toLocaleString("id-ID")}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              laporan terkurasi
+            </span>
+          </div>
+          <div className={staticCardClass}>
+            <span className="flex items-center gap-2">
+              <IconTile variant="soft" size="xs" className="text-warning">
+                <Users />
+              </IconTile>
+              <span className="text-sm text-muted-foreground">Korban</span>
+            </span>
+            <span className={numberClass}>
+              {totalVictims.toLocaleString("id-ID")}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              jiwa terdampak
+            </span>
+          </div>
           <DialogTrigger
             className={poisonCardClass}
             aria-label="Lihat riwayat hari keracunan"
           >
             <span className="flex items-center gap-2">
-              <IconTile variant="soft" size="sm" className="text-destructive">
+              <IconTile variant="soft" size="xs" className="text-destructive">
                 <Siren />
               </IconTile>
               <span className="text-sm text-muted-foreground">
                 Hari keracunan
               </span>
             </span>
-            <span className="text-2xl font-semibold tracking-tight tabular-nums">
+            <span className={numberClass}>
               {poisonedDays.toLocaleString("id-ID")}
             </span>
             <span className="text-xs text-muted-foreground">
@@ -302,14 +337,14 @@ export function StatsCards() {
             aria-label="Lihat riwayat hari tanpa keracunan"
           >
             <span className="flex items-center gap-2">
-              <IconTile variant="soft" size="sm" className="text-success">
+              <IconTile variant="soft" size="xs" className="text-success">
                 <ShieldCheck />
               </IconTile>
               <span className="text-sm text-muted-foreground">
                 Hari tanpa keracunan
               </span>
             </span>
-            <span className="text-2xl font-semibold tracking-tight tabular-nums">
+            <span className={numberClass}>
               {safeDays.toLocaleString("id-ID")}
             </span>
             <span className="text-xs text-muted-foreground">

@@ -1,13 +1,11 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/reui/badge";
 import { Frame, FramePanel } from "@/components/reui/frame";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createClient } from "@/lib/supabase/server";
+import { AdminHeader } from "../admin-header";
 import {
   addKeyword,
   addSetting,
@@ -48,25 +46,7 @@ export default async function SettingsPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <Link
-            href="/admin"
-            className="flex items-center gap-1 text-sm text-muted-foreground underline underline-offset-4"
-          >
-            <ArrowLeft className="size-4" />
-            Kurasi
-          </Link>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight">
-            Pengaturan
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Perubahan langsung aktif. Khusus jadwal, klik Terapkan setelah
-            menyimpan.
-          </p>
-        </div>
-        <ThemeToggle />
-      </header>
+      <AdminHeader active="settings" title="Pengaturan" email={user.email} />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Umum</h2>
