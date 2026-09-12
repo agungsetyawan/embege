@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/validate";
 
 export async function requireAdmin() {
   const supabase = await createClient();
@@ -20,7 +21,23 @@ export async function approveItem(formData: FormData) {
   const summary = String(formData.get("summary") ?? "").trim();
   const occurredRaw = String(formData.get("occurredOn") ?? "");
   const victimsRaw = String(formData.get("victims") ?? "");
-  if (!regionId || !summary) return;
+  if (!isUuid(itemId) || !isUuid(regionId)) return;
+  if (!summary || summary.length > 5000) return;
+
+  const victims = victimsRaw === "" ? null : Number(victimsRaw);
+  if (
+    victims !== null &&
+    (!Number.isInteger(victims) || victims < 0 || victims > 1000000)
+  )
+    return;
+  const occurredOn =
+    occurredRaw === ""
+      ? null
+      : /^\d{4}-\d{2}-\d{2}$/.test(occurredRaw) &&
+          !Number.isNaN(Date.parse(occurredRaw))
+        ? occurredRaw
+        : undefined;
+  if (occurredOn === undefined) return;
 
   const { data: item } = await supabase
     .from("crawl_items")
@@ -30,14 +47,12 @@ export async function approveItem(formData: FormData) {
     .single();
   if (!item) return;
 
-  const victims = victimsRaw === "" ? null : Number(victimsRaw);
   const { data: inserted, error } = await supabase
     .from("cases")
     .insert({
       region_id: regionId,
-      occurred_on: occurredRaw || null,
-      victims:
-        victims === null || Number.isNaN(victims) ? null : Math.trunc(victims),
+      occurred_on: occurredOn,
+      victims,
       summary,
       source_url: item.url,
       source_media: item.media,
@@ -55,21 +70,25 @@ export async function approveItem(formData: FormData) {
 
 export async function rejectItem(formData: FormData) {
   const supabase = await requireAdmin();
+  const itemId = String(formData.get("itemId"));
+  if (!isUuid(itemId)) return;
   await supabase
     .from("crawl_items")
     .update({ status: "rejected" })
-    .eq("id", String(formData.get("itemId")));
+    .eq("id", itemId);
   revalidatePath("/admin");
 }
 
 export async function restoreItem(formData: FormData) {
   const supabase = await requireAdmin();
+  const itemId = String(formData.get("itemId"));
+  if (!isUuid(itemId)) return;
   // llm_summary dibiarkan terisi supaya tidak di-enrich ulang dan tidak
   // kena auto-reject loop; kurator tinggal setujui/tolak manual.
   await supabase
     .from("crawl_items")
     .update({ status: "pending", llm_is_relevant: null })
-    .eq("id", String(formData.get("itemId")));
+    .eq("id", itemId);
   revalidatePath("/admin");
 }
 

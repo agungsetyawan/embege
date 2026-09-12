@@ -1,13 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { isUuid } from "@/lib/validate";
 import { requireAdmin } from "../actions";
+
+const UPDATABLE_SETTINGS = new Set([
+  "enrich_batch",
+  "crawl_schedule",
+  "enrich_schedule",
+]);
 
 export async function updateSetting(formData: FormData) {
   const supabase = await requireAdmin();
   const key = String(formData.get("key"));
   const value = String(formData.get("value") ?? "").trim();
-  if (!/^[a-z0-9_]+$/.test(key) || !value || value.length > 500) return;
+  if (!UPDATABLE_SETTINGS.has(key) || !value || value.length > 500) return;
   await supabase
     .from("app_settings")
     .update({ value, updated_at: new Date().toISOString() })
@@ -38,6 +45,7 @@ export async function addSource(formData: FormData) {
 export async function toggleSource(formData: FormData) {
   const supabase = await requireAdmin();
   const id = String(formData.get("id"));
+  if (!isUuid(id)) return;
   const { data } = await supabase
     .from("crawl_sources")
     .select("active")
@@ -53,10 +61,9 @@ export async function toggleSource(formData: FormData) {
 
 export async function deleteSource(formData: FormData) {
   const supabase = await requireAdmin();
-  await supabase
-    .from("crawl_sources")
-    .delete()
-    .eq("id", String(formData.get("id")));
+  const id = String(formData.get("id"));
+  if (!isUuid(id)) return;
+  await supabase.from("crawl_sources").delete().eq("id", id);
   revalidatePath("/admin/settings");
 }
 
@@ -71,6 +78,7 @@ export async function addKeyword(formData: FormData) {
 export async function toggleKeyword(formData: FormData) {
   const supabase = await requireAdmin();
   const id = String(formData.get("id"));
+  if (!isUuid(id)) return;
   const { data } = await supabase
     .from("crawl_keywords")
     .select("active")
@@ -86,10 +94,9 @@ export async function toggleKeyword(formData: FormData) {
 
 export async function deleteKeyword(formData: FormData) {
   const supabase = await requireAdmin();
-  await supabase
-    .from("crawl_keywords")
-    .delete()
-    .eq("id", String(formData.get("id")));
+  const id = String(formData.get("id"));
+  if (!isUuid(id)) return;
+  await supabase.from("crawl_keywords").delete().eq("id", id);
   revalidatePath("/admin/settings");
 }
 

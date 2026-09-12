@@ -2,19 +2,30 @@ import * as cheerio from "cheerio";
 import { requiredEnv } from "@/lib/env";
 
 const MAX_TEXT = 4000;
+const MAX_HTML = 1500000;
 
 // Ambil teks artikel (paragraf saja). Gagal (403/timeout/non-HTML) -> null, fallback ke snippet RSS.
 export async function fetchArticleText(url: string): Promise<string | null> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 10000);
-    const res = await fetch(url, {
+    const res = await fetch(parsed.toString(), {
       signal: ctrl.signal,
       headers: { "User-Agent": "Mozilla/5.0 (compatible; MBG-SIG/1.0)" },
     }).finally(() => clearTimeout(timer));
     if (!res.ok || !res.headers.get("content-type")?.includes("html"))
       return null;
+    const len = Number(res.headers.get("content-length") ?? "");
+    if (Number.isFinite(len) && len > MAX_HTML) return null;
     const html = await res.text();
+    if (html.length > MAX_HTML) return null;
     const $ = cheerio.load(html);
     $("script, style, nav, header, footer, aside, form").remove();
     const text = $("p")

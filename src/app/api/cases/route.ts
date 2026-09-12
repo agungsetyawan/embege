@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/validate";
 
 // Data publik peta. RLS tetap berlaku (anon key), hasil di-cache 5 menit
 // supaya DB tidak kena tembak tiap pengunjung.
@@ -20,6 +21,9 @@ export async function GET(req: Request) {
   const regionId = new URL(req.url).searchParams.get("region_id");
 
   if (regionId) {
+    if (!isUuid(regionId)) {
+      return Response.json({ cases: [] }, CACHE);
+    }
     const { data: cases, error } = await supabase
       .from("cases")
       .select(
