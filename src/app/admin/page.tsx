@@ -1,7 +1,10 @@
+import { Inbox } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Badge } from "@/components/reui/badge";
+import { Frame, FramePanel } from "@/components/reui/frame";
+import { IconStack } from "@/components/reui/icon-stack";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createClient } from "@/lib/supabase/server";
@@ -87,8 +90,13 @@ export default async function AdminPage({
             {user.email}
           </span>
           <ThemeToggle />
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/admin/settings">Pengaturan</Link>
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/admin/settings" />}
+          >
+            Pengaturan
           </Button>
           <form action={signOut}>
             <SubmitButton variant="outline" size="sm" type="submit">
@@ -101,40 +109,66 @@ export default async function AdminPage({
         <Button
           variant={tab === "pending" ? "default" : "outline"}
           size="sm"
-          asChild
+          nativeButton={false}
+          render={<Link href="/admin" />}
         >
-          <Link href="/admin">Antrean</Link>
+          Antrean
         </Button>
         <Button
           variant={tab === "auto" ? "default" : "outline"}
           size="sm"
-          asChild
+          nativeButton={false}
+          render={<Link href="/admin?tab=auto" />}
         >
-          <Link href="/admin?tab=auto">Ditolak otomatis</Link>
+          Ditolak otomatis
         </Button>
       </nav>
-      {(items?.length ?? 0) === 0 && (
-        <p className="text-muted-foreground">
+      {(items?.length ?? 0) === 0 ? (
+        <Frame>
+          <FramePanel className="flex flex-col items-center gap-1.5 py-8 text-center">
+            <IconStack aria-hidden="true">
+              <Inbox className="size-4" />
+            </IconStack>
+            <p className="font-medium">
+              {tab === "auto"
+                ? "Belum ada berita yang ditolak otomatis."
+                : "Antrean bersih."}
+            </p>
+            {tab !== "auto" && (
+              <p className="text-sm text-muted-foreground">
+                Berita baru masuk otomatis tiap jam.
+              </p>
+            )}
+          </FramePanel>
+        </Frame>
+      ) : (
+        <Frame stacked>
           {tab === "auto"
-            ? "Belum ada berita yang ditolak otomatis."
-            : "Antrean bersih. Berita baru masuk otomatis tiap jam."}
-        </p>
+            ? (items as RejectedItemData[] | undefined)?.map((item) => (
+                <RejectedItem key={item.id} item={item} />
+              ))
+            : (items as PendingItemData[] | undefined)?.map((item) => (
+                <PendingItem
+                  key={item.id}
+                  item={item}
+                  regions={regions ?? []}
+                />
+              ))}
+        </Frame>
       )}
-      {tab === "auto"
-        ? (items as RejectedItemData[] | undefined)?.map((item) => (
-            <RejectedItem key={item.id} item={item} />
-          ))
-        : (items as PendingItemData[] | undefined)?.map((item) => (
-            <PendingItem key={item.id} item={item} regions={regions ?? []} />
-          ))}
       {totalPages > 1 && (
         <nav
           aria-label="Halaman antrean"
           className="flex items-center justify-center gap-3"
         >
           {page > 1 ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link href={pageQuery(page - 1)}>Sebelumnya</Link>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href={pageQuery(page - 1)} />}
+            >
+              Sebelumnya
             </Button>
           ) : (
             <Button variant="outline" size="sm" disabled>
@@ -145,8 +179,13 @@ export default async function AdminPage({
             Halaman {page} dari {totalPages}
           </span>
           {page < totalPages ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link href={pageQuery(page + 1)}>Berikutnya</Link>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href={pageQuery(page + 1)} />}
+            >
+              Berikutnya
             </Button>
           ) : (
             <Button variant="outline" size="sm" disabled>

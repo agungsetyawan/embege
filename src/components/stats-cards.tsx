@@ -1,12 +1,23 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { type ColumnDef, useTable } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { ChevronDown, ShieldCheck, Siren } from "lucide-react";
-import { Fragment, useState } from "react";
+import { useMemo } from "react";
+import { Alert, AlertAction, AlertTitle } from "@/components/reui/alert";
+import { Badge } from "@/components/reui/badge";
+import {
+  DataGrid,
+  DataGridContainer,
+  type DataGridFeatures,
+  dataGridFeatures,
+} from "@/components/reui/data-grid/data-grid";
+import { DataGridScrollArea } from "@/components/reui/data-grid/data-grid-scroll-area";
+import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
+import { IconTile } from "@/components/reui/icon-tile";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -76,8 +87,150 @@ function buildFootnote(unknownDate: number, future: number): string | null {
   return `${parts.join(" dan ")} tidak dihitung`;
 }
 
+function areaName(a: TimelineArea): string {
+  if (a.province === "Wilayah tak dikenal") return "Wilayah tak dikenal";
+  return a.district ? `${a.district}, ${a.province}` : a.province;
+}
+
+type MonthGroup = {
+  key: string;
+  label: string;
+  days: TimelineDay[];
+  cases: number;
+  victims: number;
+};
+
+function groupByMonth(timeline: TimelineDay[]): MonthGroup[] {
+  const groups = new Map<string, MonthGroup>();
+  for (const day of timeline) {
+    const key = day.date.slice(0, 7);
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        key,
+        label: format(toLocalDate(`${key}-01`), "MMMM yyyy", {
+          locale: localeId,
+        }),
+        days: [],
+        cases: 0,
+        victims: 0,
+      };
+      groups.set(key, group);
+    }
+    group.days.push(day);
+    group.cases += day.cases;
+    group.victims += day.victims;
+  }
+  return [...groups.values()];
+}
+
+function formatDay(iso: string): string {
+  return format(toLocalDate(iso), "EEEE, d", { locale: localeId });
+}
+
+function MonthGrid({ days }: { days: TimelineDay[] }) {
+  const columns = useMemo<ColumnDef<DataGridFeatures, TimelineDay>[]>(
+    () => [
+      {
+        id: "expander",
+        header: () => null,
+        cell: ({ row }) => {
+          if (!row.getCanExpand()) return null;
+          const isExpanded = row.getIsExpanded();
+          return (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={row.getToggleExpandedHandler()}
+              aria-expanded={isExpanded}
+              aria-label={
+                isExpanded ? "Tutup rincian hari" : "Lihat rincian hari"
+              }
+            >
+              <ChevronDown className={isExpanded ? "rotate-180" : ""} />
+            </Button>
+          );
+        },
+        size: 36,
+        meta: {
+          expandedContent: (day: TimelineDay) => (
+            <ul className="flex flex-col gap-0.5 py-2">
+              {day.areas.map((a) => (
+                <li key={`${a.province}/${a.district}`} className="text-sm">
+                  <span className="font-medium">{areaName(a)}</span>{" "}
+                  <span className="text-muted-foreground tabular-nums">
+                    · {a.victims.toLocaleString("id-ID")} korban
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ),
+        },
+      },
+      {
+        accessorKey: "date",
+        id: "date",
+        header: "Tanggal",
+        cell: ({ row }) => (
+          <span className="font-medium">{formatDay(row.original.date)}</span>
+        ),
+        size: 140,
+      },
+      {
+        accessorKey: "cases",
+        id: "cases",
+        header: "Kejadian",
+        cell: ({ row }) => (
+          <Badge variant="destructive-light" size="sm">
+            {row.original.cases} kejadian
+          </Badge>
+        ),
+        size: 130,
+      },
+      {
+        accessorKey: "victims",
+        id: "victims",
+        header: "Korban",
+        cell: ({ row }) => (
+          <span className="tabular-nums">
+            {row.original.victims.toLocaleString("id-ID")}
+          </span>
+        ),
+        size: 140,
+        meta: {
+          headerClassName: "text-right",
+          cellClassName: "text-right",
+        },
+      },
+    ],
+    [],
+  );
+
+  const table = useTable({
+    features: dataGridFeatures,
+    columns,
+    data: days,
+    getRowId: (row) => row.date,
+    getRowCanExpand: (row) => row.original.areas.length > 0,
+    state: { pagination: { pageIndex: 0, pageSize: 100 } },
+  });
+
+  return (
+    <DataGrid
+      table={table}
+      recordCount={days.length}
+      tableLayout={{ headerBackground: false }}
+    >
+      <DataGridContainer>
+        <DataGridScrollArea>
+          <DataGridTable />
+        </DataGridScrollArea>
+      </DataGridContainer>
+    </DataGrid>
+  );
+}
+
 export function StatsCards() {
-  const [expanded, setExpanded] = useState<string | null>(null);
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["case-timeline"],
     queryFn: fetchTimeline,
@@ -98,15 +251,18 @@ export function StatsCards() {
 
   if (isError || !data)
     return (
-      <Card className="items-center gap-2 py-6 text-center">
-        <p className="font-medium">Penghitung hari gagal dimuat.</p>
-        <Button variant="outline" size="sm" onClick={() => void refetch()}>
-          Coba lagi
-        </Button>
-      </Card>
+      <Alert variant="destructive">
+        <AlertTitle>Penghitung hari gagal dimuat.</AlertTitle>
+        <AlertAction>
+          <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            Coba lagi
+          </Button>
+        </AlertAction>
+      </Alert>
     );
 
   const { timeline, unknownDate, future } = data;
+  const months = groupByMonth(timeline);
   const poisoned = new Set(timeline.map((t) => t.date));
   const first = timeline.at(-1)?.date ?? null;
   const poisonedDays = timeline.length;
@@ -114,27 +270,27 @@ export function StatsCards() {
   const footnote = buildFootnote(unknownDate, future);
 
   const cardBase =
-    "flex flex-col gap-1 rounded-xl p-4 text-left ring-1 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden";
-  const poisonCardClass = `${cardBase} bg-red-50 ring-red-200 hover:bg-red-100/70 dark:bg-red-950/40 dark:ring-red-900 dark:hover:bg-red-950/60`;
-  const safeCardClass = `${cardBase} bg-green-50 ring-green-200 hover:bg-green-100/70 dark:bg-green-950/40 dark:ring-green-900 dark:hover:bg-green-950/60`;
+    "flex flex-col gap-1.5 rounded-xl bg-card p-4 text-left ring-1 ring-border transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden";
+  const poisonCardClass = `${cardBase} hover:bg-destructive/5`;
+  const safeCardClass = `${cardBase} hover:bg-success/5`;
 
   return (
-    <Dialog
-      onOpenChange={(open) => {
-        if (!open) setExpanded(null);
-      }}
-    >
+    <Dialog>
       <div className="flex flex-col gap-1">
         <div className="grid grid-cols-2 gap-3">
           <DialogTrigger
             className={poisonCardClass}
             aria-label="Lihat riwayat hari keracunan"
           >
-            <span className="flex items-center gap-1.5 text-sm text-red-700 dark:text-red-400">
-              <Siren className="size-4" />
-              Hari keracunan
+            <span className="flex items-center gap-2">
+              <IconTile variant="soft" size="sm" className="text-destructive">
+                <Siren />
+              </IconTile>
+              <span className="text-sm text-muted-foreground">
+                Hari keracunan
+              </span>
             </span>
-            <span className="text-2xl font-semibold tracking-tight text-red-700 dark:text-red-400">
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">
               {poisonedDays.toLocaleString("id-ID")}
             </span>
             <span className="text-xs text-muted-foreground">
@@ -145,11 +301,15 @@ export function StatsCards() {
             className={safeCardClass}
             aria-label="Lihat riwayat hari tanpa keracunan"
           >
-            <span className="flex items-center gap-1.5 text-sm text-green-700 dark:text-green-400">
-              <ShieldCheck className="size-4" />
-              Hari tanpa keracunan
+            <span className="flex items-center gap-2">
+              <IconTile variant="soft" size="sm" className="text-success">
+                <ShieldCheck />
+              </IconTile>
+              <span className="text-sm text-muted-foreground">
+                Hari tanpa keracunan
+              </span>
             </span>
-            <span className="text-2xl font-semibold tracking-tight text-green-700 dark:text-green-400">
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">
               {safeDays.toLocaleString("id-ID")}
             </span>
             <span className="text-xs text-muted-foreground">
@@ -161,7 +321,7 @@ export function StatsCards() {
           <p className="text-xs text-muted-foreground">*{footnote}</p>
         )}
       </div>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Riwayat hari keracunan</DialogTitle>
           <DialogDescription>
@@ -175,72 +335,24 @@ export function StatsCards() {
             Belum ada data untuk ditampilkan.
           </p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 pr-2 font-medium">Tanggal</th>
-                <th className="py-2 pr-2 text-right font-medium">Kejadian</th>
-                <th className="py-2 text-right font-medium">Korban</th>
-              </tr>
-            </thead>
-            <tbody>
-              {timeline.map((day) => {
-                const open = expanded === day.date;
-                return (
-                  <Fragment key={day.date}>
-                    <tr className="border-b">
-                      <td className="py-2 pr-2">
-                        <button
-                          type="button"
-                          aria-expanded={open}
-                          onClick={() => setExpanded(open ? null : day.date)}
-                          className="flex items-center gap-1 font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
-                        >
-                          <ChevronDown
-                            className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
-                          />
-                          {formatDate(day.date)}
-                        </button>
-                      </td>
-                      <td className="py-2 pr-2 text-right tabular-nums">
-                        {day.cases}
-                      </td>
-                      <td className="py-2 text-right tabular-nums">
-                        {day.victims.toLocaleString("id-ID")}
-                      </td>
-                    </tr>
-                    {open && (
-                      <tr className="border-b bg-muted/50">
-                        <td colSpan={3} className="px-4 py-2">
-                          <ul className="flex flex-col gap-1">
-                            {day.areas.map((a) => {
-                              const name =
-                                a.province === "Wilayah tak dikenal"
-                                  ? "Wilayah tak dikenal"
-                                  : a.district
-                                    ? `${a.district}, ${a.province}`
-                                    : a.province;
-                              return (
-                                <li
-                                  key={`${a.province}/${a.district}`}
-                                  className="flex items-baseline justify-between gap-2 text-sm"
-                                >
-                                  <span>{name}</span>
-                                  <span className="text-muted-foreground tabular-nums">
-                                    {a.victims.toLocaleString("id-ID")}
-                                  </span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="flex flex-col gap-5">
+            {months.map((month) => (
+              <section key={month.key} aria-label={month.label}>
+                <div className="sticky top-0 z-10 -mx-1 bg-popover px-1 py-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold">{month.label}</h3>
+                    <Badge variant="destructive-light" size="sm">
+                      {month.cases} kejadian
+                    </Badge>
+                    <Badge variant="outline" size="sm">
+                      {month.victims.toLocaleString("id-ID")} korban
+                    </Badge>
+                  </div>
+                </div>
+                <MonthGrid days={month.days} />
+              </section>
+            ))}
+          </div>
         )}
       </DialogContent>
     </Dialog>

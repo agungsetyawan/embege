@@ -1,12 +1,12 @@
 "use client";
 
-import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./button";
 import { Calendar } from "./calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
 function toISODate(d: Date): string {
   const y = d.getFullYear();
@@ -38,27 +38,29 @@ export function DateField({
   );
 
   return (
-    <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen}>
       <input type="hidden" name={name} value={date ? toISODate(date) : ""} />
-      <PopoverPrimitive.Trigger asChild>
-        <Button
-          id={id}
-          variant="outline"
-          type="button"
-          className="w-full justify-start text-left font-normal"
-        >
-          <CalendarIcon data-icon="inline-start" />
-          {date ? (
-            format(date, "d MMMM yyyy", { locale: localeId })
-          ) : (
-            <span className="text-muted-foreground">Pilih tanggal</span>
-          )}
-        </Button>
-      </PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Content
+      <PopoverTrigger
+        render={
+          <Button
+            id={id}
+            variant="outline"
+            type="button"
+            className="w-full justify-start text-left font-normal"
+          />
+        }
+      >
+        <CalendarIcon data-icon="inline-start" />
+        {date ? (
+          format(date, "d MMMM yyyy", { locale: localeId })
+        ) : (
+          <span className="text-muted-foreground">Pilih tanggal</span>
+        )}
+      </PopoverTrigger>
+      <PopoverContent
         align="start"
         sideOffset={4}
-        className="z-50 rounded-md border bg-card p-0 text-card-foreground shadow-md data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+        className="w-auto border bg-card p-0 text-card-foreground"
       >
         <Calendar
           mode="single"
@@ -69,7 +71,7 @@ export function DateField({
             setOpen(false);
           }}
         />
-      </PopoverPrimitive.Content>
-    </PopoverPrimitive.Root>
+      </PopoverContent>
+    </Popover>
   );
 }

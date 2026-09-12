@@ -15,9 +15,10 @@ import {
 import MarkerClusterGroup from "react-leaflet-cluster";
 import "leaflet/dist/leaflet.css";
 import "react-leaflet-cluster/dist/assets/MarkerCluster.css";
-import { Badge } from "@/components/ui/badge";
+import { Alert, AlertAction, AlertTitle } from "@/components/reui/alert";
+import { Badge } from "@/components/reui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -218,15 +219,13 @@ export function IndoMap() {
     );
   if (geo.isError || data.isError || !geo.data || !data.data) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-          <TriangleAlert className="size-8 text-destructive" />
-          <p className="font-medium">Peta gagal dimuat.</p>
-          <p className="text-sm text-muted-foreground">
-            Periksa koneksi internet, lalu coba lagi.
-          </p>
+      <Alert variant="destructive">
+        <TriangleAlert />
+        <AlertTitle>Peta gagal dimuat.</AlertTitle>
+        <AlertAction>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => {
               void geo.refetch();
               void data.refetch();
@@ -234,8 +233,8 @@ export function IndoMap() {
           >
             Coba lagi
           </Button>
-        </CardContent>
-      </Card>
+        </AlertAction>
+      </Alert>
     );
   }
 
@@ -333,7 +332,7 @@ export function IndoMap() {
         }}
       >
         {selected && (
-          <SheetContent className="z-[1001] w-full overflow-y-auto sm:max-w-md">
+          <SheetContent className="w-full overflow-y-auto sm:max-w-md">
             <SheetHeader className="text-left">
               <SheetTitle>
                 {selected.district}, {selected.province}

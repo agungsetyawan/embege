@@ -13,7 +13,9 @@
       "!.next",
       "!dist",
       "!build",
-      "!graphify-out"
+      "!graphify-out",
+      "!src/components/reui",
+      "!src/components/ui"
     ]
   },
   "formatter": {

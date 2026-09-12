@@ -2,14 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle } from "@/components/reui/alert";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Frame,
+  FrameDescription,
+  FrameHeader,
+  FramePanel,
+  FrameTitle,
+} from "@/components/reui/frame";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
@@ -39,12 +40,14 @@ export default function AdminLoginPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Login Admin</CardTitle>
-          <CardDescription>Kurasi berita & pengaturan crawler.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Frame>
+        <FramePanel>
+          <FrameHeader>
+            <FrameTitle>Login Admin</FrameTitle>
+            <FrameDescription>
+              Kurasi berita & pengaturan crawler.
+            </FrameDescription>
+          </FrameHeader>
           <form action={onSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
@@ -68,17 +71,17 @@ export default function AdminLoginPage() {
               />
             </div>
             {error && (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
+              <Alert variant="destructive">
+                <AlertTitle>{error}</AlertTitle>
+              </Alert>
             )}
             <Button type="submit" disabled={busy}>
               {busy ? "Memeriksa" : "Masuk"}
               {busy && <Spinner />}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </FramePanel>
+      </Frame>
     </main>
   );
 }

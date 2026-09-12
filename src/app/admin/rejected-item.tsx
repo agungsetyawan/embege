@@ -1,13 +1,8 @@
 "use client";
 
 import { Bot, RotateCcw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Badge } from "@/components/reui/badge";
+import { FrameFooter, FrameHeader, FramePanel } from "@/components/reui/frame";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { restoreItem } from "./actions";
 
@@ -25,15 +20,19 @@ export type RejectedItemData = {
 export function RejectedItem({ item }: { item: RejectedItemData }) {
   const date = item.published_at ? item.published_at.slice(0, 10) : null;
   return (
-    <Card>
-      <CardHeader className="gap-1.5">
-        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-          <Badge variant="secondary">{item.media}</Badge>
-          {date && <span>{date}</span>}
-          <Badge variant="outline">
-            <Bot />
-            Ditolak otomatis
-          </Badge>
+    <FramePanel>
+      <FrameHeader className="gap-1.5 p-0">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <Badge variant="secondary">{item.media}</Badge>
+            {date && <span>{date}</span>}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <Badge variant="outline">
+              <Bot />
+              Ditolak otomatis
+            </Badge>
+          </div>
         </div>
         <a
           href={item.url}
@@ -43,15 +42,13 @@ export function RejectedItem({ item }: { item: RejectedItemData }) {
         >
           {item.title}
         </a>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        {item.llm_reject_reason && (
-          <p className="text-sm text-muted-foreground">
-            {item.llm_reject_reason}
-          </p>
-        )}
-      </CardContent>
-      <CardFooter className="justify-end gap-2">
+      </FrameHeader>
+      {item.llm_reject_reason && (
+        <p className="text-sm text-muted-foreground">
+          {item.llm_reject_reason}
+        </p>
+      )}
+      <FrameFooter className="flex-row justify-end gap-2 p-0">
         <form action={restoreItem}>
           <input type="hidden" name="itemId" value={item.id} />
           <SubmitButton type="submit" variant="outline">
@@ -59,7 +56,7 @@ export function RejectedItem({ item }: { item: RejectedItemData }) {
             Kembalikan ke antrean
           </SubmitButton>
         </form>
-      </CardFooter>
-    </Card>
+      </FrameFooter>
+    </FramePanel>
   );
 }

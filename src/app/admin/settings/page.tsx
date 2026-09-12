@@ -1,9 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Badge } from "@/components/reui/badge";
+import { Frame, FramePanel } from "@/components/reui/frame";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -70,55 +70,57 @@ export default async function SettingsPage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Umum</h2>
-        {settings?.map((s) => (
-          <Card key={s.key}>
-            <CardContent className="flex flex-col gap-1.5 pt-6">
-              <code className="text-sm font-semibold">{s.key}</code>
-              {HINTS[s.key] && (
-                <p className="text-xs text-muted-foreground">{HINTS[s.key]}</p>
-              )}
-              <form action={updateSetting} className="flex gap-2">
-                <input type="hidden" name="key" value={s.key} />
+        <Frame stacked>
+          {settings?.map((s) => (
+            <FramePanel key={s.key}>
+              <div className="flex flex-col gap-1.5">
+                <code className="text-sm font-semibold">{s.key}</code>
+                {HINTS[s.key] && (
+                  <p className="text-xs text-muted-foreground">
+                    {HINTS[s.key]}
+                  </p>
+                )}
+                <form action={updateSetting} className="flex gap-2">
+                  <input type="hidden" name="key" value={s.key} />
+                  <Input
+                    name="value"
+                    required
+                    defaultValue={s.value}
+                    className="font-mono"
+                  />
+                  <SubmitButton type="submit" variant="outline">
+                    Simpan
+                  </SubmitButton>
+                </form>
+              </div>
+            </FramePanel>
+          ))}
+          <FramePanel>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-semibold">Pengaturan baru</span>
+              <form action={addSetting} className="flex gap-2">
+                <Input
+                  name="key"
+                  required
+                  placeholder="nama_kunci"
+                  className="font-mono"
+                />
                 <Input
                   name="value"
                   required
-                  defaultValue={s.value}
+                  placeholder="nilai"
                   className="font-mono"
                 />
                 <SubmitButton type="submit" variant="outline">
-                  Simpan
+                  Tambah
                 </SubmitButton>
               </form>
-            </CardContent>
-          </Card>
-        ))}
-        <Card>
-          <CardContent className="flex flex-col gap-1.5 pt-6">
-            <span className="text-sm font-semibold">Pengaturan baru</span>
-            <form action={addSetting} className="flex gap-2">
-              <Input
-                name="key"
-                required
-                placeholder="nama_kunci"
-                className="font-mono"
-              />
-              <Input
-                name="value"
-                required
-                placeholder="nilai"
-                className="font-mono"
-              />
-              <SubmitButton type="submit" variant="outline">
-                Tambah
-              </SubmitButton>
-            </form>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
+            </div>
+          </FramePanel>
+          <FramePanel>
             <ApplyButton />
-          </CardContent>
-        </Card>
+          </FramePanel>
+        </Frame>
       </section>
 
       <Separator />
@@ -130,31 +132,37 @@ export default async function SettingsPage() {
             Berlaku di crawl berikutnya. Sumber mati otomatis dilewati crawler.
           </p>
         </div>
-        {sources?.map((s) => (
-          <Card key={s.id}>
-            <CardContent className="flex items-center gap-2 pt-6 text-sm">
-              <span className="font-medium">{s.name}</span>
-              <span className="flex-1 truncate font-mono text-xs text-muted-foreground">
-                {s.rss_url ?? "(URL belum diisi)"}
-              </span>
-              <Badge variant={s.active ? "secondary" : "outline"}>
-                {s.active ? "Aktif" : "Mati"}
-              </Badge>
-              <form action={toggleSource}>
-                <input type="hidden" name="id" value={s.id} />
-                <SubmitButton type="submit" variant="outline" size="sm">
-                  {s.active ? "Matikan" : "Aktifkan"}
-                </SubmitButton>
-              </form>
-              <form action={deleteSource}>
-                <input type="hidden" name="id" value={s.id} />
-                <SubmitButton type="submit" variant="outline" size="sm">
-                  Hapus
-                </SubmitButton>
-              </form>
-            </CardContent>
-          </Card>
-        ))}
+        <Frame stacked>
+          {sources?.map((s) => (
+            <FramePanel key={s.id}>
+              <div className="flex flex-col gap-2 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium">{s.name}</span>
+                  <Badge variant={s.active ? "secondary" : "outline"}>
+                    {s.active ? "Aktif" : "Mati"}
+                  </Badge>
+                </div>
+                <span className="truncate font-mono text-xs text-muted-foreground">
+                  {s.rss_url ?? "(URL belum diisi)"}
+                </span>
+                <div className="flex gap-2">
+                  <form action={toggleSource}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <SubmitButton type="submit" variant="outline" size="sm">
+                      {s.active ? "Matikan" : "Aktifkan"}
+                    </SubmitButton>
+                  </form>
+                  <form action={deleteSource}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <SubmitButton type="submit" variant="outline" size="sm">
+                      Hapus
+                    </SubmitButton>
+                  </form>
+                </div>
+              </div>
+            </FramePanel>
+          ))}
+        </Frame>
         <form action={addSource} className="flex gap-2">
           <Input
             name="name"
@@ -184,28 +192,30 @@ export default async function SettingsPage() {
             substring.
           </p>
         </div>
-        {keywords?.map((k) => (
-          <Card key={k.id}>
-            <CardContent className="flex items-center gap-2 pt-6 text-sm">
-              <code className="flex-1 font-semibold">{k.keyword}</code>
-              <Badge variant={k.active ? "secondary" : "outline"}>
-                {k.active ? "Aktif" : "Mati"}
-              </Badge>
-              <form action={toggleKeyword}>
-                <input type="hidden" name="id" value={k.id} />
-                <SubmitButton type="submit" variant="outline" size="sm">
-                  {k.active ? "Matikan" : "Aktifkan"}
-                </SubmitButton>
-              </form>
-              <form action={deleteKeyword}>
-                <input type="hidden" name="id" value={k.id} />
-                <SubmitButton type="submit" variant="outline" size="sm">
-                  Hapus
-                </SubmitButton>
-              </form>
-            </CardContent>
-          </Card>
-        ))}
+        <Frame stacked>
+          {keywords?.map((k) => (
+            <FramePanel key={k.id}>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <code className="flex-1 font-semibold">{k.keyword}</code>
+                <Badge variant={k.active ? "secondary" : "outline"}>
+                  {k.active ? "Aktif" : "Mati"}
+                </Badge>
+                <form action={toggleKeyword}>
+                  <input type="hidden" name="id" value={k.id} />
+                  <SubmitButton type="submit" variant="outline" size="sm">
+                    {k.active ? "Matikan" : "Aktifkan"}
+                  </SubmitButton>
+                </form>
+                <form action={deleteKeyword}>
+                  <input type="hidden" name="id" value={k.id} />
+                  <SubmitButton type="submit" variant="outline" size="sm">
+                    Hapus
+                  </SubmitButton>
+                </form>
+              </div>
+            </FramePanel>
+          ))}
+        </Frame>
         <form action={addKeyword} className="flex gap-2">
           <Input
             name="keyword"
