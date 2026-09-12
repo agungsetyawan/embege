@@ -23,13 +23,13 @@ import { Badge } from "@/components/reui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 type CaseRow = {
   id: string;
@@ -233,7 +233,7 @@ function CaseList({ regionId }: { regionId: string }) {
               className="inline-flex items-center gap-1 text-sm font-medium underline underline-offset-4"
             >
               <ExternalLink className="size-3.5" />
-              Sumber: {c.source_media}
+              {c.source_media}
             </a>
             <ReportDialog caseId={c.id} />
           </div>
@@ -246,6 +246,7 @@ function CaseList({ regionId }: { regionId: string }) {
 export function IndoMap() {
   const [selected, setSelected] = useState<SummaryRow | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const geo = useQuery({
     queryKey: ["batas-kabupaten"],
     queryFn: fetchKabupaten,
@@ -366,21 +367,20 @@ export function IndoMap() {
           </MarkerClusterGroup>
         </MapContainer>
       </Card>
-      <Sheet
+      <Drawer
         open={selected !== null}
         onOpenChange={(open) => {
           if (!open) setSelected(null);
         }}
+        swipeDirection={isDesktop ? "right" : "down"}
+        showSwipeHandle={!isDesktop}
       >
         {selected && (
-          <SheetContent className="w-full overflow-y-auto sm:max-w-md">
-            <SheetHeader className="text-left">
-              <SheetTitle>
+          <DrawerContent className="w-full sm:max-w-md">
+            <DrawerHeader className="pb-4 shadow-sm">
+              <DrawerTitle>
                 {selected.district}, {selected.province}
-              </SheetTitle>
-              <SheetDescription>
-                Rincian kasus terkurasi untuk daerah ini.
-              </SheetDescription>
+              </DrawerTitle>
               <div className="flex flex-wrap gap-1.5 pt-1">
                 <Badge variant="destructive-light" size="sm">
                   {selected.count.toLocaleString("id-ID")} kasus
@@ -389,13 +389,13 @@ export function IndoMap() {
                   {selected.victims.toLocaleString("id-ID")} korban
                 </Badge>
               </div>
-            </SheetHeader>
-            <div className="px-4 pb-4">
+            </DrawerHeader>
+            <div className="min-h-0 overflow-y-auto px-4 py-4">
               <CaseList regionId={selected.region_id} />
             </div>
-          </SheetContent>
+          </DrawerContent>
         )}
-      </Sheet>
+      </Drawer>
       <div className="flex gap-4 text-xs text-muted-foreground">
         <span>
           <i className="mr-1 inline-block h-2 w-2 bg-[#eab308]" />1 kasus
