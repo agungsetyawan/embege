@@ -4,7 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef, useTable } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { ChevronDown, FileText, ShieldCheck, Siren, Users } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  ShieldCheck,
+  Siren,
+  Users,
+} from "lucide-react";
 import { useMemo } from "react";
 import { Alert, AlertAction, AlertTitle } from "@/components/reui/alert";
 import { Badge } from "@/components/reui/badge";
@@ -18,6 +25,7 @@ import { DataGridScrollArea } from "@/components/reui/data-grid/data-grid-scroll
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
 import { IconTile } from "@/components/reui/icon-tile";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -244,10 +252,10 @@ export function StatsCards() {
         aria-busy="true"
         aria-label="Memuat penghitung hari"
       >
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-[150px] w-full rounded-xl" />
+        <Skeleton className="h-[150px] w-full rounded-xl" />
+        <Skeleton className="h-[150px] w-full rounded-xl" />
+        <Skeleton className="h-[150px] w-full rounded-xl" />
       </output>
     );
 
@@ -273,84 +281,104 @@ export function StatsCards() {
   const totalVictims = timeline.reduce((t, d) => t + d.victims, 0);
   const footnote = buildFootnote(unknownDate, future);
 
-  const cardBase =
-    "flex flex-col gap-1 rounded-xl bg-card p-3 text-left ring-1 ring-border transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden";
-  const poisonCardClass = `${cardBase} hover:bg-destructive/5`;
-  const safeCardClass = `${cardBase} hover:bg-success/5`;
-  const staticCardClass = `${cardBase}`;
+  // DialogTrigger renders a native <button>, so the clickable cards replicate
+  // the Card visuals (same radius, ring, spacing) instead of nesting a <div>.
+  const triggerBase =
+    "group flex cursor-pointer flex-col gap-2 overflow-hidden rounded-xl bg-card py-3 text-left text-sm text-card-foreground ring-1 ring-foreground/10 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden";
+  const poisonCardClass = `${triggerBase} hover:ring-destructive/30`;
   const numberClass =
-    "text-xl font-semibold tracking-tight tabular-nums sm:text-2xl";
+    "text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl";
+  const chevronClass =
+    "size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5";
 
   return (
     <Dialog>
       <div className="flex flex-col gap-1">
         <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-          <div className={staticCardClass}>
-            <span className="flex items-center gap-2">
-              <IconTile variant="soft" size="xs" className="text-info">
-                <FileText />
-              </IconTile>
-              <span className="text-sm text-muted-foreground">Kasus</span>
-            </span>
-            <span className={numberClass}>
-              {totalCases.toLocaleString("id-ID")}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              laporan terkurasi
-            </span>
-          </div>
-          <div className={staticCardClass}>
-            <span className="flex items-center gap-2">
-              <IconTile variant="soft" size="xs" className="text-warning">
-                <Users />
-              </IconTile>
-              <span className="text-sm text-muted-foreground">Korban</span>
-            </span>
-            <span className={numberClass}>
-              {totalVictims.toLocaleString("id-ID")}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              jiwa terdampak
-            </span>
-          </div>
+          <Card size="sm" className="gap-2">
+            <CardHeader>
+              <span className="flex items-center gap-2">
+                <IconTile variant="soft" size="sm" className="text-info">
+                  <FileText />
+                </IconTile>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Kasus
+                </span>
+              </span>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1.5">
+              <span className={numberClass}>
+                {totalCases.toLocaleString("id-ID")}
+              </span>
+              <Badge variant="info-light" size="sm" radius="full">
+                laporan terkurasi
+              </Badge>
+            </CardContent>
+          </Card>
+          <Card size="sm" className="gap-2">
+            <CardHeader>
+              <span className="flex items-center gap-2">
+                <IconTile variant="soft" size="sm" className="text-warning">
+                  <Users />
+                </IconTile>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Korban
+                </span>
+              </span>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1.5">
+              <span className={numberClass}>
+                {totalVictims.toLocaleString("id-ID")}
+              </span>
+              <Badge variant="warning-light" size="sm" radius="full">
+                jiwa terdampak
+              </Badge>
+            </CardContent>
+          </Card>
           <DialogTrigger
             className={poisonCardClass}
             aria-label="Lihat riwayat hari keracunan"
           >
-            <span className="flex items-center gap-2">
-              <IconTile variant="soft" size="xs" className="text-destructive">
-                <Siren />
-              </IconTile>
-              <span className="text-sm text-muted-foreground">
-                Hari keracunan
+            <span className="flex items-center justify-between gap-2 px-3">
+              <span className="flex items-center gap-2">
+                <IconTile variant="soft" size="sm" className="text-destructive">
+                  <Siren />
+                </IconTile>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Hari keracunan
+                </span>
               </span>
+              <ChevronRight className={chevronClass} aria-hidden="true" />
             </span>
-            <span className={numberClass}>
-              {poisonedDays.toLocaleString("id-ID")}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {first ? `sejak ${formatDate(first)}` : "belum ada data"}
+            <span className="flex flex-col gap-1.5 px-3">
+              <span className={numberClass}>
+                {poisonedDays.toLocaleString("id-ID")}
+              </span>
+              <Badge variant="destructive-light" size="sm" radius="full">
+                {first ? `sejak ${formatDate(first)}` : "belum ada data"}
+              </Badge>
             </span>
           </DialogTrigger>
-          <DialogTrigger
-            className={safeCardClass}
-            aria-label="Lihat riwayat hari tanpa keracunan"
-          >
-            <span className="flex items-center gap-2">
-              <IconTile variant="soft" size="xs" className="text-success">
-                <ShieldCheck />
-              </IconTile>
-              <span className="text-sm text-muted-foreground">
-                Hari tanpa keracunan
+          <Card size="sm" className="gap-2">
+            <CardHeader>
+              <span className="flex items-center gap-2">
+                <IconTile variant="soft" size="sm" className="text-success">
+                  <ShieldCheck />
+                </IconTile>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Hari tanpa keracunan
+                </span>
               </span>
-            </span>
-            <span className={numberClass}>
-              {safeDays.toLocaleString("id-ID")}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Senin sampai Sabtu, di luar hari berkasus
-            </span>
-          </DialogTrigger>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1.5">
+              <span className={numberClass}>
+                {safeDays.toLocaleString("id-ID")}
+              </span>
+              <Badge variant="success-light" size="sm" radius="full">
+                di luar hari berkasus
+              </Badge>
+            </CardContent>
+          </Card>
         </div>
         {footnote && (
           <p className="text-xs text-muted-foreground">*{footnote}</p>
