@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://embege-poisoning.vercel.app"),
   title: {
-    default: "Peta Kasus Keracunan MBG Indonesia",
-    template: "%s | Peta Kasus Keracunan MBG Indonesia",
+    default: "Peta Kasus Keracunan MBG",
+    template: "%s | Peta Kasus Keracunan MBG",
   },
   description:
     "Peta interaktif kasus keracunan program Makan Bergizi Gratis (MBG) di Indonesia per kabupaten/kota, dikurasi dari pemberitaan kredibel dan diperbarui berkala.",
@@ -29,16 +29,16 @@ export const metadata: Metadata = {
     "peta kasus keracunan",
     "kasus keracunan Indonesia",
   ],
-  authors: [{ name: "Peta Kasus Keracunan MBG Indonesia" }],
-  creator: "Peta Kasus Keracunan MBG Indonesia",
-  publisher: "Peta Kasus Keracunan MBG Indonesia",
+  authors: [{ name: "Peta Kasus Keracunan MBG" }],
+  creator: "Peta Kasus Keracunan MBG",
+  publisher: "Peta Kasus Keracunan MBG",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "id_ID",
     url: "/",
-    siteName: "Peta Kasus Keracunan MBG Indonesia",
-    title: "Peta Kasus Keracunan MBG Indonesia",
+    siteName: "Peta Kasus Keracunan MBG",
+    title: "Peta Kasus Keracunan MBG",
     description:
       "Peta interaktif kasus keracunan program Makan Bergizi Gratis (MBG) di Indonesia per kabupaten/kota, dikurasi dari pemberitaan kredibel.",
     images: [
@@ -46,13 +46,13 @@ export const metadata: Metadata = {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Peta Kasus Keracunan MBG Indonesia",
+        alt: "Peta Kasus Keracunan MBG",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Peta Kasus Keracunan MBG Indonesia",
+    title: "Peta Kasus Keracunan MBG",
     description:
       "Peta interaktif kasus keracunan program Makan Bergizi Gratis (MBG) di Indonesia, dikurasi dari pemberitaan kredibel.",
     images: ["/opengraph-image"],

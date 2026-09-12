@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Peta Kasus Keracunan MBG Indonesia";
+export const alt = "Peta Kasus Keracunan MBG";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -19,7 +19,7 @@ export default function OpengraphImage() {
       }}
     >
       <div style={{ fontSize: 72, fontWeight: 700, lineHeight: 1.1 }}>
-        Peta Kasus Keracunan MBG Indonesia
+        Peta Kasus Keracunan MBG
       </div>
       <div style={{ fontSize: 32, marginTop: 24, color: "#d4d4d4" }}>
         Peta interaktif per kabupaten/kota dari pemberitaan kredibel

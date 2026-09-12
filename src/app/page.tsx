@@ -6,13 +6,13 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "WebSite",
-      name: "Peta Kasus Keracunan MBG Indonesia",
+      name: "Peta Kasus Keracunan MBG",
       url: "https://embege-poisoning.vercel.app/",
       inLanguage: "id",
     },
     {
       "@type": "Dataset",
-      name: "Kasus Keracunan MBG Indonesia",
+      name: "Kasus Keracunan MBG",
       description:
         "Kasus keracunan program Makan Bergizi Gratis (MBG) di Indonesia per kabupaten/kota, dikurasi dari pemberitaan kredibel.",
       url: "https://embege-poisoning.vercel.app/",
@@ -34,7 +34,7 @@ export default function Home() {
         <header className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Peta Kasus Keracunan MBG Indonesia
+              Peta Kasus Keracunan MBG
             </h1>
             <p className="text-sm text-muted-foreground">
               Data dikurasi dari pemberitaan kredibel. Klik titik untuk detail.
