@@ -2,17 +2,19 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { FeatureCollection } from "geojson";
-import type { Map as LeafletMap } from "leaflet";
+import L, { type Map as LeafletMap } from "leaflet";
 import { TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
-  CircleMarker,
   GeoJSON,
   MapContainer,
+  Marker,
   TileLayer,
   useMap,
 } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import "leaflet/dist/leaflet.css";
+import "react-leaflet-cluster/dist/assets/MarkerCluster.css";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -74,12 +76,33 @@ function fillColor(count: number): string {
   return "transparent";
 }
 
-// Terbang ke kotak daerah berkasus. Nol kasus = biarkan default se-Indonesia.
+// Kelas severity yang sama untuk dot dan cluster, selaras dengan legenda.
+function sevClass(count: number): string {
+  if (count >= 5) return "mbg-sev-5";
+  if (count >= 2) return "mbg-sev-2";
+  return "mbg-sev-1";
+}
+
+// Satu dot per daerah. Angka = jumlah kasus daerah itu.
+function dotIcon(count: number): L.DivIcon {
+  return L.divIcon({
+    html: `<div class="mbg-dot ${sevClass(count)}"><span>${count}</span></div>`,
+    className: "mbg-dot-wrap",
+    iconSize: L.point(26, 26, true),
+  });
+}
+
+// Terbang ke kotak daerah berkasus sekali saja saat peta dimuat.
+// Nol kasus = biarkan default se-Indonesia. Setelah user zoom/klik,
+// bingkai jangan direbut lagi (klik marker me-render ulang halaman).
 function FitToCases({ summary }: { summary: SummaryRow[] }) {
   const map = useMap();
+  const fitted = useRef(false);
   useEffect(() => {
+    if (fitted.current) return;
     const active = summary.filter((s) => s.count > 0);
     if (active.length === 0) return;
+    fitted.current = true;
     const lats = active.map((s) => s.lat);
     const lngs = active.map((s) => s.lng);
     const pad = active.length === 1 ? 1.5 : 0.5;
@@ -179,6 +202,9 @@ export function IndoMap() {
 
   const summary = data.data.summary.filter((s) => s.count > 0);
   const byKey = new Map(summary.map((s) => [`${s.province}/${s.district}`, s]));
+  const countByLatLng = new Map(
+    summary.map((s) => [`${s.lat},${s.lng}`, s.count]),
+  );
   const totalCases = summary.reduce((t, s) => t + s.count, 0);
   const totalVictims = summary.reduce((t, s) => t + s.victims, 0);
 
@@ -227,20 +253,37 @@ export function IndoMap() {
               };
             }}
           />
-          {summary.map((s) => (
-            <CircleMarker
-              key={s.region_id}
-              center={[s.lat, s.lng]}
-              radius={4 + Math.min(s.count * 1.5 + s.victims / 60, 6)}
-              pathOptions={{ color: "#dc2626", fillOpacity: 0.7 }}
-              eventHandlers={{
-                click: () => {
-                  setSelected(s);
-                  mapRef.current?.panTo([s.lat, s.lng]);
-                },
-              }}
-            />
-          ))}
+          <MarkerClusterGroup
+            chunkedLoading
+            showCoverageOnHover={false}
+            iconCreateFunction={(cluster) => {
+              const total = cluster.getAllChildMarkers().reduce((t, m) => {
+                const ll = m.getLatLng();
+                return t + (countByLatLng.get(`${ll.lat},${ll.lng}`) ?? 0);
+              }, 0);
+              const size = total >= 100 ? 46 : total >= 10 ? 40 : 34;
+              return L.divIcon({
+                html: `<div class="mbg-cluster ${sevClass(total)}"><span>${total}</span></div>`,
+                className: "mbg-cluster-wrap",
+                iconSize: L.point(size, size, true),
+              });
+            }}
+          >
+            {summary.map((s) => (
+              <Marker
+                key={s.region_id}
+                position={[s.lat, s.lng]}
+                icon={dotIcon(s.count)}
+                title={`${s.count} kasus di ${s.district}, ${s.province}`}
+                eventHandlers={{
+                  click: () => {
+                    setSelected(s);
+                    mapRef.current?.panTo([s.lat, s.lng]);
+                  },
+                }}
+              />
+            ))}
+          </MarkerClusterGroup>
         </MapContainer>
       </Card>
       <Sheet

@@ -78,3 +78,44 @@
     cursor: pointer;
   }
 }
+
+/* Lencana angka peta: dot per daerah dan lingkaran cluster. */
+.mbg-dot-wrap,
+.mbg-cluster-wrap {
+  background: none;
+  border: none;
+}
+.mbg-dot,
+.mbg-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #fff;
+  border-radius: 9999px;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+.mbg-dot {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+  line-height: 1;
+}
+.mbg-cluster {
+  font-size: 12px;
+  line-height: 1;
+}
+.mbg-sev-1 {
+  background-color: #eab308;
+  color: #422006;
+}
+.mbg-sev-2 {
+  background-color: #f97316;
+  color: #fff;
+}
+.mbg-sev-5 {
+  background-color: #dc2626;
+  color: #fff;
+}
