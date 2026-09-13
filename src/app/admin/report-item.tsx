@@ -195,7 +195,7 @@ export function ReportItem({
             <input type="hidden" name="reportId" value={report.id} />
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={`region-${report.id}`}>
-                Pindahkan ke wilayah yang benar
+                Pindah ke wilayah baru
               </Label>
               <Cascader
                 items={tree}
@@ -265,9 +265,7 @@ export function ReportItem({
             <input type="hidden" name="reportId" value={report.id} />
             <div className="flex flex-col gap-3 sm:flex-row">
               <div className="flex flex-1 flex-col gap-1.5">
-                <Label htmlFor={`fix-date-${report.id}`}>
-                  Tanggal baru kasus
-                </Label>
+                <Label htmlFor={`fix-date-${report.id}`}>Tanggal koreksi</Label>
                 <DateField
                   id={`fix-date-${report.id}`}
                   name="occurredOn"
@@ -276,7 +274,7 @@ export function ReportItem({
               </div>
               <div className="flex w-full flex-col gap-1.5 sm:w-40">
                 <Label htmlFor={`fix-victims-${report.id}`}>
-                  Jumlah korban baru
+                  Korban koreksi
                 </Label>
                 <Input
                   id={`fix-victims-${report.id}`}
@@ -297,7 +295,7 @@ export function ReportItem({
           <input type="hidden" name="reportId" value={report.id} />
         </form>
       </div>
-      <FrameFooter className="flex-row justify-end gap-2 p-0">
+      <FrameFooter className="flex-row flex-wrap justify-end gap-2 p-0">
         <FormSubmitButton
           variant="outline"
           formId={`dismiss-${report.id}`}
@@ -317,7 +315,7 @@ export function ReportItem({
             formId={`move-${report.id}`}
             action={moveReportCase}
           >
-            Pindah wilayah
+            Pindah
           </FormSubmitButton>
         )}
         {report.reason === "duplicate" && (
@@ -327,12 +325,12 @@ export function ReportItem({
             action={deleteReportedCase}
           >
             <Trash2 />
-            Hapus case terlapor
+            Hapus case
           </FormSubmitButton>
         )}
         {report.reason !== "location" && report.reason !== "duplicate" && (
           <FormSubmitButton formId={`fix-${report.id}`} action={applyReportFix}>
-            Terapkan koreksi
+            Terapkan
           </FormSubmitButton>
         )}
       </FrameFooter>

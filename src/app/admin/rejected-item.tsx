@@ -53,7 +53,7 @@ export function RejectedItem({ item }: { item: RejectedItemData }) {
           <input type="hidden" name="itemId" value={item.id} />
           <SubmitButton type="submit" variant="outline">
             <RotateCcw data-icon="inline-start" />
-            Kembalikan ke antrean
+            Kembalikan
           </SubmitButton>
         </form>
       </FrameFooter>

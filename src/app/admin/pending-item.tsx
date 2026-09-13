@@ -237,7 +237,7 @@ export function PendingItem({
           Tolak
         </FormSubmitButton>
         <FormSubmitButton formId={`approve-${item.id}`} action={approveItem}>
-          Setuju
+          Setujui
         </FormSubmitButton>
       </FrameFooter>
     </FramePanel>

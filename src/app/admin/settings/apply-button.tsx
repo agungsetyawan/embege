@@ -23,7 +23,7 @@ export function ApplyButton() {
             setBusy(false);
           }}
         >
-          {busy ? "Menerapkan" : "Terapkan jadwal ke cron"}
+          {busy ? "Menerapkan" : "Terapkan jadwal"}
           {busy && <Spinner />}
         </Button>
       </div>
