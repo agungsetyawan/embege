@@ -33,7 +33,7 @@ export function todayWIB(): string {
   return new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
-export function toLocalDate(iso: string): Date {
+function toLocalDate(iso: string): Date {
   return new Date(`${iso}T00:00:00`);
 }
 

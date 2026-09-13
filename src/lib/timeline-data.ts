@@ -1,13 +1,14 @@
 import { createAnonClient } from "@/lib/supabase/anon";
-import type { TimelineDay, TimelineResponse } from "@/lib/timeline";
+import {
+  type TimelineDay,
+  type TimelineResponse,
+  todayWIB,
+} from "@/lib/timeline";
 
 // One row per published case, aggregated per date below.
-// WIB is fixed at UTC+7 (no DST), so "today" can be derived from UTC.
 export async function fetchTimeline(): Promise<TimelineResponse> {
   const supabase = createAnonClient();
-  const today = new Date(Date.now() + 7 * 3600 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  const today = todayWIB();
   const { data: rows, error } = await supabase
     .from("cases")
     .select("occurred_on,victims,regions(province,district)")

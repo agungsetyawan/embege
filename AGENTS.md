@@ -76,6 +76,7 @@ Lessons already paid for in debug time. Follow them.
 
 **Database**
 - RLS: public reads `regions` and published `cases` only. Public writes go only through the `submit_case_report()` RPC (1 report per case per IP per hour). Every other write needs an authenticated admin.
+- Public server-side reads use `createAnonClient` (anon key, no cookies) so the route stays static/ISR. The cookie-based `createClient` is for admin/session paths only — `cookies()` forces the route dynamic and kills caching.
 - Public server-side queries use the anon key so RLS still applies. Service-role is for cron only.
 - `cases.deleted_at` is a soft delete: hidden from all public reads and the `case_summary` view, restorable from the admin Terhapus tab.
 - `centroid_ok=false` means coordinates are unverified. Never treat them as facts.
