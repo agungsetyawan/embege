@@ -377,6 +377,15 @@ export function IndoMap() {
           <GeoJSON
             key="kabupaten"
             data={geo.data}
+            eventHandlers={{
+              click: (e) => {
+                const s = byKey.get(e.layer.feature?.properties?.id as string);
+                if (s) {
+                  setSelected(s);
+                  mapRef.current?.panTo([s.lat, s.lng]);
+                }
+              },
+            }}
             style={(feature) => {
               const id = feature?.properties?.id as string | undefined;
               const n = id ? (byKey.get(id)?.count ?? 0) : 0;
