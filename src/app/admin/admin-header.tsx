@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { NavLinkStatus } from "@/components/ui/nav-link-status";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { signOut } from "./actions";
 
@@ -70,6 +71,7 @@ export function AdminHeader({
             render={<Link href={item.href} />}
           >
             {item.label}
+            <NavLinkStatus />
           </Button>
         ))}
       </nav>

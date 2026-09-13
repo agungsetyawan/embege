@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { NavigationProgress } from "@/components/navigation-progress";
 import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
@@ -88,7 +89,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <NavigationProgress />
+            {children}
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

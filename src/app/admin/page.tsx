@@ -5,6 +5,7 @@ import { Badge } from "@/components/reui/badge";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { IconStack } from "@/components/reui/icon-stack";
 import { Button } from "@/components/ui/button";
+import { NavLinkStatus } from "@/components/ui/nav-link-status";
 import { createClient } from "@/lib/supabase/server";
 import { AdminHeader } from "./admin-header";
 import { DeletedItem, type DeletedItemData } from "./deleted-item";
@@ -250,6 +251,7 @@ export default async function AdminPage({
               render={<Link href={pageQuery(page - 1)} />}
             >
               Sebelumnya
+              <NavLinkStatus />
             </Button>
           ) : (
             <Button variant="outline" size="sm" disabled>
@@ -267,6 +269,7 @@ export default async function AdminPage({
               render={<Link href={pageQuery(page + 1)} />}
             >
               Berikutnya
+              <NavLinkStatus />
             </Button>
           ) : (
             <Button variant="outline" size="sm" disabled>

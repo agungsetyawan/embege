@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { IndoMapLazy } from "@/components/indo-map-lazy";
 import { Badge } from "@/components/reui/badge";
 import { StatsCards } from "@/components/stats-cards";
+import { StatsCardsSkeleton } from "@/components/stats-cards-skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 // Timeline revalidates every 5 minutes (matches the "Diperbarui berkala" label).
@@ -53,7 +55,9 @@ export default function Home() {
             Diperbarui berkala tiap jam
           </p>
         </header>
-        <StatsCards />
+        <Suspense fallback={<StatsCardsSkeleton />}>
+          <StatsCards />
+        </Suspense>
         <IndoMapLazy />
         <footer className="flex flex-col gap-1 border-t pt-3 text-xs text-muted-foreground">
           <p>
