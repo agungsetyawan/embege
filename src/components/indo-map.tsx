@@ -17,6 +17,7 @@ import {
 import MarkerClusterGroup from "react-leaflet-cluster";
 import "leaflet/dist/leaflet.css";
 import "react-leaflet-cluster/dist/assets/MarkerCluster.css";
+import { IndoMapSkeleton } from "@/components/indo-map-skeleton";
 import { ReportDialog } from "@/components/report-dialog";
 import { Alert, AlertAction, AlertTitle } from "@/components/reui/alert";
 import { Badge } from "@/components/reui/badge";
@@ -313,16 +314,7 @@ export function IndoMap() {
     staleTime: 5 * 60 * 1000,
   });
 
-  if (geo.isLoading || data.isLoading)
-    return (
-      <output
-        className="flex flex-col gap-2"
-        aria-busy="true"
-        aria-label="Memuat peta"
-      >
-        <Skeleton className="h-[70vh] w-full" />
-      </output>
-    );
+  if (geo.isLoading || data.isLoading) return <IndoMapSkeleton />;
   if (geo.isError || data.isError || !geo.data || !data.data) {
     return (
       <Alert variant="destructive">
