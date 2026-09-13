@@ -59,10 +59,10 @@ export function buildFootnote(
   future: number,
 ): string | null {
   const parts: string[] = [];
-  if (unknownDate > 0) parts.push(`${unknownDate} kasus tanpa tanggal pasti`);
+  if (unknownDate > 0) parts.push(`${unknownDate} kasus tanpa tanggal`);
   if (future > 0) parts.push(`${future} kasus bertanggal masa depan`);
   if (parts.length === 0) return null;
-  return `${parts.join(" dan ")} tidak dihitung`;
+  return `${parts.join(" dan ")}, tidak dihitung`;
 }
 
 export function areaName(a: TimelineArea): string {
