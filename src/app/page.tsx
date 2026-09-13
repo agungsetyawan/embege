@@ -3,6 +3,9 @@ import { Badge } from "@/components/reui/badge";
 import { StatsCards } from "@/components/stats-cards";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+// Timeline revalidates every 5 minutes (matches the "Diperbarui berkala" label).
+export const revalidate = 300;
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [

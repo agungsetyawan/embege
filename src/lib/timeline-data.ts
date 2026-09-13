@@ -1,40 +1,20 @@
-import { createClient } from "@/lib/supabase/server";
-import { isUuid } from "@/lib/validate";
+import { createAnonClient } from "@/lib/supabase/anon";
+import type { TimelineDay, TimelineResponse } from "@/lib/timeline";
 
-// Per-date aggregation of published cases, newest first. Powers the day
-// counters. Accepts an optional ?region_id= filter for a single region's
-// history; an invalid id yields an empty timeline.
-export const dynamic = "force-dynamic";
-export const revalidate = 300;
-
-const CACHE = {
-  headers: {
-    "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-  },
-};
-
-export async function GET(req: Request) {
-  const supabase = await createClient();
-  const regionId = new URL(req.url).searchParams.get("region_id");
-  if (regionId && !isUuid(regionId)) {
-    return Response.json({ timeline: [], unknownDate: 0, future: 0 }, CACHE);
-  }
-
-  // One row per published case, aggregated per date below.
-  // WIB is fixed at UTC+7 (no DST), so "today" can be derived from UTC.
+// One row per published case, aggregated per date below.
+// WIB is fixed at UTC+7 (no DST), so "today" can be derived from UTC.
+export async function fetchTimeline(): Promise<TimelineResponse> {
+  const supabase = createAnonClient();
   const today = new Date(Date.now() + 7 * 3600 * 1000)
     .toISOString()
     .slice(0, 10);
-  let query = supabase
+  const { data: rows, error } = await supabase
     .from("cases")
     .select("occurred_on,victims,regions(province,district)")
     .eq("published", true)
     .is("deleted_at", null)
     .order("occurred_on", { ascending: false, nullsFirst: false });
-  if (regionId) query = query.eq("region_id", regionId);
-  const { data: rows, error } = await query;
-  if (error)
-    return Response.json({ error: "gagal memuat data" }, { status: 500 });
+  if (error) throw new Error("Gagal memuat data hari");
 
   const days = new Map<
     string,
@@ -76,11 +56,11 @@ export async function GET(req: Request) {
     area.victims += row.victims ?? 0;
     day.areas.set(key, area);
   }
-  const timeline = [...days.entries()].map(([date, day]) => ({
+  const timeline: TimelineDay[] = [...days.entries()].map(([date, day]) => ({
     date,
     cases: day.cases,
     victims: day.victims,
     areas: [...day.areas.values()].sort((a, b) => b.victims - a.victims),
   }));
-  return Response.json({ timeline, unknownDate, future }, CACHE);
+  return { timeline, unknownDate, future };
 }
