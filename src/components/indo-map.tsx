@@ -357,7 +357,7 @@ export function IndoMap() {
           ]}
           maxBoundsViscosity={1.0}
           scrollWheelZoom
-          className="h-[70vh] w-full"
+          className="h-[60vh] md:h-[70vh] w-full"
         >
           {/* Esri WorldStreetMap: English labels, no API key. */}
           <TileLayer

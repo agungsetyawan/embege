@@ -7,7 +7,7 @@ export function IndoMapSkeleton() {
   return (
     <output aria-busy="true" aria-label="Memuat peta">
       <Card className="overflow-hidden p-0">
-        <div className="flex h-[70vh] w-full items-center justify-center bg-muted p-6">
+        <div className="flex h-[60vh] md:h-[70vh] w-full items-center justify-center bg-muted p-6">
           <div
             aria-hidden="true"
             className="h-full w-full animate-pulse bg-muted-foreground/30"
