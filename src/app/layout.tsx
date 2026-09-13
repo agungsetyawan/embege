@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,11 +18,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://embege-poisoning.vercel.app"),
   title: {
-    default: "Peta Kasus Keracunan MBG",
-    template: "%s | Peta Kasus Keracunan MBG",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Peta interaktif kasus keracunan program Makan Bergizi Gratis (MBG) di Indonesia per kabupaten/kota, dikurasi dari pemberitaan kredibel dan diperbarui berkala.",
+  description: SITE_DESCRIPTION,
   keywords: [
     "MBG",
     "Makan Bergizi Gratis",
@@ -29,32 +29,30 @@ export const metadata: Metadata = {
     "peta kasus keracunan",
     "kasus keracunan Indonesia",
   ],
-  authors: [{ name: "Peta Kasus Keracunan MBG" }],
-  creator: "Peta Kasus Keracunan MBG",
-  publisher: "Peta Kasus Keracunan MBG",
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "id_ID",
     url: "/",
-    siteName: "Peta Kasus Keracunan MBG",
-    title: "Peta Kasus Keracunan MBG",
-    description:
-      "Peta interaktif kasus keracunan program Makan Bergizi Gratis (MBG) di Indonesia per kabupaten/kota, dikurasi dari pemberitaan kredibel.",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Peta Kasus Keracunan MBG",
+        alt: SITE_NAME,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Peta Kasus Keracunan MBG",
-    description:
-      "Peta interaktif kasus keracunan program Makan Bergizi Gratis (MBG) di Indonesia, dikurasi dari pemberitaan kredibel.",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
     images: ["/opengraph-image"],
   },
   robots: {
