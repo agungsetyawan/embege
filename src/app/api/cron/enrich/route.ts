@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import { enrichWithGemini, fetchArticleText } from "@/lib/enrich";
+import {
+  enrichBatchWithGemini,
+  enrichWithGemini,
+  fetchArticleText,
+  type LlmResult,
+} from "@/lib/enrich";
 import { requiredEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -62,14 +67,40 @@ export async function GET(req: Request) {
   let enriched = 0;
   let autoRejected = 0;
   let failed = 0;
-  for (const item of items) {
+
+  // Fetch article texts in parallel (I/O bound), then ONE Gemini call for the batch.
+  const texts = await Promise.all(
+    items.map((item) =>
+      fetchArticleText(item.url).then((t) => t ?? item.summary ?? ""),
+    ),
+  );
+  const inputs = items.map((item, i) => ({
+    id: item.id,
+    title: item.title,
+    text: texts[i],
+  }));
+  const results = await enrichBatchWithGemini(inputs);
+  // Fallback per-item (parallel) for ids the batch call missed, so one bad
+  // apple never fails the whole batch.
+  const missing = inputs.filter((it) => !results.has(it.id));
+  if (missing.length > 0) {
+    const fallbacks = await Promise.all(
+      missing.map(async ({ id, title, text }) => ({
+        id,
+        result: await enrichWithGemini(title, text),
+      })),
+    );
+    for (const { id, result } of fallbacks) {
+      if (result) results.set(id, result);
+    }
+  }
+
+  const handleItem = async (
+    item: (typeof items)[number],
+    result: LlmResult | undefined,
+  ): Promise<"enriched" | "rejected" | "failed"> => {
     try {
-      const article = (await fetchArticleText(item.url)) ?? item.summary ?? "";
-      const result = await enrichWithGemini(item.title, article);
-      if (!result) {
-        failed++;
-        continue;
-      }
+      if (!result) return "failed";
       // High-confidence non-MBG-poisoning news: auto-reject.
       if (
         !result.isPoisonRelated &&
@@ -84,9 +115,7 @@ export async function GET(req: Request) {
             llm_reject_reason: result.rejectReason,
           })
           .eq("id", item.id);
-        if (error) failed++;
-        else autoRejected++;
-        continue;
+        return error ? "failed" : "rejected";
       }
       const candidate = matchRegion(result.district, regions);
       const update: {
@@ -111,11 +140,20 @@ export async function GET(req: Request) {
         .from("crawl_items")
         .update(update)
         .eq("id", item.id);
-      if (error) failed++;
-      else enriched++;
+      return error ? "failed" : "enriched";
     } catch {
-      failed++;
+      return "failed";
     }
+  };
+
+  // DB updates in parallel; count outcomes.
+  const outcomes = await Promise.all(
+    items.map((item) => handleItem(item, results.get(item.id))),
+  );
+  for (const o of outcomes) {
+    if (o === "enriched") enriched++;
+    else if (o === "rejected") autoRejected++;
+    else failed++;
   }
   return Response.json({
     processed: items.length,
