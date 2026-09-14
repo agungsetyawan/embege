@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   if (reason === "victims") {
     const raw = body.reported_victims;
     const n = typeof raw === "number" ? raw : Number(str(raw));
-    if (!Number.isInteger(n) || n < 0 || n > 1000000) {
+    if (!Number.isInteger(n) || n < 0 || n > 9999) {
       return Response.json(
         { error: "Jumlah korban tidak valid." },
         { status: 400 },

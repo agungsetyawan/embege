@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { type AdminLogEntry, logAdminAction } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/validate";
 
@@ -11,11 +12,12 @@ export async function requireAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/admin/login");
-  return supabase;
+  const log = (entry: AdminLogEntry) => logAdminAction(supabase, user, entry);
+  return { supabase, user, log };
 }
 
 export async function approveItem(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase, log } = await requireAdmin();
   const itemId = String(formData.get("itemId"));
   const regionId = String(formData.get("regionId"));
   const summary = String(formData.get("summary") ?? "").trim();
@@ -27,7 +29,7 @@ export async function approveItem(formData: FormData) {
   const victims = victimsRaw === "" ? null : Number(victimsRaw);
   if (
     victims !== null &&
-    (!Number.isInteger(victims) || victims < 0 || victims > 1000000)
+    (!Number.isInteger(victims) || victims < 0 || victims > 9999)
   )
     return;
   const occurredOn =
@@ -65,22 +67,33 @@ export async function approveItem(formData: FormData) {
     .from("crawl_items")
     .update({ status: "approved", case_id: inserted.id })
     .eq("id", itemId);
+  await log({
+    action: "crawl.approve",
+    table: "cases",
+    rowId: inserted.id,
+    diff: { from_item: itemId, region_id: regionId },
+  });
   revalidatePath("/admin");
 }
 
 export async function rejectItem(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase, log } = await requireAdmin();
   const itemId = String(formData.get("itemId"));
   if (!isUuid(itemId)) return;
   await supabase
     .from("crawl_items")
     .update({ status: "rejected" })
     .eq("id", itemId);
+  await log({
+    action: "crawl.reject",
+    table: "crawl_items",
+    rowId: itemId,
+  });
   revalidatePath("/admin");
 }
 
 export async function restoreItem(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase, log } = await requireAdmin();
   const itemId = String(formData.get("itemId"));
   if (!isUuid(itemId)) return;
   // Keep llm_summary filled so the item is not re-enriched and does not
@@ -89,34 +102,49 @@ export async function restoreItem(formData: FormData) {
     .from("crawl_items")
     .update({ status: "pending", llm_is_relevant: null })
     .eq("id", itemId);
+  await log({
+    action: "crawl.restore",
+    table: "crawl_items",
+    rowId: itemId,
+  });
   revalidatePath("/admin");
 }
 
 export async function resolveReport(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase, log } = await requireAdmin();
   const reportId = String(formData.get("reportId"));
   if (!isUuid(reportId)) return;
   await supabase
     .from("case_reports")
     .update({ status: "resolved" })
     .eq("id", reportId);
+  await log({
+    action: "report.resolve",
+    table: "case_reports",
+    rowId: reportId,
+  });
   revalidatePath("/admin");
 }
 
 export async function dismissReport(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase, log } = await requireAdmin();
   const reportId = String(formData.get("reportId"));
   if (!isUuid(reportId)) return;
   await supabase
     .from("case_reports")
     .update({ status: "dismissed" })
     .eq("id", reportId);
+  await log({
+    action: "report.dismiss",
+    table: "case_reports",
+    rowId: reportId,
+  });
   revalidatePath("/admin");
 }
 
 // Move the reported case to the region the reporter says is correct.
 export async function moveReportCase(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase, user, log } = await requireAdmin();
   const reportId = String(formData.get("reportId"));
   const regionId = String(formData.get("regionId"));
   if (!isUuid(reportId) || !isUuid(regionId)) return;
@@ -130,7 +158,11 @@ export async function moveReportCase(formData: FormData) {
 
   const { error } = await supabase
     .from("cases")
-    .update({ region_id: regionId })
+    .update({
+      region_id: regionId,
+      updated_at: new Date().toISOString(),
+      updated_by_email: user.email ?? null,
+    })
     .eq("id", report.case_id);
   if (error) return;
 
@@ -138,13 +170,19 @@ export async function moveReportCase(formData: FormData) {
     .from("case_reports")
     .update({ status: "resolved" })
     .eq("id", reportId);
+  await log({
+    action: "report.move_case",
+    table: "cases",
+    rowId: report.case_id,
+    diff: { region_id: regionId, from_report: reportId },
+  });
   revalidatePath("/admin");
 }
 
 // Soft-delete the reported duplicate so it can be restored from the
 // Terhapus tab if the call turns out to be wrong.
 export async function deleteReportedCase(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase, log } = await requireAdmin();
   const caseId = String(formData.get("caseId"));
   const reportId = String(formData.get("reportId"));
   if (!isUuid(caseId)) return;
@@ -159,21 +197,33 @@ export async function deleteReportedCase(formData: FormData) {
       .update({ status: "resolved" })
       .eq("id", reportId);
   }
+  await log({
+    action: "case.delete",
+    table: "cases",
+    rowId: caseId,
+    diff: { from_report: isUuid(reportId) ? reportId : null },
+  });
   revalidatePath("/admin");
 }
 
 export async function restoreCase(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase, log } = await requireAdmin();
   const caseId = String(formData.get("caseId"));
   if (!isUuid(caseId)) return;
   await supabase.from("cases").update({ deleted_at: null }).eq("id", caseId);
+  await log({
+    action: "case.restore",
+    table: "cases",
+    rowId: caseId,
+  });
   revalidatePath("/admin");
+  revalidatePath("/admin/cases");
 }
 
 // Apply the reporter's suggested values to the case, then mark the report
 // resolved. Empty inputs clear the field, same semantics as approveItem.
 export async function applyReportFix(formData: FormData) {
-  const supabase = await requireAdmin();
+  const { supabase, user, log } = await requireAdmin();
   const reportId = String(formData.get("reportId"));
   if (!isUuid(reportId)) return;
   const victimsRaw = String(formData.get("victims") ?? "");
@@ -181,7 +231,7 @@ export async function applyReportFix(formData: FormData) {
   const victims = victimsRaw === "" ? null : Number(victimsRaw);
   if (
     victims !== null &&
-    (!Number.isInteger(victims) || victims < 0 || victims > 1000000)
+    (!Number.isInteger(victims) || victims < 0 || victims > 9999)
   )
     return;
   const occurredOn =
@@ -202,7 +252,12 @@ export async function applyReportFix(formData: FormData) {
 
   const { error } = await supabase
     .from("cases")
-    .update({ victims, occurred_on: occurredOn })
+    .update({
+      victims,
+      occurred_on: occurredOn,
+      updated_at: new Date().toISOString(),
+      updated_by_email: user.email ?? null,
+    })
     .eq("id", report.case_id);
   if (error) return;
 
@@ -210,6 +265,12 @@ export async function applyReportFix(formData: FormData) {
     .from("case_reports")
     .update({ status: "resolved" })
     .eq("id", reportId);
+  await log({
+    action: "report.apply_fix",
+    table: "cases",
+    rowId: report.case_id,
+    diff: { victims, occurred_on: occurredOn, from_report: reportId },
+  });
   revalidatePath("/admin");
 }
 

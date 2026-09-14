@@ -11,6 +11,7 @@ export type AdminNavKey =
   | "rejected"
   | "reports"
   | "deleted"
+  | "cases"
   | "settings";
 
 const NAV_ITEMS: { key: AdminNavKey; label: string; href: string }[] = [
@@ -18,6 +19,7 @@ const NAV_ITEMS: { key: AdminNavKey; label: string; href: string }[] = [
   { key: "rejected", label: "Ditolak", href: "/admin?tab=rejected" },
   { key: "reports", label: "Laporan", href: "/admin?tab=reports" },
   { key: "deleted", label: "Terhapus", href: "/admin?tab=deleted" },
+  { key: "cases", label: "Kasus", href: "/admin/cases" },
   { key: "settings", label: "Pengaturan", href: "/admin/settings" },
 ];
 
