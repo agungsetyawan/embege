@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 import {
-  enrichBatchWithGemini,
   enrichWithGemini,
   fetchArticleText,
   type LlmResult,
@@ -68,32 +67,20 @@ export async function GET(req: Request) {
   let autoRejected = 0;
   let failed = 0;
 
-  // Fetch article texts in parallel (I/O bound), then ONE Gemini call for the batch.
+  // Fetch article texts in parallel (I/O bound), then enrich each item in
+  // its own isolated Gemini call, all in parallel.
   const texts = await Promise.all(
     items.map((item) =>
       fetchArticleText(item.url).then((t) => t ?? item.summary ?? ""),
     ),
   );
-  const inputs = items.map((item, i) => ({
-    id: item.id,
-    title: item.title,
-    text: texts[i],
-  }));
-  const results = await enrichBatchWithGemini(inputs);
-  // Fallback per-item (parallel) for ids the batch call missed, so one bad
-  // apple never fails the whole batch.
-  const missing = inputs.filter((it) => !results.has(it.id));
-  if (missing.length > 0) {
-    const fallbacks = await Promise.all(
-      missing.map(async ({ id, title, text }) => ({
-        id,
-        result: await enrichWithGemini(title, text),
-      })),
-    );
-    for (const { id, result } of fallbacks) {
-      if (result) results.set(id, result);
-    }
-  }
+  const results = new Map<string, LlmResult>();
+  await Promise.all(
+    items.map(async (item, i) => {
+      const result = await enrichWithGemini(item.title, texts[i]);
+      if (result) results.set(item.id, result);
+    }),
+  );
 
   const handleItem = async (
     item: (typeof items)[number],

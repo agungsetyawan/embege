@@ -123,6 +123,7 @@ async function callGemini(contents: unknown, responseSchema: unknown) {
         contents,
         generationConfig: {
           response_mime_type: "application/json",
+          temperature: 0,
           response_schema: responseSchema,
         },
       }),
@@ -149,48 +150,4 @@ export async function enrichWithGemini(
   } catch {
     return null;
   }
-}
-
-export type BatchEnrichItem = { id: string; title: string; text: string };
-
-// One Gemini call for the whole batch. Returns id -> result; unknown/invalid ids dropped.
-export async function enrichBatchWithGemini(
-  items: BatchEnrichItem[],
-): Promise<Map<string, LlmResult>> {
-  const out = new Map<string, LlmResult>();
-  if (items.length === 0) return out;
-  try {
-    const ids = new Set(items.map((i) => i.id));
-    const parsed = await callGemini(
-      [
-        {
-          parts: [
-            {
-              text: `Ada ${items.length} berita. Untuk SETIAP berita, salin id-nya persis dan isi field kurasi. Jawab SATU array JSON (satu objek per berita, urutan sama).\n${JSON.stringify(items.map((i) => ({ id: i.id, judul: i.title, isi: i.text })))}`,
-            },
-          ],
-        },
-      ],
-      {
-        type: "ARRAY",
-        items: {
-          type: "OBJECT",
-          properties: { id: { type: "STRING" }, ...ITEM_SCHEMA.properties },
-          required: ["id", ...ITEM_SCHEMA.required],
-        },
-      },
-    );
-    if (!Array.isArray(parsed)) return out;
-    for (const entry of parsed) {
-      if (!entry || typeof entry !== "object") continue;
-      const id = String((entry as Record<string, unknown>).id ?? "");
-      // ponytail: first valid object per id wins, LLM duplicates ignored
-      if (!ids.has(id) || out.has(id)) continue;
-      const result = parseLlmResult(entry);
-      if (result) out.set(id, result);
-    }
-  } catch {
-    // Fallthrough: caller falls back to per-item calls for missing ids.
-  }
-  return out;
 }
