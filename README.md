@@ -10,7 +10,7 @@ The public map shows case counts per district (a district is a kabupaten or kota
 
 The crawler reads RSS feeds from four active outlets every hour. It filters items by keyword and stores matches for review. Duplicate URLs never create a second row.
 
-The admin dashboard lists pending items with an AI summary and a location guess for each item. The admin picks the district, edits the summary, then approves or rejects the item. Approved items appear on the public map.
+The admin dashboard lists pending items with an AI summary and a location guess for each item. The admin picks the district, edits the summary, then approves or rejects the item. Approved items appear on the public map. A separate `/admin/cases` page lists all cases in a filterable table where the admin can edit, soft-delete, and restore rows; each row links its per-case action history.
 
 Anyone can report a wrong victim count or a wrong date on a published case from a dialog on the map. Reports are anonymous. The submit endpoint runs an invisible bot check, a honeypot field, and an hourly per-case rate limit. The admin reviews reports in a Laporan tab and can apply the suggested values, move the case to another district, or soft-delete a reported duplicate. Soft-deleted cases stay recoverable in a Terhapus tab.
 
@@ -67,13 +67,14 @@ The table below lists each variable, its source, and its scope:
 
 ## Database Schema
 
-The schema has seven tables:
+The schema has eight tables:
 
 - `regions`: 514 districts with province, centroid coordinates, and a `centroid_ok` flag. The flag is false for 12 districts with weak source geometry. Those districts need manual coordinate checks.
 - `crawl_sources`: news outlets with RSS URL and active flag.
 - `crawl_keywords`: filter words with active flag. Words of five letters or fewer match whole words only. Longer words match substrings.
 - `crawl_items`: raw crawl results with status `pending`, `approved`, or `rejected`, plus AI summary, guessed district, and confidence score.
-- `cases`: approved public cases linked to a district. A soft delete through `deleted_at` hides a case from the map without removing the row.
+- `cases`: approved public cases linked to a district. A soft delete through `deleted_at` hides a case from the map without removing the row. `updated_at` and `updated_by_email` record the last admin edit.
+- `admin_audit_log`: append-only trail of every admin write (actor, action, row, before/after diff) for multi-admin accountability. Authenticated admins only.
 - `case_reports`: public correction reports per case, with a reason, suggested values, and a status of `open`, `resolved`, or `dismissed`.
 - `app_settings`: runtime configuration such as batch size and cron schedules.
 

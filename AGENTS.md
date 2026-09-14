@@ -78,7 +78,8 @@ Lessons already paid for in debug time. Follow them.
 - RLS: public reads `regions` and published `cases` only. Public writes go only through the `submit_case_report()` RPC (1 report per case per IP per hour). Every other write needs an authenticated admin.
 - Public server-side reads use `createAnonClient` (anon key, no cookies) so the route stays static/ISR. The cookie-based `createClient` is for admin/session paths only — `cookies()` forces the route dynamic and kills caching.
 - Public server-side queries use the anon key so RLS still applies. Service-role is for cron only.
-- `cases.deleted_at` is a soft delete: hidden from all public reads and the `case_summary` view, restorable from the admin Terhapus tab.
+- `cases.deleted_at` is a soft delete: hidden from all public reads and the `case_summary` view, restorable from the admin Terhapus tab and the `/admin/cases` status filter.
+- Every admin Server Action that writes to the database must record the actor via the `log()` helper returned by `requireAdmin()` into `admin_audit_log`. Logging is best-effort and never fails the action.
 - `centroid_ok=false` means coordinates are unverified. Never treat them as facts.
 - Keywords of five letters or fewer match whole words only. Longer ones match substrings.
 
@@ -91,7 +92,7 @@ Lessons already paid for in debug time. Follow them.
 - Identifiers and code comments in English. User-facing strings (UI copy, aria-labels, metadata, LLM prompts) stay in natural Indonesian.
 
 **UI**
-- shadcn-style primitives in `src/components/ui`, tokens in `globals.css`. Admin routes are Server Components + Server Actions.
+- shadcn-style primitives in `src/components/ui`, tokens in `globals.css`. Admin routes are Server Components + Server Actions. Admin surfaces use ReUI (Frame for curation flows, data-grid for the `/admin/cases` table).
 - Labels in natural Indonesian, Lucide icons only (no emoji, no text arrows, no em dashes in UI copy).
 
 **Verification bar**
@@ -104,7 +105,7 @@ Lessons already paid for in debug time. Follow them.
 - Runtime: Next.js 16 App Router (Turbopack), React 19, Tailwind CSS v4. Theme tokens live in `@theme`, dark mode runs on class via next-themes.
 - Data: Supabase Postgres plus Auth, `pg_cron`/`pg_net`, and Vault. TanStack Query v5 caches client reads.
 - Map: Leaflet plus react-leaflet plus one static GeoJSON file. Not MapLibre and not vector tiles. See the backlog.
-- UI: shadcn components in the Base-UI generation (components.json style `base-nova`), ReUI free components in `src/components/reui` (frame, badge, timeline, alert, icon-tile, icon-stack, cascader, autocomplete, data-grid) installed via CLI only. Admin surfaces use ReUI Frame, public surfaces stay shadcn Card. Lucide icons. `react-day-picker` v10 with the `date-fns` Indonesian locale.
+- UI: shadcn components in the Base-UI generation (components.json style `base-nova`), ReUI free components in `src/components/reui` (frame, badge, alert, icon-tile, icon-stack, cascader, autocomplete, data-grid) installed via CLI only. Admin surfaces use ReUI Frame, public surfaces stay shadcn Card. Lucide icons. `react-day-picker` v10 with the `date-fns` Indonesian locale.
 - LLM: Gemini through plain REST, no SDK. The model name is pinned in `src/lib/enrich.ts`.
 
 Do not change these without asking: cron lives in Supabase, public reads use the anon key under RLS, and human curation stays required before anything publishes.
