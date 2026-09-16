@@ -6,7 +6,7 @@ Production: https://embege-poisoning.vercel.app
 
 ## Features
 
-The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district, and nearby markers cluster by zoom level. Clicking a marker opens a side sheet that lists each case with its date, victim count, and source link. The page supports dark mode.
+The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district, and nearby markers cluster by zoom level. Clicking a marker opens a side sheet that lists each case with its date, victim count, and source link. A search button opens a province-grouped picker covering all 514 districts; picking a district flies the map there and opens the same side sheet, with a case-count badge on districts that have cases. The page supports dark mode.
 
 The crawler reads RSS feeds from four active outlets every hour. It filters items by keyword and stores matches for review. Duplicate URLs never create a second row.
 
@@ -84,7 +84,7 @@ Row Level Security allows public reads of `regions` and published `cases` only. 
 
 The app exposes four JSON endpoints:
 
-- `GET /api/cases`: public. It returns published cases with district data. The response carries `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
+- `GET /api/cases`: public. Without params it returns the per-region summary of all 514 districts ordered by province and district, including zero-case rows used by the markers and the search picker. With `?region_id=` it returns that district's published cases. The response carries `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
 - `POST /api/reports`: public. It stores a correction report for a published case after a bot check. It returns 201 on success, 400 for invalid input, 403 for bots, and 429 when the same visitor already reported the case within an hour.
 - `GET /api/cron/crawl`: needs `Authorization: Bearer <CRON_SECRET>`. It crawls active feeds and returns counts of sources, fetched items, and new rows.
 - `GET /api/cron/enrich`: needs `Authorization: Bearer <CRON_SECRET>`. It enriches pending items and returns counts of processed, enriched, and failed items.
