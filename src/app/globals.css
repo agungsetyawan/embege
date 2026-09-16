@@ -171,11 +171,29 @@ div:has(> [data-slot="cascader-content"]) {
   z-index: 1001;
 }
 
-/* Fullscreen peta: kartu mengisi layar dan peta mengikuti tingginya.
-   invalidateSize() dipanggil saat toggle dari MapToolbar. */
-.mbg-map-card:fullscreen {
+/* Mode peta penuh: kartu mengisi viewport (pengganti Fullscreen API yang
+   tidak ada di iPhone Safari). invalidateSize() dipanggil saat toggle dari
+   MapToolbar. */
+.mbg-map-card--expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
   border-radius: 0;
 }
-.mbg-map-card:fullscreen .mbg-map {
+.mbg-map-card--expanded .mbg-map {
   height: 100dvh;
+}
+
+/* Animasi masuk saja (keluar instan): keyframes jalan tiap class expanded
+   ditambahkan. media query = hormati prefers-reduced-motion. */
+@keyframes mbg-expand {
+  from {
+    opacity: 0.6;
+    transform: scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mbg-map-card--expanded {
+    animation: mbg-expand 0.25s ease-out;
+  }
 }

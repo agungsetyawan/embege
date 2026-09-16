@@ -5,7 +5,7 @@ import type { Map as LeafletMap } from "leaflet";
 import { TriangleAlert } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -36,9 +36,30 @@ const RegionDetailDrawer = dynamic(
 export function IndoMap() {
   const [selected, setSelected] = useState<SummaryRow | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
-  // Elemen kartu: target fullscreen sekaligus container portal search + drawer
-  // agar keduanya ikut terlihat saat fullscreen.
+  // Elemen kartu: container portal search + drawer agar keduanya ikut
+  // terlihat saat mode peta penuh.
   const [cardEl, setCardEl] = useState<HTMLDivElement | null>(null);
+  // Pseudo-fullscreen via CSS class: works on iOS Safari (no Fullscreen API
+  // on iPhone) and Esc reaches the page so the drawer closes first.
+  const [expanded, setExpanded] = useState(false);
+  // Esc order: drawer open = let it close itself, otherwise exit expanded.
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selected === null) setExpanded(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [expanded, selected]);
+  // Lock background scroll while expanded.
+  useEffect(() => {
+    if (!expanded) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [expanded]);
   const { resolvedTheme } = useTheme();
   const tiles = resolveBasemap(resolvedTheme === "dark");
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -107,7 +128,9 @@ export function IndoMap() {
     <div className="flex flex-col gap-3">
       <Card
         ref={setCardEl}
-        className="mbg-map-card relative overflow-hidden p-0"
+        className={`mbg-map-card relative overflow-hidden p-0 ${
+          expanded ? "mbg-map-card--expanded" : ""
+        }`}
       >
         <MapContainer
           ref={mapRef}
@@ -144,7 +167,10 @@ export function IndoMap() {
             onSelect={handleSelectDot}
           />
           <MapZoomControl />
-          <MapToolbar targetRef={{ current: cardEl }} />
+          <MapToolbar
+            expanded={expanded}
+            onToggle={() => setExpanded((v) => !v)}
+          />
           <MapAttributionControl />
         </MapContainer>
         {!selected && (

@@ -82,7 +82,7 @@ export function MapZoomControl() {
   return (
     <div
       ref={boxRef}
-      className="absolute right-3 bottom-5 z-1000 flex flex-col overflow-hidden rounded-lg border bg-background shadow-md"
+      className="absolute right-3 bottom-3 z-1000 flex flex-col overflow-hidden rounded-lg border bg-background shadow-md"
     >
       <IconTile
         variant="outline"
@@ -139,15 +139,18 @@ export function resolveBasemap(isDark: boolean): BasemapTiles {
   };
 }
 
-// Fullscreen toggle, top-right. Lives inside the MapContainer so useMap()
-// gives the instance for invalidateSize().
+// Expand toggle, top-right: pseudo-fullscreen via CSS class so it works on
+// iOS Safari (no Fullscreen API on iPhone) and Esc closes the drawer first.
+// Lives inside the MapContainer so useMap() gives the instance for
+// invalidateSize().
 export function MapToolbar({
-  targetRef,
+  expanded,
+  onToggle,
 }: {
-  targetRef: { current: HTMLDivElement | null };
+  expanded: boolean;
+  onToggle: () => void;
 }) {
   const map = useMap();
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const boxRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const node = boxRef.current;
@@ -155,14 +158,10 @@ export function MapToolbar({
     L.DomEvent.disableClickPropagation(node);
     L.DomEvent.disableScrollPropagation(node);
   }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: sengaja jalan ulang tiap toggle agar Leaflet mengukur ulang setelah class berubah
   useEffect(() => {
-    const sync = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-      map.invalidateSize();
-    };
-    document.addEventListener("fullscreenchange", sync);
-    return () => document.removeEventListener("fullscreenchange", sync);
-  }, [map]);
+    map.invalidateSize();
+  }, [map, expanded]);
 
   return (
     <div ref={boxRef} className="absolute top-3 right-3 z-1000">
@@ -173,19 +172,13 @@ export function MapToolbar({
         render={
           <button
             type="button"
-            aria-label={
-              isFullscreen ? "Keluar layar penuh" : "Mode layar penuh"
-            }
-            onClick={() => {
-              const el = targetRef.current;
-              if (!el) return;
-              if (document.fullscreenElement) void document.exitFullscreen();
-              else void el.requestFullscreen();
-            }}
+            aria-label={expanded ? "Keluar layar penuh" : "Mode layar penuh"}
+            aria-expanded={expanded}
+            onClick={onToggle}
           />
         }
       >
-        {isFullscreen ? (
+        {expanded ? (
           <Minimize className="size-4" />
         ) : (
           <Maximize className="size-4" />
