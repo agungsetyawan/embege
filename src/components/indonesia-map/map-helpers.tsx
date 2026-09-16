@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import { IconTile } from "../reui/icon-tile";
+import { ButtonGroup } from "../ui/button-group";
 import type { SummaryRow } from "./types";
 
 // Fly to the bounding box of regions with cases once on load.
@@ -94,40 +95,39 @@ export function MapZoomControl() {
   const atMax = zoom >= limits.max;
 
   return (
-    <div
-      ref={boxRef}
-      className="absolute right-3 bottom-3 z-1000 flex flex-col overflow-hidden rounded-lg border bg-background shadow-md"
-    >
-      <IconTile
-        variant="outline"
-        size="sm"
-        className="rounded-none border-0 shadow-none disabled:opacity-50 dark:bg-background"
-        render={
-          <button
-            type="button"
-            aria-label="Perbesar peta"
-            disabled={atMax}
-            onClick={() => map.zoomIn()}
-          />
-        }
-      >
-        <Plus />
-      </IconTile>
-      <IconTile
-        variant="outline"
-        size="sm"
-        className="rounded-none border-0 border-t shadow-none disabled:opacity-50 dark:bg-background"
-        render={
-          <button
-            type="button"
-            aria-label="Perkecil peta"
-            disabled={atMin}
-            onClick={() => map.zoomOut()}
-          />
-        }
-      >
-        <Minus />
-      </IconTile>
+    <div ref={boxRef} className="absolute right-3 bottom-3 z-1000">
+      <ButtonGroup orientation="vertical">
+        <IconTile
+          variant="outline"
+          size="sm"
+          className="disabled:opacity-50 dark:bg-background"
+          render={
+            <button
+              type="button"
+              aria-label="Perbesar peta"
+              disabled={atMax}
+              onClick={() => map.zoomIn()}
+            />
+          }
+        >
+          <Plus />
+        </IconTile>
+        <IconTile
+          variant="outline"
+          size="sm"
+          className="disabled:opacity-50 dark:bg-background"
+          render={
+            <button
+              type="button"
+              aria-label="Perkecil peta"
+              disabled={atMin}
+              onClick={() => map.zoomOut()}
+            />
+          }
+        >
+          <Minus />
+        </IconTile>
+      </ButtonGroup>
     </div>
   );
 }
