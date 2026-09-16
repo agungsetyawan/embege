@@ -249,7 +249,7 @@ export function IndonesiaMap() {
       </Suspense>
       <Card
         ref={setCardEl}
-        className={`mbg-map-card relative overflow-hidden p-0 ${
+        className={`mbg-map-card relative gap-0 overflow-hidden p-0 ${
           expanded ? "mbg-map-card--expanded" : ""
         }`}
       >
