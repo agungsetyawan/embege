@@ -8,6 +8,8 @@ import L, { type Map as LeafletMap } from "leaflet";
 import {
   Ambulance,
   ExternalLink,
+  Minus,
+  Plus,
   Search,
   TriangleAlert,
   Users,
@@ -392,17 +394,16 @@ function RegionSearch({
       <CascaderTrigger
         showIcon={false}
         render={
-          <Button
-            type="button"
+          <IconTile
             variant="outline"
-            size="icon"
-            aria-label="Cari kabupaten/kota"
-            className="absolute top-3 right-3 z-1001 size-9 shrink-0 rounded-lg bg-background shadow-md"
-          />
+            size="sm"
+            className="absolute top-3 left-3 z-1001 shrink-0 shadow-md dark:bg-background"
+            render={<button type="button" aria-label="Cari kabupaten/kota" />}
+          >
+            <Search className="size-4" />
+          </IconTile>
         }
-      >
-        <Search className="size-4" />
-      </CascaderTrigger>
+      ></CascaderTrigger>
       <CascaderContent align="end" className="w-64">
         <CascaderPanel>
           <CascaderNav>
@@ -417,6 +418,74 @@ function RegionSearch({
         </CascaderPanel>
       </CascaderContent>
     </Cascader>
+  );
+}
+
+// Custom zoom buttons (ReUI IconTile). Lives inside the MapContainer so
+// useMap() guarantees the instance: no ref-timing gamble, zoom state syncs.
+function MapZoomControl() {
+  const map = useMap();
+  const [zoom, setZoom] = useState(map.getZoom());
+  const [limits, setLimits] = useState({
+    min: map.getMinZoom(),
+    max: map.getMaxZoom(),
+  });
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const sync = () => {
+      setZoom(map.getZoom());
+      setLimits({ min: map.getMinZoom(), max: map.getMaxZoom() });
+    };
+    sync();
+    map.on("zoomend zoomlevelschange", sync);
+    return () => void map.off("zoomend zoomlevelschange", sync);
+  }, [map]);
+  // Clicks/scrolls over the buttons must not drag or zoom the map itself.
+  useEffect(() => {
+    const node = boxRef.current;
+    if (!node) return;
+    L.DomEvent.disableClickPropagation(node);
+    L.DomEvent.disableScrollPropagation(node);
+  }, []);
+  const atMin = zoom <= limits.min;
+  const atMax = zoom >= limits.max;
+
+  return (
+    <div
+      ref={boxRef}
+      className="absolute right-3 bottom-5 z-1000 flex flex-col overflow-hidden rounded-lg border bg-background shadow-md"
+    >
+      <IconTile
+        variant="outline"
+        size="sm"
+        className="rounded-none border-0 shadow-none disabled:opacity-50 dark:bg-background"
+        render={
+          <button
+            type="button"
+            aria-label="Perbesar peta"
+            disabled={atMax}
+            onClick={() => map.zoomIn()}
+          />
+        }
+      >
+        <Plus />
+      </IconTile>
+      <IconTile
+        variant="outline"
+        size="sm"
+        className="rounded-none border-0 border-t shadow-none disabled:opacity-50 dark:bg-background"
+        render={
+          <button
+            type="button"
+            aria-label="Perkecil peta"
+            disabled={atMin}
+            onClick={() => map.zoomOut()}
+          />
+        }
+      >
+        <Minus />
+      </IconTile>
+    </div>
   );
 }
 
@@ -480,6 +549,7 @@ export function IndoMap() {
           ]}
           maxBoundsViscosity={1.0}
           scrollWheelZoom
+          zoomControl={false}
           className="h-[60vh] md:h-[70vh] w-full"
         >
           {/* Esri WorldStreetMap: English labels, no API key. */}
@@ -543,6 +613,7 @@ export function IndoMap() {
               />
             ))}
           </MarkerClusterGroup>
+          <MapZoomControl />
         </MapContainer>
         {!selected && (
           <RegionSearch
