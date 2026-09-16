@@ -17,6 +17,7 @@ import { Alert, AlertAction, AlertTitle } from "../reui/alert";
 import { Badge } from "../reui/badge";
 import { IconTile } from "../reui/icon-tile";
 import { Button } from "../ui/button";
+import { ButtonGroup } from "../ui/button-group";
 import { Skeleton } from "../ui/skeleton";
 import { CASE_STALE_TIME, fetchRegionCases } from "./api";
 
@@ -59,9 +60,9 @@ function ShareCaseButton({
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const label = formatCaseDate(occurredOn);
   const stateText = {
-    idle: "Bagikan",
-    copied: "Tersalin",
-    failed: "Gagal menyalin",
+    idle: "Share",
+    copied: "Copied",
+    failed: "Failed",
   }[state];
 
   const flash = (next: "copied" | "failed") => {
@@ -86,9 +87,8 @@ function ShareCaseButton({
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="sm"
-      className="text-muted-foreground"
       onClick={() => void handleShare()}
       aria-label={`Bagikan kasus ${label}`}
     >
@@ -192,13 +192,13 @@ export function CaseList({
             <ExternalLink className="size-3.5" />
             {c.source_media}
           </a>
-          <div className="flex items-center justify-end gap-1">
+          <ButtonGroup className="ml-auto">
             <ReportDialog caseId={c.id} />
             <ShareCaseButton
               regionId={c.region_id}
               occurredOn={c.occurred_on}
             />
-          </div>
+          </ButtonGroup>
         </li>
       ))}
     </ul>

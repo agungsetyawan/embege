@@ -41,14 +41,9 @@ const initialState = {
 
 function ReportTrigger(props: React.ComponentProps<typeof Button>) {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="text-muted-foreground"
-      {...props}
-    >
+    <Button variant="outline" size="sm" {...props}>
       <Flag className="size-3.5" />
-      Laporkan
+      Report
     </Button>
   );
 }
