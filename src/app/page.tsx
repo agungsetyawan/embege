@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { IndoMapLazy } from "@/components/indo-map-lazy";
+import { IndonesiaMapLazy } from "@/components/indonesia-map-lazy";
 import { Badge } from "@/components/reui/badge";
 import { StatsCards } from "@/components/stats-cards";
 import { StatsCardsSkeleton } from "@/components/stats-cards-skeleton";
@@ -58,7 +58,7 @@ export default function Home() {
         <Suspense fallback={<StatsCardsSkeleton />}>
           <StatsCards />
         </Suspense>
-        <IndoMapLazy />
+        <IndonesiaMapLazy />
         <footer className="flex flex-col gap-1 border-t pt-3 text-xs text-muted-foreground">
           <p>
             Sumber dari RSS media kredibel. Setiap berita diperiksa kurator

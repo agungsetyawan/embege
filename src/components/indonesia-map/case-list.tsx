@@ -38,7 +38,7 @@ export function CaseList({ regionId }: { regionId: string }) {
         aria-busy="true"
         aria-label="Memuat daftar kasus"
       >
-        {["kasus-1", "kasus-2", "kasus-3"].map((id) => (
+        {["case-1", "case-2", "case-3"].map((id) => (
           <div key={id} className="flex flex-col gap-1.5">
             <Skeleton className="h-3 w-32" />
             <Skeleton className="h-4 w-full" />

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Pengganti kartu statistik saat data timeline dimuat.
+// Stats cards placeholder while the timeline data loads.
 export function StatsCardsSkeleton() {
   return (
     <output

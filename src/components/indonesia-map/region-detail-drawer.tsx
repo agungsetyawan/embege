@@ -32,8 +32,8 @@ export function RegionDetailDrawer({
       showSwipeHandle={!isDesktop}
     >
       {selected && (
-        // Portal luar menempel ke kartu peta: portal dalam bawaan DrawerContent
-        // ikut terseret ke sana sehingga drawer terlihat saat fullscreen.
+        // Outer portal attaches to the map card: the built-in inner portal of
+        // DrawerContent follows it so the drawer stays visible in fullscreen.
         <DrawerPrimitive.Portal container={container}>
           <DrawerContent className="w-full sm:max-w-md">
             <DrawerHeader className="pb-4 shadow-sm">

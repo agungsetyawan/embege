@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Pengganti halaman data kasus selama navigasi filter dan pagination.
+// Case data page placeholder during filter navigation and pagination.
 export default function CasesLoading() {
   return (
     <main

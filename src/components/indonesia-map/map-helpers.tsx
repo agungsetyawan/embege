@@ -158,7 +158,7 @@ export function MapToolbar({
     L.DomEvent.disableClickPropagation(node);
     L.DomEvent.disableScrollPropagation(node);
   }, []);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: sengaja jalan ulang tiap toggle agar Leaflet mengukur ulang setelah class berubah
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run on every toggle so Leaflet remeasures after the class changes
   useEffect(() => {
     map.invalidateSize();
   }, [map, expanded]);
@@ -206,7 +206,7 @@ export function MapAttributionControl() {
     >
       <div
         role="note"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: kredit Esri statis milik sendiri, tanpa input pengguna
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: static first-party Esri credit, no user input
         dangerouslySetInnerHTML={{ __html: ESRI_ATTR }}
         className={`max-w-64 rounded-md border bg-popover px-2.5 py-1.5 text-[11px] leading-relaxed text-popover-foreground shadow-md transition-opacity [&_a]:underline ${
           open

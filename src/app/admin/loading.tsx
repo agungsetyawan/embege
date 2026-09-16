@@ -1,7 +1,7 @@
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Pengganti halaman admin selama navigasi tab dan pagination.
+// Admin page placeholder during tab navigation and pagination.
 export default function AdminLoading() {
   return (
     <main

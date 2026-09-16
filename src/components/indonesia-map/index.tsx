@@ -9,11 +9,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { IndoMapSkeleton } from "../indo-map-skeleton";
+import { IndonesiaMapSkeleton } from "../indonesia-map-skeleton";
 import { Alert, AlertAction, AlertTitle } from "../reui/alert";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
-import { CASE_STALE_TIME, fetchKabupaten, fetchSummary } from "./api";
+import { CASE_STALE_TIME, fetchDistricts, fetchSummary } from "./api";
 import { MapLegend } from "./legend";
 import {
   FitToCases,
@@ -23,7 +23,7 @@ import {
   resolveBasemap,
 } from "./map-helpers";
 import { DimOutsideIndonesia } from "./mask-layer";
-import { KabupatenLayer } from "./region-layer";
+import { DistrictLayer } from "./region-layer";
 import { RegionMarkers } from "./region-markers";
 import { RegionSearch } from "./region-search";
 import type { SummaryRow } from "./types";
@@ -33,11 +33,11 @@ const RegionDetailDrawer = dynamic(
   { ssr: false },
 );
 
-export function IndoMap() {
+export function IndonesiaMap() {
   const [selected, setSelected] = useState<SummaryRow | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
-  // Elemen kartu: container portal search + drawer agar keduanya ikut
-  // terlihat saat mode peta penuh.
+  // Card element: portal container for search + drawer so both stay
+  // visible in full-map mode.
   const [cardEl, setCardEl] = useState<HTMLDivElement | null>(null);
   // Pseudo-fullscreen via CSS class: works on iOS Safari (no Fullscreen API
   // on iPhone) and Esc reaches the page so the drawer closes first.
@@ -64,8 +64,8 @@ export function IndoMap() {
   const tiles = resolveBasemap(resolvedTheme === "dark");
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const geo = useQuery({
-    queryKey: ["batas-kabupaten"],
-    queryFn: fetchKabupaten,
+    queryKey: ["district-boundaries"],
+    queryFn: fetchDistricts,
     staleTime: Infinity,
     gcTime: Infinity,
   });
@@ -94,8 +94,8 @@ export function IndoMap() {
     mapRef.current?.panTo([s.lat, s.lng]);
   }, []);
 
-  // Search: drawer menunggu animasi flyTo selesai (moveend + fallback
-  // timeout bila moveend tidak tembak, mis. sudah di lokasi).
+  // Search: drawer waits for the flyTo animation to finish (moveend +
+  // fallback timeout when moveend never fires, e.g. already at the location).
   const flightCleanupRef = useRef<(() => void) | null>(null);
 
   const handleSelectSearch = useCallback(
@@ -112,21 +112,21 @@ export function IndoMap() {
         setSelected(s);
       };
       map.once("moveend", open);
-      // ponytail: durasi flyTo 0.8 dtk + margin, bukan debounce generik.
+      // ponytail: 0.8s flyTo duration + margin, not a generic debounce.
       const timer = setTimeout(open, 1000);
       flightCleanupRef.current = () => {
         map.off("moveend", open);
         clearTimeout(timer);
       };
-      // Zoom mengikuti poligon kabupaten/kota; fallback ke titik bila
-      // feature tidak ketemu.
+      // Zoom follows the district polygon; fall back to the point when
+      // the feature is not found.
       const feature = geo.data?.features.find(
         (f) => f.properties?.id === `${s.province}/${s.district}`,
       );
       if (feature) {
         map.flyToBounds(L.geoJSON(feature).getBounds(), {
-          // Geser tengah semu keluar dari area drawer: kanan di desktop,
-          // bawah di mobile. Angka drawer: sm:max-w-md (448px) + margin.
+          // Shift the apparent center out of the drawer area: right on
+          // desktop, bottom on mobile. Drawer size: sm:max-w-md (448px) + margin.
           paddingTopLeft: [32, 32],
           paddingBottomRight: isDesktop ? [480, 48] : [32, 360],
           maxZoom: 11,
@@ -141,7 +141,7 @@ export function IndoMap() {
     [geo.data, isDesktop],
   );
 
-  if (geo.isLoading || data.isLoading) return <IndoMapSkeleton />;
+  if (geo.isLoading || data.isLoading) return <IndonesiaMapSkeleton />;
   if (geo.isError || data.isError || !geo.data || !data.data) {
     return (
       <Alert variant="destructive">
@@ -195,7 +195,7 @@ export function IndoMap() {
           <TileLayer url={tiles.overlayUrl} />
           <DimOutsideIndonesia geo={geo.data} />
           <FitToCases summary={summary} />
-          <KabupatenLayer
+          <DistrictLayer
             geo={geo.data}
             byKey={byKey}
             onSelect={handleSelectDot}

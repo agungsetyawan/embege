@@ -118,7 +118,7 @@
   }
 }
 
-/* Lencana angka peta: dot per daerah dan lingkaran cluster. */
+/* Map count badges: one dot per region plus cluster circles. */
 /* Mask that dims everything outside Indonesia. Follows the theme background. */
 .mbg-outside-dim {
   fill: var(--color-background);
@@ -163,16 +163,16 @@
   color: #fff;
 }
 
-/* Cascader popup harus mengalahkan pane Leaflet (z 200-1000) dan drawer peta
-   (z-1000/1001). ReUI hardcode z-50 di portal positioner-nya, dan className
-   consumer hanya sampai ke Popup di dalamnya, jadi dinaikkan dari sini.
-   Positioner adalah parent langsung dari popup Cascader. */
+/* Cascader popup must beat the Leaflet panes (z 200-1000) and the map drawer
+   (z-1000/1001). ReUI hardcodes z-50 on its portal positioner, and the
+   consumer className only reaches the inner Popup, so it is raised here.
+   The positioner is the direct parent of the Cascader popup. */
 div:has(> [data-slot="cascader-content"]) {
   z-index: 1001;
 }
 
-/* Mode peta penuh: kartu mengisi viewport (pengganti Fullscreen API yang
-   tidak ada di iPhone Safari). invalidateSize() dipanggil saat toggle dari
+/* Full-map mode: card fills the viewport (replaces the Fullscreen API
+   missing on iPhone Safari). invalidateSize() is called on toggle from
    MapToolbar. */
 .mbg-map-card--expanded {
   position: fixed;
@@ -184,8 +184,8 @@ div:has(> [data-slot="cascader-content"]) {
   height: 100dvh;
 }
 
-/* Animasi masuk saja (keluar instan): keyframes jalan tiap class expanded
-   ditambahkan. media query = hormati prefers-reduced-motion. */
+/* Enter animation only (instant exit): keyframes run each time the expanded
+   class is added. Media query respects prefers-reduced-motion. */
 @keyframes mbg-expand {
   from {
     opacity: 0.6;

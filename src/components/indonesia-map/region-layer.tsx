@@ -5,7 +5,7 @@ import { GeoJSON } from "react-leaflet";
 import { fillColor } from "./severity";
 import type { SummaryRow } from "./types";
 
-export function KabupatenLayer({
+export function DistrictLayer({
   geo,
   byKey,
   onSelect,
@@ -16,7 +16,7 @@ export function KabupatenLayer({
 }) {
   return (
     <GeoJSON
-      key="kabupaten"
+      key="districts"
       data={geo}
       eventHandlers={{
         click: (e) => {

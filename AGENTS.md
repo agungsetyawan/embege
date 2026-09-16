@@ -95,6 +95,7 @@ Lessons already paid for in debug time. Follow them.
 
 **Language**
 - Identifiers and code comments in English. User-facing strings (UI copy, aria-labels, metadata, LLM prompts) stay in natural Indonesian.
+- `district` means kabupaten/kota (second-level region). Never `city` (kota-only) or `regency` (kabupaten-only).
 
 **UI**
 - shadcn-style primitives in `src/components/ui`, tokens in `globals.css`. Admin routes are Server Components + Server Actions. Admin surfaces use ReUI (Frame for curation flows, data-grid for the `/admin/cases` table).

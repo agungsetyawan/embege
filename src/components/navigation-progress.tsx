@@ -3,8 +3,8 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
-// Bar tipis di atas layar selama navigasi antar halaman.
-// Nyalakan saat link internal diklik, matikan saat rute baru tampil.
+// Slim bar at the top of the screen during page navigation.
+// Turn on when an internal link is clicked, off when the new route renders.
 function NavigationProgressBar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -18,7 +18,7 @@ function NavigationProgressBar() {
       const anchor = target?.closest?.('a[href^="/"]');
       if (!(anchor instanceof HTMLAnchorElement)) return;
       if (anchor.target || anchor.hasAttribute("download")) return;
-      // Klik ke URL yang sama tidak memicu navigasi, abaikan.
+      // Clicks to the same URL do not trigger navigation, ignore them.
       const to = anchor.getAttribute("href")?.split("#")[0];
       if (to === window.location.pathname + window.location.search) return;
       setNavigating(true);
@@ -27,12 +27,12 @@ function NavigationProgressBar() {
     return () => document.removeEventListener("click", onClick, true);
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: sengaja jalan ulang tiap rute ganti
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run on every route change
   useEffect(() => {
     setNavigating(false);
   }, [pathname, searchParams]);
 
-  // Pengaman: bar tidak boleh nyangkut lebih dari 4 detik.
+  // Guard: the bar must never get stuck for more than 4 seconds.
   useEffect(() => {
     if (!navigating) return;
     const t = setTimeout(() => setNavigating(false), 4000);

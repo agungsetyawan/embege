@@ -27,9 +27,9 @@ async function fetchStats() {
   }
 }
 
-// Path data peta Indonesia untuk watermark latar. Satori tidak mendukung
-// SVG sebagai <img>, jadi path dibaca dari public/id.svg lalu dirender
-// sebagai elemen <svg> inline. Gagal baca = fallback hitam polos.
+// Indonesia map path for the background watermark. Satori does not support
+// SVG as <img>, so the path is read from public/id.svg and rendered
+// as an inline <svg> element. Read failure = plain black fallback.
 async function fetchMapPath(): Promise<string | null> {
   try {
     const svg = await readFile(join(process.cwd(), "public", "id.svg"), "utf8");

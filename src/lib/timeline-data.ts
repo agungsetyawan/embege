@@ -15,7 +15,7 @@ export async function fetchTimeline(): Promise<TimelineResponse> {
     .eq("published", true)
     .is("deleted_at", null)
     .order("occurred_on", { ascending: false, nullsFirst: false });
-  if (error) throw new Error("Gagal memuat data hari");
+  if (error) throw new Error("Failed to load day data");
 
   const days = new Map<
     string,

@@ -4,7 +4,7 @@ import { requiredEnv } from "@/lib/env";
 const MAX_TEXT = 4000;
 const MAX_HTML = 1500000;
 
-// Ambil teks artikel (paragraf saja). Gagal (403/timeout/non-HTML) -> null, fallback ke snippet RSS.
+// Fetch article text (paragraphs only). Failure (403/timeout/non-HTML) -> null, fallback to the RSS snippet.
 export async function fetchArticleText(url: string): Promise<string | null> {
   let parsed: URL;
   try {
@@ -50,7 +50,7 @@ export type LlmResult = {
   victims: number | null;
 };
 
-// Normalisasi satu objek JSON LLM menjadi LlmResult. Gagal validasi -> null.
+// Normalize one LLM JSON object into LlmResult. Validation failure -> null.
 function parseLlmResult(parsed: unknown): LlmResult | null {
   if (!parsed || typeof parsed !== "object") return null;
   const p = parsed as Record<string, unknown>;

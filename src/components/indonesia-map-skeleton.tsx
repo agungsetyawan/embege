@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 // Loading placeholder for the Indonesia map. Uses the public/id.svg
 // silhouette as a mask so the shape follows the theme via tokens
 // instead of the SVG's hardcoded green fill.
-export function IndoMapSkeleton() {
+export function IndonesiaMapSkeleton() {
   return (
     <output aria-busy="true" aria-label="Memuat peta">
       <Card className="overflow-hidden p-0">

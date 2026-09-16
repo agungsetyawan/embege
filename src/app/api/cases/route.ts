@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       .order("occurred_on", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
     if (error)
-      return Response.json({ error: "gagal memuat data" }, { status: 500 });
+      return Response.json({ error: "failed to load data" }, { status: 500 });
     return Response.json({ cases: cases ?? [] }, CACHE);
   }
 
@@ -47,6 +47,6 @@ export async function GET(req: Request) {
     .order("province")
     .order("district");
   if (error)
-    return Response.json({ error: "gagal memuat data" }, { status: 500 });
+    return Response.json({ error: "failed to load data" }, { status: 500 });
   return Response.json({ summary: summary ?? [] }, CACHE);
 }

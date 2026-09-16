@@ -10,7 +10,7 @@ function toLatLng([lng, lat]: number[]): [number, number] {
 }
 
 // Dim everything outside Indonesia: one world-sized polygon with all
-// kabupaten rings as holes. Sits above the tiles but below the overlays.
+// district rings as holes. Sits above the tiles but below the overlays.
 export function DimOutsideIndonesia({ geo }: { geo: FeatureCollection }) {
   const map = useMap();
   const holes = useMemo<[number, number][][]>(() => {
@@ -29,7 +29,7 @@ export function DimOutsideIndonesia({ geo }: { geo: FeatureCollection }) {
 
   useEffect(() => {
     if (holes.length === 0) return;
-    // World-sized outer ring with all kabupaten rings as holes.
+    // World-sized outer ring with all district rings as holes.
     const mask = L.polygon(
       [
         [
