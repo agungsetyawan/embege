@@ -39,11 +39,13 @@ export async function GET(req: Request) {
     return Response.json({ cases: cases ?? [] }, CACHE);
   }
 
-  // Only regions with cases are sent. Client-side, unknown regions = 0 cases.
+  // All 514 regions, including zero-case ones (for map search).
+  // Client-side, regions are split into with-cases (markers) and all (search).
   const { data: summary, error } = await supabase
     .from("case_summary")
     .select("*")
-    .gt("count", 0);
+    .order("province")
+    .order("district");
   if (error)
     return Response.json({ error: "gagal memuat data" }, { status: 500 });
   return Response.json({ summary: summary ?? [] }, CACHE);

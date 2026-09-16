@@ -5,8 +5,14 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import type { Feature, FeatureCollection } from "geojson";
 import L, { type Map as LeafletMap } from "leaflet";
-import { Ambulance, ExternalLink, TriangleAlert, Users } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  Ambulance,
+  ExternalLink,
+  Search,
+  TriangleAlert,
+  Users,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   GeoJSON,
   MapContainer,
@@ -21,6 +27,22 @@ import { IndoMapSkeleton } from "@/components/indo-map-skeleton";
 import { ReportDialog } from "@/components/report-dialog";
 import { Alert, AlertAction, AlertTitle } from "@/components/reui/alert";
 import { Badge } from "@/components/reui/badge";
+import {
+  Cascader,
+  CascaderContent,
+  CascaderEmpty,
+  CascaderList,
+  CascaderPanel,
+  CascaderStatus,
+  CascaderTrigger,
+} from "@/components/reui/cascader/cascader";
+import { CascaderItems } from "@/components/reui/cascader/cascader-item";
+import {
+  CascaderBreadcrumb,
+  CascaderInput,
+  CascaderNav,
+} from "@/components/reui/cascader/cascader-nav";
+import type { CascaderNode } from "@/components/reui/cascader/cascader-types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -298,6 +320,106 @@ function CaseList({ regionId }: { regionId: string }) {
   );
 }
 
+// Grouped by province (ReUI Cascader), searchable deep. Same setSelected
+// path as a marker click, plus a zoom-in flight.
+type RegionSearchNode = CascaderNode<{ count: number }>;
+
+function buildRegionSearchTree(rows: SummaryRow[]): RegionSearchNode[] {
+  const byProvince = new Map<string, RegionSearchNode>();
+  for (const r of rows) {
+    let province = byProvince.get(r.province);
+    if (!province) {
+      province = {
+        value: `prov:${r.province}`,
+        label: r.province,
+        children: [],
+      };
+      byProvince.set(r.province, province);
+    }
+    province.children?.push({
+      value: r.region_id,
+      label: r.district ?? r.province,
+      // label: r.district ? r.district : r.province,
+      keywords: [r.district, r.province],
+      data: { count: r.count },
+    });
+  }
+  return [...byProvince.values()];
+}
+
+function RegionSearch({
+  rows,
+  onSelect,
+}: {
+  rows: SummaryRow[];
+  onSelect: (s: SummaryRow) => void;
+}) {
+  const [cascaderKey, setCascaderKey] = useState(0);
+  const tree = useMemo(() => buildRegionSearchTree(rows), [rows]);
+
+  return (
+    <Cascader
+      key={cascaderKey}
+      items={tree}
+      searchScope="deep"
+      onValueChange={(value) => {
+        const row = rows.find((r) => r.region_id === value);
+        if (row) onSelect(row);
+      }}
+      onOpenChange={(open) => {
+        // Reset query and path so the next open starts clean.
+        if (!open) setCascaderKey((k) => k + 1);
+      }}
+      renderLabel={(node) => {
+        const count = (node.data as { count?: number } | undefined)?.count;
+        if (count == null || count === 0) return node.label;
+        return (
+          <span className="flex w-full items-center justify-between gap-2">
+            <span className="truncate">{node.label}</span>
+            <Badge variant="secondary" size="sm" className="shrink-0">
+              {count.toLocaleString("id-ID")} kasus
+            </Badge>
+          </span>
+        );
+      }}
+      labels={{
+        search: (parent) =>
+          parent ? `Cari di ${parent}...` : "Cari kabupaten/kota...",
+        empty: "Tidak ada daerah yang cocok.",
+        back: "Kembali",
+      }}
+    >
+      <CascaderTrigger
+        showIcon={false}
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Cari kabupaten/kota"
+            className="absolute top-3 right-3 z-1001 size-9 shrink-0 rounded-lg bg-background shadow-md"
+          />
+        }
+      >
+        <Search className="size-4" />
+      </CascaderTrigger>
+      <CascaderContent align="end" className="w-64">
+        <CascaderPanel>
+          <CascaderNav>
+            <CascaderBreadcrumb />
+            <CascaderInput />
+          </CascaderNav>
+          <CascaderEmpty />
+          <CascaderList maxHeight={288}>
+            <CascaderItems />
+          </CascaderList>
+          <CascaderStatus />
+        </CascaderPanel>
+      </CascaderContent>
+    </Cascader>
+  );
+}
+
 export function IndoMap() {
   const [selected, setSelected] = useState<SummaryRow | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -336,7 +458,8 @@ export function IndoMap() {
     );
   }
 
-  const summary = data.data.summary.filter((s) => s.count > 0);
+  const allSummary = data.data.summary;
+  const summary = allSummary.filter((s) => s.count > 0);
   const byKey = new Map(summary.map((s) => [`${s.province}/${s.district}`, s]));
   const countByLatLng = new Map(
     summary.map((s) => [`${s.lat},${s.lng}`, s.count]),
@@ -344,7 +467,7 @@ export function IndoMap() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Card className="overflow-hidden p-0">
+      <Card className="relative overflow-hidden p-0">
         <MapContainer
           ref={mapRef}
           center={[-2.5, 118]}
@@ -421,6 +544,18 @@ export function IndoMap() {
             ))}
           </MarkerClusterGroup>
         </MapContainer>
+        {!selected && (
+          <RegionSearch
+            rows={allSummary}
+            onSelect={(s) => {
+              setSelected(s);
+              mapRef.current?.flyTo(
+                [s.lat, s.lng],
+                Math.max(mapRef.current.getZoom(), 9),
+              );
+            }}
+          />
+        )}
       </Card>
       <Drawer
         open={selected !== null}
@@ -436,16 +571,18 @@ export function IndoMap() {
               <DrawerTitle>
                 {selected.district}, {selected.province}
               </DrawerTitle>
-              <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
-                <Badge variant="destructive-light">
-                  <Ambulance />
-                  {selected.count.toLocaleString("id-ID")} kasus
-                </Badge>
-                <Badge variant="secondary">
-                  <Users />
-                  {selected.victims.toLocaleString("id-ID")} korban
-                </Badge>
-              </div>
+              {selected.count > 0 && (
+                <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
+                  <Badge variant="destructive-light">
+                    <Ambulance />
+                    {selected.count.toLocaleString("id-ID")} kasus
+                  </Badge>
+                  <Badge variant="secondary">
+                    <Users />
+                    {selected.victims.toLocaleString("id-ID")} korban
+                  </Badge>
+                </div>
+              )}
             </DrawerHeader>
             <div className="min-h-0 overflow-y-auto px-4 py-4">
               <div className="mb-4 overflow-hidden rounded-lg border">

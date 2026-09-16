@@ -162,3 +162,11 @@
   background-color: #dc2626;
   color: #fff;
 }
+
+/* Cascader popup harus mengalahkan pane Leaflet (z 200-1000) dan drawer peta
+   (z-1000/1001). ReUI hardcode z-50 di portal positioner-nya, dan className
+   consumer hanya sampai ke Popup di dalamnya, jadi dinaikkan dari sini.
+   Positioner adalah parent langsung dari popup Cascader. */
+div:has(> [data-slot="cascader-content"]) {
+  z-index: 1001;
+}
