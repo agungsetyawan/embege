@@ -115,7 +115,7 @@ export function RegionSearch({
         <CascaderPanel>
           <CascaderNav>
             <CascaderBreadcrumb />
-            <CascaderInput />
+            <CascaderInput className="text-base" />
           </CascaderNav>
           <CascaderEmpty />
           <CascaderList maxHeight={288}>
