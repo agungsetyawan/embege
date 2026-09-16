@@ -2,7 +2,7 @@
 
 import type { Feature } from "geojson";
 import L from "leaflet";
-import { Minus, Plus } from "lucide-react";
+import { Info, Maximize, Minimize, Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import { IconTile } from "../reui/icon-tile";
@@ -113,6 +113,128 @@ export function MapZoomControl() {
         }
       >
         <Minus />
+      </IconTile>
+    </div>
+  );
+}
+
+// Basemap follows the app theme: Esri Canvas Light/Dark Gray, key-free.
+interface BasemapTiles {
+  id: string;
+  url: string;
+  overlayUrl: string;
+  attribution: string;
+}
+
+const ESRI_ATTR =
+  "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community";
+
+export function resolveBasemap(isDark: boolean): BasemapTiles {
+  const shade = isDark ? "Dark" : "Light";
+  return {
+    id: shade,
+    url: `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${shade}_Gray_Base/MapServer/tile/{z}/{y}/{x}`,
+    overlayUrl: `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${shade}_Gray_Reference/MapServer/tile/{z}/{y}/{x}`,
+    attribution: ESRI_ATTR,
+  };
+}
+
+// Fullscreen toggle, top-right. Lives inside the MapContainer so useMap()
+// gives the instance for invalidateSize().
+export function MapToolbar({
+  targetRef,
+}: {
+  targetRef: { current: HTMLDivElement | null };
+}) {
+  const map = useMap();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const node = boxRef.current;
+    if (!node) return;
+    L.DomEvent.disableClickPropagation(node);
+    L.DomEvent.disableScrollPropagation(node);
+  }, []);
+  useEffect(() => {
+    const sync = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+      map.invalidateSize();
+    };
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, [map]);
+
+  return (
+    <div ref={boxRef} className="absolute top-3 right-3 z-1000">
+      <IconTile
+        variant="outline"
+        size="sm"
+        className="shrink-0 shadow-md dark:bg-background"
+        render={
+          <button
+            type="button"
+            aria-label={
+              isFullscreen ? "Keluar layar penuh" : "Mode layar penuh"
+            }
+            onClick={() => {
+              const el = targetRef.current;
+              if (!el) return;
+              if (document.fullscreenElement) void document.exitFullscreen();
+              else void el.requestFullscreen();
+            }}
+          />
+        }
+      >
+        {isFullscreen ? (
+          <Minimize className="size-4" />
+        ) : (
+          <Maximize className="size-4" />
+        )}
+      </IconTile>
+    </div>
+  );
+}
+
+// Tile credits behind an info button (hover reveals on desktop, tap toggles
+// on touch). Keep visible: Esri tiles require credit.
+export function MapAttributionControl() {
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const node = boxRef.current;
+    if (!node) return;
+    L.DomEvent.disableClickPropagation(node);
+    L.DomEvent.disableScrollPropagation(node);
+  }, []);
+  return (
+    <div
+      ref={boxRef}
+      className="group absolute bottom-3 left-3 z-1000 flex flex-col items-start gap-1.5"
+    >
+      <div
+        role="note"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: kredit Esri statis milik sendiri, tanpa input pengguna
+        dangerouslySetInnerHTML={{ __html: ESRI_ATTR }}
+        className={`max-w-64 rounded-md border bg-popover px-2.5 py-1.5 text-[11px] leading-relaxed text-popover-foreground shadow-md transition-opacity [&_a]:underline ${
+          open
+            ? "visible opacity-100"
+            : "invisible opacity-0 group-hover:visible group-hover:opacity-100"
+        }`}
+      />
+      <IconTile
+        variant="outline"
+        size="sm"
+        className="shrink-0 rounded-full shadow-md dark:bg-background"
+        render={
+          <button
+            type="button"
+            aria-label="Atribusi data peta"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          />
+        }
+      >
+        <Info className="size-4" />
       </IconTile>
     </div>
   );

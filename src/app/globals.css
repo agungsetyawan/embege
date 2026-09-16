@@ -170,3 +170,12 @@
 div:has(> [data-slot="cascader-content"]) {
   z-index: 1001;
 }
+
+/* Fullscreen peta: kartu mengisi layar dan peta mengikuti tingginya.
+   invalidateSize() dipanggil saat toggle dari MapToolbar. */
+.mbg-map-card:fullscreen {
+  border-radius: 0;
+}
+.mbg-map-card:fullscreen .mbg-map {
+  height: 100dvh;
+}

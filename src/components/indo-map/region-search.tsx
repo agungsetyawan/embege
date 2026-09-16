@@ -54,9 +54,11 @@ function buildRegionSearchTree(rows: SummaryRow[]): RegionSearchNode[] {
 
 export function RegionSearch({
   rows,
+  container,
   onSelect,
 }: {
   rows: SummaryRow[];
+  container?: HTMLElement;
   onSelect: (s: SummaryRow) => void;
 }) {
   const [cascaderKey, setCascaderKey] = useState(0);
@@ -110,6 +112,7 @@ export function RegionSearch({
       <CascaderContent
         align="start"
         sideOffset={SEARCH_PANEL_OFFSET}
+        container={container}
         className="w-64 shadow-sm"
       >
         <CascaderPanel>

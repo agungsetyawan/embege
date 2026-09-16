@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Map as LeafletMap } from "leaflet";
 import { TriangleAlert } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -14,7 +15,13 @@ import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { CASE_STALE_TIME, fetchKabupaten, fetchSummary } from "./api";
 import { MapLegend } from "./legend";
-import { FitToCases, MapZoomControl } from "./map-helpers";
+import {
+  FitToCases,
+  MapAttributionControl,
+  MapToolbar,
+  MapZoomControl,
+  resolveBasemap,
+} from "./map-helpers";
 import { DimOutsideIndonesia } from "./mask-layer";
 import { KabupatenLayer } from "./region-layer";
 import { RegionMarkers } from "./region-markers";
@@ -29,6 +36,11 @@ const RegionDetailDrawer = dynamic(
 export function IndoMap() {
   const [selected, setSelected] = useState<SummaryRow | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
+  // Elemen kartu: target fullscreen sekaligus container portal search + drawer
+  // agar keduanya ikut terlihat saat fullscreen.
+  const [cardEl, setCardEl] = useState<HTMLDivElement | null>(null);
+  const { resolvedTheme } = useTheme();
+  const tiles = resolveBasemap(resolvedTheme === "dark");
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const geo = useQuery({
     queryKey: ["batas-kabupaten"],
@@ -93,7 +105,10 @@ export function IndoMap() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Card className="relative overflow-hidden p-0">
+      <Card
+        ref={setCardEl}
+        className="mbg-map-card relative overflow-hidden p-0"
+      >
         <MapContainer
           ref={mapRef}
           center={[-2.5, 118]}
@@ -107,13 +122,15 @@ export function IndoMap() {
           maxBoundsViscosity={1.0}
           scrollWheelZoom
           zoomControl={false}
-          className="h-[60vh] md:h-[70vh] w-full"
+          attributionControl={false}
+          className="mbg-map h-[60vh] md:h-[70vh] w-full"
         >
-          {/* Esri WorldStreetMap: English labels, no API key. */}
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://www.esri.com/">Esri</a>'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+            key={tiles.id}
+            attribution={tiles.attribution}
+            url={tiles.url}
           />
+          <TileLayer url={tiles.overlayUrl} />
           <DimOutsideIndonesia geo={geo.data} />
           <FitToCases summary={summary} />
           <KabupatenLayer
@@ -127,15 +144,22 @@ export function IndoMap() {
             onSelect={handleSelectDot}
           />
           <MapZoomControl />
+          <MapToolbar targetRef={{ current: cardEl }} />
+          <MapAttributionControl />
         </MapContainer>
         {!selected && (
-          <RegionSearch rows={allSummary} onSelect={handleSelectSearch} />
+          <RegionSearch
+            rows={allSummary}
+            container={cardEl ?? undefined}
+            onSelect={handleSelectSearch}
+          />
         )}
       </Card>
       <RegionDetailDrawer
         selected={selected}
         geo={geo.data}
         isDesktop={isDesktop}
+        container={cardEl ?? undefined}
         onClose={() => setSelected(null)}
       />
       <MapLegend />
