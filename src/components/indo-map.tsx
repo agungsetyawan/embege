@@ -397,14 +397,20 @@ function RegionSearch({
           <IconTile
             variant="outline"
             size="sm"
-            className="absolute top-3 left-3 z-1001 shrink-0 shadow-md dark:bg-background"
+            className="absolute top-3 left-3 z-1001 shrink-0 shadow-md dark:bg-background aria-expanded:opacity-0 aria-expanded:pointer-events-none"
             render={<button type="button" aria-label="Cari kabupaten/kota" />}
           >
             <Search className="size-4" />
           </IconTile>
         }
       ></CascaderTrigger>
-      <CascaderContent align="end" className="w-64">
+      {/* -32 = IconTile sm height: panel top lands on the trigger's top edge,
+          so the panel grows from the button's own top-left corner. */}
+      <CascaderContent
+        align="start"
+        sideOffset={-32}
+        className="w-64 shadow-sm"
+      >
         <CascaderPanel>
           <CascaderNav>
             <CascaderBreadcrumb />
