@@ -122,9 +122,8 @@ The list below pairs each known problem with its fix:
 
 The list below holds planned work:
 
-- Vector tiles when the boundary file grows too large for a single download
-- Public auth if bookmark features arrive
-- X/Twitter crawler when API access exists
+- Vector tiles when the boundary file grows too large for a single download (one PMTiles file on Supabase Storage, no tile server needed)
+- X/Twitter crawler when API access exists (X API access is paid, so this stays on hold)
 
 ## License
 
