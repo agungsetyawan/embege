@@ -4,11 +4,20 @@ import { useQuery } from "@tanstack/react-query";
 import L, { type Map as LeafletMap } from "leaflet";
 import { TriangleAlert } from "lucide-react";
 import dynamic from "next/dynamic";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { isDateString, isUuid } from "@/lib/validate";
 import { IndonesiaMapSkeleton } from "../indonesia-map-skeleton";
 import { Alert, AlertAction, AlertTitle } from "../reui/alert";
 import { Button } from "../ui/button";
@@ -18,6 +27,7 @@ import { MapLegend } from "./legend";
 import {
   FitToCases,
   MapAttributionControl,
+  MapReadyProbe,
   MapToolbar,
   MapZoomControl,
   resolveBasemap,
@@ -33,8 +43,39 @@ const RegionDetailDrawer = dynamic(
   { ssr: false },
 );
 
+function isDateParam(value: string | null): value is string {
+  if (!value || !isDateString(value)) return false;
+  return !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
+}
+
+// Reports ?region_id=&date= changes (set by the timeline dialog, or by a
+// shared link). useSearchParams needs a Suspense boundary, hence the split.
+function MapUrlSync({
+  onParams,
+}: {
+  onParams: (regionId: string | null, date: string | null) => void;
+}) {
+  const searchParams = useSearchParams();
+  const regionId = searchParams.get("region_id");
+  const date = searchParams.get("date");
+  useEffect(() => {
+    onParams(regionId, date);
+  }, [regionId, date, onParams]);
+  return null;
+}
+
 export function IndonesiaMap() {
   const [selected, setSelected] = useState<SummaryRow | null>(null);
+  // Date from ?date= whose cases are highlighted in the drawer.
+  const [highlightDate, setHighlightDate] = useState<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  // Last ?region_id=&date= combo already applied; prevents re-flying.
+  const appliedUrlRef = useRef<string | null>(null);
+  // The forwarded MapContainer ref only resolves a commit after mount, so
+  // the URL flight waits for this probe instead of gambling on ref timing.
+  const [mapReady, setMapReady] = useState(false);
+  const handleMapReady = useCallback(() => setMapReady(true), []);
   const mapRef = useRef<LeafletMap | null>(null);
   // Card element: portal container for search + drawer so both stay
   // visible in full-map mode.
@@ -89,10 +130,17 @@ export function IndonesiaMap() {
     [summary],
   );
 
-  const handleSelectDot = useCallback((s: SummaryRow) => {
-    setSelected(s);
-    mapRef.current?.panTo([s.lat, s.lng]);
-  }, []);
+  const handleSelectDot = useCallback(
+    (s: SummaryRow) => {
+      // Manual picks own the drawer: drop any URL-driven highlight.
+      setHighlightDate(null);
+      appliedUrlRef.current = null;
+      router.replace(pathname, { scroll: false });
+      setSelected(s);
+      mapRef.current?.panTo([s.lat, s.lng]);
+    },
+    [router, pathname],
+  );
 
   // Search: drawer waits for the flyTo animation to finish (moveend +
   // fallback timeout when moveend never fires, e.g. already at the location).
@@ -141,6 +189,37 @@ export function IndonesiaMap() {
     [geo.data, isDesktop],
   );
 
+  // Timeline dialog (or a shared link) drives the map through the URL.
+  // Same flight as search, plus the highlight date for the drawer.
+  const applyFromUrl = useCallback(
+    (regionId: string | null, date: string | null) => {
+      // No retry mark before the map exists: the flight needs the instance.
+      if (!mapReady) return;
+      if (!regionId || !isUuid(regionId)) {
+        appliedUrlRef.current = null;
+        return;
+      }
+      const validDate = isDateParam(date) ? date : null;
+      const key = `${regionId}//${validDate ?? ""}`;
+      if (appliedUrlRef.current === key) return;
+      const row = allSummary.find((s) => s.region_id === regionId);
+      if (!row) return;
+      appliedUrlRef.current = key;
+      setHighlightDate(validDate);
+      handleSelectSearch(row);
+      // The click happened up in the stats cards; bring the map into view.
+      cardEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+    },
+    [allSummary, handleSelectSearch, cardEl, mapReady],
+  );
+
+  const handleCloseDrawer = useCallback(() => {
+    setSelected(null);
+    setHighlightDate(null);
+    appliedUrlRef.current = null;
+    router.replace(pathname, { scroll: false });
+  }, [router, pathname]);
+
   if (geo.isLoading || data.isLoading) return <IndonesiaMapSkeleton />;
   if (geo.isError || data.isError || !geo.data || !data.data) {
     return (
@@ -165,6 +244,9 @@ export function IndonesiaMap() {
 
   return (
     <div className="flex flex-col gap-3">
+      <Suspense fallback={null}>
+        <MapUrlSync onParams={applyFromUrl} />
+      </Suspense>
       <Card
         ref={setCardEl}
         className={`mbg-map-card relative overflow-hidden p-0 ${
@@ -195,6 +277,7 @@ export function IndonesiaMap() {
           <TileLayer url={tiles.overlayUrl} />
           <DimOutsideIndonesia geo={geo.data} />
           <FitToCases summary={summary} />
+          <MapReadyProbe onReady={handleMapReady} />
           <DistrictLayer
             geo={geo.data}
             byKey={byKey}
@@ -222,10 +305,11 @@ export function IndonesiaMap() {
       </Card>
       <RegionDetailDrawer
         selected={selected}
+        highlightDate={highlightDate}
         geo={geo.data}
         isDesktop={isDesktop}
         container={cardEl ?? undefined}
-        onClose={() => setSelected(null)}
+        onClose={handleCloseDrawer}
       />
       <MapLegend />
     </div>

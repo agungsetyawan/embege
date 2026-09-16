@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
 export type TimelineArea = {
+  region_id: string | null;
   province: string;
   district: string;
   victims: number;

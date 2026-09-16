@@ -2,7 +2,8 @@
 
 import type { Feature } from "geojson";
 import L from "leaflet";
-import { Info, Maximize, Minimize, Minus, Plus } from "lucide-react";
+import { Info, Maximize, Minimize, Minus, Moon, Plus, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import { IconTile } from "../reui/icon-tile";
@@ -47,6 +48,19 @@ export function FocusRegion({ feature }: { feature?: Feature }) {
     if (feature)
       map.fitBounds(L.geoJSON(feature).getBounds(), { padding: [12, 12] });
   }, [map, feature]);
+  return null;
+}
+
+// Reports when the Leaflet instance exists. Lives inside the MapContainer so
+// useMap() guarantees the instance: no ref-timing gamble (the forwarded ref
+// on MapContainer only resolves a commit after mount).
+export function MapReadyProbe({ onReady }: { onReady: () => void }) {
+  // Mounted only once the Leaflet instance exists (MapContainer renders
+  // children after creating it), so a mount effect is the ready signal.
+  useMap();
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
   return null;
 }
 
@@ -151,6 +165,7 @@ export function MapToolbar({
   onToggle: () => void;
 }) {
   const map = useMap();
+  const { resolvedTheme, setTheme } = useTheme();
   const boxRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const node = boxRef.current;
@@ -164,7 +179,27 @@ export function MapToolbar({
   }, [map, expanded]);
 
   return (
-    <div ref={boxRef} className="absolute top-3 right-3 z-1000">
+    <div
+      ref={boxRef}
+      className="absolute top-3 right-3 z-1000 flex flex-col gap-2"
+    >
+      <IconTile
+        variant="outline"
+        size="sm"
+        className="shrink-0 shadow-md dark:bg-background"
+        render={
+          <button
+            type="button"
+            aria-label="Ganti tema gelap/terang"
+            onClick={() =>
+              setTheme(resolvedTheme === "dark" ? "light" : "dark")
+            }
+          />
+        }
+      >
+        <Sun className="hidden size-4 dark:block" />
+        <Moon className="size-4 dark:hidden" />
+      </IconTile>
       <IconTile
         variant="outline"
         size="sm"
@@ -217,7 +252,7 @@ export function MapAttributionControl() {
       <IconTile
         variant="outline"
         size="sm"
-        className="shrink-0 rounded-full shadow-md dark:bg-background"
+        className="shrink-0 shadow-md dark:bg-background"
         render={
           <button
             type="button"

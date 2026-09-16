@@ -1,5 +1,6 @@
 import { createAnonClient } from "@/lib/supabase/anon";
 import {
+  type TimelineArea,
   type TimelineDay,
   type TimelineResponse,
   todayWIB,
@@ -11,7 +12,7 @@ export async function fetchTimeline(): Promise<TimelineResponse> {
   const today = todayWIB();
   const { data: rows, error } = await supabase
     .from("cases")
-    .select("occurred_on,victims,regions(province,district)")
+    .select("occurred_on,victims,region_id,regions(province,district)")
     .eq("published", true)
     .is("deleted_at", null)
     .order("occurred_on", { ascending: false, nullsFirst: false });
@@ -19,14 +20,7 @@ export async function fetchTimeline(): Promise<TimelineResponse> {
 
   const days = new Map<
     string,
-    {
-      cases: number;
-      victims: number;
-      areas: Map<
-        string,
-        { province: string; district: string; victims: number }
-      >;
-    }
+    { cases: number; victims: number; areas: Map<string, TimelineArea> }
   >();
   let unknownDate = 0;
   let future = 0;
@@ -48,8 +42,11 @@ export async function fetchTimeline(): Promise<TimelineResponse> {
     day.cases += 1;
     day.victims += row.victims ?? 0;
     const region = Array.isArray(row.regions) ? row.regions[0] : row.regions;
-    const key = `${region?.province ?? "?"}//${region?.district ?? "?"}`;
+    const regionId = row.region_id ?? null;
+    const key =
+      regionId ?? `${region?.province ?? "?"}//${region?.district ?? "?"}`;
     const area = day.areas.get(key) ?? {
+      region_id: regionId,
       province: region?.province ?? "Wilayah tak dikenal",
       district: region?.district ?? "",
       victims: 0,

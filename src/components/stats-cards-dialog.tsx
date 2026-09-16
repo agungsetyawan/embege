@@ -2,6 +2,8 @@
 
 import { type ColumnDef, useTable } from "@tanstack/react-table";
 import { ChevronDown, ChevronRight, Siren } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Badge } from "@/components/reui/badge";
 import {
   DataGrid,
@@ -29,79 +31,105 @@ import {
   type TimelineDay,
 } from "@/lib/timeline";
 
-const monthColumns: ColumnDef<DataGridFeatures, TimelineDay>[] = [
-  {
-    id: "expander",
-    header: () => null,
-    cell: ({ row }) => {
-      if (!row.getCanExpand()) return null;
-      const isExpanded = row.getIsExpanded();
-      return (
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={row.getToggleExpandedHandler()}
-          aria-expanded={isExpanded}
-          aria-label={isExpanded ? "Tutup rincian hari" : "Lihat rincian hari"}
-        >
-          <ChevronDown className={isExpanded ? "rotate-180" : ""} />
-        </Button>
-      );
+function MonthGrid({
+  days,
+  onSelectArea,
+}: {
+  days: TimelineDay[];
+  onSelectArea: (regionId: string, date: string) => void;
+}) {
+  const monthColumns: ColumnDef<DataGridFeatures, TimelineDay>[] = [
+    {
+      id: "expander",
+      header: () => null,
+      cell: ({ row }) => {
+        if (!row.getCanExpand()) return null;
+        const isExpanded = row.getIsExpanded();
+        return (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={row.getToggleExpandedHandler()}
+            aria-expanded={isExpanded}
+            aria-label={
+              isExpanded ? "Tutup rincian hari" : "Lihat rincian hari"
+            }
+          >
+            <ChevronDown className={isExpanded ? "rotate-180" : ""} />
+          </Button>
+        );
+      },
+      size: 36,
+      meta: {
+        expandedContent: (day: TimelineDay) => (
+          <ul className="flex flex-col gap-0.5 py-2">
+            {day.areas.map((a) => {
+              // No region_id (e.g. unknown regions): plain text, cannot open the map drawer.
+              const regionId = a.region_id;
+              return (
+                <li
+                  key={regionId ?? `${a.province}/${a.district}`}
+                  className="text-sm"
+                >
+                  {regionId ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectArea(regionId, day.date)}
+                      aria-label={`Lihat kasus di ${areaName(a)} pada ${formatDate(day.date)}`}
+                      className="cursor-pointer text-left font-medium underline-offset-4 hover:underline"
+                    >
+                      {areaName(a)}
+                    </button>
+                  ) : (
+                    <span className="font-medium">{areaName(a)}</span>
+                  )}{" "}
+                  <span className="text-muted-foreground tabular-nums">
+                    · {a.victims.toLocaleString("id-ID")} korban
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ),
+      },
     },
-    size: 36,
-    meta: {
-      expandedContent: (day: TimelineDay) => (
-        <ul className="flex flex-col gap-0.5 py-2">
-          {day.areas.map((a) => (
-            <li key={`${a.province}/${a.district}`} className="text-sm">
-              <span className="font-medium">{areaName(a)}</span>{" "}
-              <span className="text-muted-foreground tabular-nums">
-                · {a.victims.toLocaleString("id-ID")} korban
-              </span>
-            </li>
-          ))}
-        </ul>
+    {
+      accessorKey: "date",
+      id: "date",
+      header: "Tanggal",
+      cell: ({ row }) => (
+        <span className="font-medium">{formatDay(row.original.date)}</span>
       ),
+      size: 140,
     },
-  },
-  {
-    accessorKey: "date",
-    id: "date",
-    header: "Tanggal",
-    cell: ({ row }) => (
-      <span className="font-medium">{formatDay(row.original.date)}</span>
-    ),
-    size: 140,
-  },
-  {
-    accessorKey: "cases",
-    id: "cases",
-    header: "Kejadian",
-    cell: ({ row }) => (
-      <Badge variant="destructive-light" size="sm">
-        {row.original.cases} kejadian
-      </Badge>
-    ),
-    size: 130,
-  },
-  {
-    accessorKey: "victims",
-    id: "victims",
-    header: "Korban",
-    cell: ({ row }) => (
-      <span className="tabular-nums">
-        {row.original.victims.toLocaleString("id-ID")}
-      </span>
-    ),
-    size: 140,
-    meta: {
-      headerClassName: "text-right",
-      cellClassName: "text-right",
+    {
+      accessorKey: "cases",
+      id: "cases",
+      header: "Kejadian",
+      cell: ({ row }) => (
+        <Badge variant="destructive-light" size="sm">
+          {row.original.cases} kejadian
+        </Badge>
+      ),
+      size: 130,
     },
-  },
-];
+    {
+      accessorKey: "victims",
+      id: "victims",
+      header: "Korban",
+      cell: ({ row }) => (
+        <span className="tabular-nums">
+          {row.original.victims.toLocaleString("id-ID")}
+        </span>
+      ),
+      size: 140,
+      meta: {
+        headerClassName: "text-right",
+        cellClassName: "text-right",
+      },
+    },
+  ];
 
-function MonthGrid({ days }: { days: TimelineDay[] }) {
   const table = useTable({
     features: dataGridFeatures,
     columns: monthColumns,
@@ -145,8 +173,22 @@ export function StatsCardsDialog({
   const chevronClass =
     "size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5";
 
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+
+  // Same destination as the map search: the map flies to the region and
+  // opens its drawer, which highlights the cases of this date.
+  const handleSelectArea = (regionId: string, date: string) => {
+    setOpen(false);
+    const query = new URLSearchParams({
+      region_id: regionId,
+      date,
+    }).toString();
+    router.replace(`?${query}`, { scroll: false });
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         className={poisonCardClass}
         aria-label="Lihat riwayat hari keracunan"
@@ -199,7 +241,7 @@ export function StatsCardsDialog({
                     </Badge>
                   </div>
                 </div>
-                <MonthGrid days={month.days} />
+                <MonthGrid days={month.days} onSelectArea={handleSelectArea} />
               </section>
             ))}
           </div>

@@ -11,12 +11,14 @@ import type { SummaryRow } from "./types";
 
 export function RegionDetailDrawer({
   selected,
+  highlightDate,
   geo,
   isDesktop,
   container,
   onClose,
 }: {
   selected: SummaryRow | null;
+  highlightDate: string | null;
   geo: FeatureCollection;
   isDesktop: boolean;
   container?: HTMLElement;
@@ -57,7 +59,10 @@ export function RegionDetailDrawer({
               <div className="mb-4 overflow-hidden rounded-lg border">
                 <RegionPreview selected={selected} geo={geo} />
               </div>
-              <CaseList regionId={selected.region_id} />
+              <CaseList
+                regionId={selected.region_id}
+                highlightDate={highlightDate}
+              />
             </div>
           </DrawerContent>
         </DrawerPrimitive.Portal>
