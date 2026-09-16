@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NavigationProgress } from "@/components/navigation-progress";
@@ -94,6 +95,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </QueryProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
