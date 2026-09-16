@@ -1,9 +1,7 @@
 import { Suspense } from "react";
 import { IndonesiaMapLazy } from "@/components/indonesia-map-lazy";
-import { Badge } from "@/components/reui/badge";
 import { StatsCards } from "@/components/stats-cards";
 import { StatsCardsSkeleton } from "@/components/stats-cards-skeleton";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 // Timeline revalidates every 5 minutes (matches the "Diperbarui berkala" label).
 export const revalidate = 300;
@@ -39,10 +37,6 @@ export default function Home() {
       />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4">
         <header className="flex flex-col gap-2">
-          <div className="flex items-start justify-between gap-4">
-            <Badge variant="secondary">embege-poisoning</Badge>
-            <ThemeToggle />
-          </div>
           <h1 className="text-2xl font-semibold tracking-tight">
             Peta Kasus Keracunan MBG
           </h1>
