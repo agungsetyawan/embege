@@ -25,6 +25,11 @@ Before implementing:
 
 Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
+**Large files**
+- Past ~500 lines or 3+ responsibilities, split into a folder (`types`, `api`, one module per concern) with a thin `index` shell. Keep the public import path unchanged.
+- Code-split below-the-fold content (`next/dynamic`): drawers, dialogs, and secondary views stay out of the first-paint chunk. One split boundary per lazy subtree, no nested dynamics.
+- Memo (`useMemo`/`useCallback`) only when the computation is expensive or a memoized consumer needs stable identity. Otherwise it is ceremony, cut it.
+
 ## 3. Surgical Changes
 
 **Touch only what you must. Clean up only your own mess.**
