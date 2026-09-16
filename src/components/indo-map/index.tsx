@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { Map as LeafletMap } from "leaflet";
+import L, { type Map as LeafletMap } from "leaflet";
 import { TriangleAlert } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
@@ -94,13 +94,52 @@ export function IndoMap() {
     mapRef.current?.panTo([s.lat, s.lng]);
   }, []);
 
-  const handleSelectSearch = useCallback((s: SummaryRow) => {
-    setSelected(s);
-    mapRef.current?.flyTo(
-      [s.lat, s.lng],
-      Math.max(mapRef.current.getZoom(), 9),
-    );
-  }, []);
+  // Search: drawer menunggu animasi flyTo selesai (moveend + fallback
+  // timeout bila moveend tidak tembak, mis. sudah di lokasi).
+  const flightCleanupRef = useRef<(() => void) | null>(null);
+
+  const handleSelectSearch = useCallback(
+    (s: SummaryRow) => {
+      const map = mapRef.current;
+      if (!map) {
+        setSelected(s);
+        return;
+      }
+      flightCleanupRef.current?.();
+      const open = () => {
+        flightCleanupRef.current?.();
+        flightCleanupRef.current = null;
+        setSelected(s);
+      };
+      map.once("moveend", open);
+      // ponytail: durasi flyTo 0.8 dtk + margin, bukan debounce generik.
+      const timer = setTimeout(open, 1000);
+      flightCleanupRef.current = () => {
+        map.off("moveend", open);
+        clearTimeout(timer);
+      };
+      // Zoom mengikuti poligon kabupaten/kota; fallback ke titik bila
+      // feature tidak ketemu.
+      const feature = geo.data?.features.find(
+        (f) => f.properties?.id === `${s.province}/${s.district}`,
+      );
+      if (feature) {
+        map.flyToBounds(L.geoJSON(feature).getBounds(), {
+          // Geser tengah semu keluar dari area drawer: kanan di desktop,
+          // bawah di mobile. Angka drawer: sm:max-w-md (448px) + margin.
+          paddingTopLeft: [32, 32],
+          paddingBottomRight: isDesktop ? [480, 48] : [32, 360],
+          maxZoom: 11,
+          duration: 0.8,
+        });
+      } else {
+        map.flyTo([s.lat, s.lng], Math.max(map.getZoom(), 9), {
+          duration: 0.8,
+        });
+      }
+    },
+    [geo.data, isDesktop],
+  );
 
   if (geo.isLoading || data.isLoading) return <IndoMapSkeleton />;
   if (geo.isError || data.isError || !geo.data || !data.data) {
