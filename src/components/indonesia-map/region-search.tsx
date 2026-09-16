@@ -102,7 +102,7 @@ export function RegionSearch({
           <IconTile
             variant="outline"
             size="sm"
-            className="absolute top-3 left-3 z-1001 shrink-0 shadow-md dark:bg-background aria-expanded:opacity-0 aria-expanded:pointer-events-none"
+            className="absolute top-3 left-3 z-1000 shrink-0 shadow-md dark:bg-background aria-expanded:opacity-0 aria-expanded:pointer-events-none"
             render={<button type="button" aria-label="Cari kabupaten/kota" />}
           >
             <Search className="size-4" />
