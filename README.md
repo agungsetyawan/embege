@@ -6,7 +6,7 @@ Production: https://embege-poisoning.vercel.app
 
 ## Features
 
-The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district, and nearby markers cluster by zoom level. Clicking a marker opens a side sheet that lists each case with its date, victim count, and source link. A search button opens a province-grouped picker covering all 514 districts; picking a district flies the map there and opens the same side sheet, with a case-count badge on districts that have cases. The page supports dark mode.
+The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district, and nearby markers cluster by zoom level. Clicking a marker opens a side sheet that lists each case with its date, victim count, and source link. A search button opens a province-grouped picker covering all 514 districts; picking a district flies the map there and opens the same side sheet, with a case-count badge on districts that have cases. The page supports dark mode. The map has an expand button for a full-viewport view, and the gray basemap follows the light or dark theme.
 
 The crawler reads RSS feeds from four active outlets every hour. It filters items by keyword and stores matches for review. Duplicate URLs never create a second row.
 

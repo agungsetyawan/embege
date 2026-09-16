@@ -99,6 +99,8 @@ Lessons already paid for in debug time. Follow them.
 **UI**
 - shadcn-style primitives in `src/components/ui`, tokens in `globals.css`. Admin routes are Server Components + Server Actions. Admin surfaces use ReUI (Frame for curation flows, data-grid for the `/admin/cases` table).
 - Labels in natural Indonesian, Lucide icons only (no emoji, no text arrows, no em dashes in UI copy).
+- Fullscreen API does not exist on iPhone Safari (`requestFullscreen` is undefined). Use CSS pseudo-fullscreen (fixed inset-0 card) instead of feature-detect plus prefix.
+- Base UI portals mount to `document.body`, so they vanish inside a fullscreen subtree. Pass `container` to mount them inside, or wrap in an outer portal: a nested portal without `container` resolves to the parent portal node.
 
 **Verification bar**
 - `npm run lint` and `npm run build` stay green. Check browser output with chrome-devtools (clean console plus screenshot). Test cron endpoints with and without the secret.
