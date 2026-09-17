@@ -3,16 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import {
-  Ambulance,
-  Check,
-  ExternalLink,
-  Share2,
-  TriangleAlert,
-} from "lucide-react";
+import { Ambulance, ExternalLink, TriangleAlert } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
-import { isDateString } from "@/lib/validate";
+import { useEffect, useRef } from "react";
 import { Alert, AlertAction, AlertTitle } from "../reui/alert";
 import { Badge } from "../reui/badge";
 import { IconTile } from "../reui/icon-tile";
@@ -20,6 +13,7 @@ import { Button } from "../ui/button";
 import { ButtonGroup } from "../ui/button-group";
 import { Skeleton } from "../ui/skeleton";
 import { CASE_STALE_TIME, fetchRegionCases } from "./api";
+import { ShareButton } from "./share-button";
 
 const ReportDialog = dynamic(
   () => import("../report-dialog").then((m) => m.ReportDialog),
@@ -31,75 +25,6 @@ function formatCaseDate(iso: string | null): string {
   const parsed = new Date(`${iso.slice(0, 10)}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return iso;
   return format(parsed, "d MMMM yyyy", { locale: localeId });
-}
-
-function buildCaseUrl(regionId: string, occurredOn: string | null): string {
-  const query = new URLSearchParams({ region_id: regionId });
-  const date = occurredOn?.slice(0, 10) ?? "";
-  if (isDateString(date)) query.set("date", date);
-  // Origin, not an env var: follows whatever domain serves the page.
-  return `${window.location.origin}/?${query.toString()}`;
-}
-
-async function copyText(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function ShareCaseButton({
-  regionId,
-  occurredOn,
-}: {
-  regionId: string;
-  occurredOn: string | null;
-}) {
-  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
-  const label = formatCaseDate(occurredOn);
-  const stateText = {
-    idle: "Share",
-    copied: "Copied",
-    failed: "Failed",
-  }[state];
-
-  const flash = (next: "copied" | "failed") => {
-    setState(next);
-    setTimeout(() => setState("idle"), 2000);
-  };
-
-  const handleShare = async () => {
-    const url = buildCaseUrl(regionId, occurredOn);
-    // System sheet first (mobile); clipboard fallback otherwise.
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: `Kasus keracunan ${label}`, url });
-        return;
-      } catch (err) {
-        // Dismissed by the user: stay silent, do not fall through to copy.
-        if (err instanceof DOMException && err.name === "AbortError") return;
-      }
-    }
-    flash((await copyText(url)) ? "copied" : "failed");
-  };
-
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => void handleShare()}
-      aria-label={`Bagikan kasus ${label}`}
-    >
-      {state === "copied" ? (
-        <Check className="size-3.5" />
-      ) : (
-        <Share2 className="size-3.5" />
-      )}
-      {stateText}
-    </Button>
-  );
 }
 
 export function CaseList({
@@ -194,9 +119,11 @@ export function CaseList({
           </a>
           <ButtonGroup className="ml-auto">
             <ReportDialog caseId={c.id} />
-            <ShareCaseButton
+            <ShareButton
               regionId={c.region_id}
-              occurredOn={c.occurred_on}
+              date={c.occurred_on}
+              title={`Kasus keracunan ${formatCaseDate(c.occurred_on)}`}
+              label={`Bagikan kasus ${formatCaseDate(c.occurred_on)}`}
             />
           </ButtonGroup>
         </li>

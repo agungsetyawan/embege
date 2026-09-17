@@ -7,6 +7,7 @@ import { Badge } from "../reui/badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../ui/drawer";
 import { CaseList } from "./case-list";
 import { RegionPreview } from "./region-preview";
+import { ShareButton } from "./share-button";
 import type { SummaryRow } from "./types";
 
 export function RegionDetailDrawer({
@@ -39,9 +40,18 @@ export function RegionDetailDrawer({
         <DrawerPrimitive.Portal container={container}>
           <DrawerContent className="w-full sm:max-w-md">
             <DrawerHeader className="pb-4 shadow-sm">
-              <DrawerTitle>
-                {selected.district}, {selected.province}
-              </DrawerTitle>
+              <div className="flex items-start gap-2">
+                <DrawerTitle className="min-w-0 flex-1">
+                  {selected.district}, {selected.province}
+                </DrawerTitle>
+                <ShareButton
+                  iconOnly
+                  variant="ghost"
+                  regionId={selected.region_id}
+                  title={`Kasus keracunan di ${selected.district}, ${selected.province}`}
+                  label={`Bagikan daerah ${selected.district}`}
+                />
+              </div>
               {selected.count > 0 && (
                 <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
                   <Badge variant="destructive-light">
