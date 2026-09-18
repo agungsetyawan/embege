@@ -64,6 +64,7 @@ export function RegionSearch({
       key={cascaderKey}
       items={tree}
       searchScope="deep"
+      indicator={false}
       onValueChange={(value) => {
         const row = rows.find((r) => r.region_id === value);
         if (row) onSelect(row);
@@ -78,7 +79,7 @@ export function RegionSearch({
         return (
           <span className="flex w-full items-center justify-between gap-2">
             <span className="truncate">{node.label}</span>
-            <Badge variant="secondary" size="sm" className="shrink-0">
+            <Badge variant="destructive-light" size="sm" className="shrink-0">
               {count.toLocaleString("id-ID")} kasus
             </Badge>
           </span>

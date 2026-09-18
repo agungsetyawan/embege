@@ -4,7 +4,7 @@ import { Badge } from "@/components/reui/badge";
 import { IconTile } from "@/components/reui/icon-tile";
 import { StatsCardsDialog } from "@/components/stats-cards-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { buildFootnote, countSafeDays, groupByMonth } from "@/lib/timeline";
+import { buildFootnote, countSafeDays } from "@/lib/timeline";
 import { fetchTimeline } from "@/lib/timeline-data";
 
 export async function StatsCards() {
@@ -18,7 +18,6 @@ export async function StatsCards() {
   }
 
   const { timeline, unknownDate, future } = data;
-  const months = groupByMonth(timeline);
   const poisoned = new Set(timeline.map((t) => t.date));
   const first = timeline.at(-1)?.date ?? null;
   const poisonedDays = timeline.length;
@@ -74,7 +73,7 @@ export async function StatsCards() {
           </CardContent>
         </Card>
         <StatsCardsDialog
-          months={months}
+          timeline={timeline}
           first={first}
           poisonedDays={poisonedDays}
         />

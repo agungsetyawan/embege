@@ -3,7 +3,7 @@
 import { type ColumnDef, useTable } from "@tanstack/react-table";
 import { ChevronDown, ChevronRight, Siren } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/reui/badge";
 import {
   DataGrid,
@@ -18,18 +18,31 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   areaName,
   formatDate,
   formatDay,
-  type MonthGroup,
+  groupByPeriod,
+  type Period,
   type TimelineDay,
 } from "@/lib/timeline";
+
+const periodLabels: Record<Period, string> = {
+  weekly: "Mingguan",
+  monthly: "Bulanan",
+  yearly: "Tahunan",
+};
 
 function MonthGrid({
   days,
@@ -105,22 +118,26 @@ function MonthGrid({
     {
       accessorKey: "cases",
       id: "cases",
-      header: "Kejadian",
+      header: "Kasus",
       cell: ({ row }) => (
-        <Badge variant="destructive-light" size="sm">
-          {row.original.cases} kejadian
+        <Badge variant="destructive-light" size="sm" className="tabular-nums">
+          {row.original.cases.toLocaleString("id-ID")}
         </Badge>
       ),
       size: 130,
+      meta: {
+        headerClassName: "text-center",
+        cellClassName: "text-center",
+      },
     },
     {
       accessorKey: "victims",
       id: "victims",
       header: "Korban",
       cell: ({ row }) => (
-        <span className="tabular-nums">
+        <Badge variant="outline" size="sm" className="tabular-nums">
           {row.original.victims.toLocaleString("id-ID")}
-        </span>
+        </Badge>
       ),
       size: 140,
       meta: {
@@ -155,11 +172,11 @@ function MonthGrid({
 }
 
 export function StatsCardsDialog({
-  months,
+  timeline,
   first,
   poisonedDays,
 }: {
-  months: MonthGroup[];
+  timeline: TimelineDay[];
   first: string | null;
   poisonedDays: number;
 }) {
@@ -175,6 +192,11 @@ export function StatsCardsDialog({
 
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [period, setPeriod] = useState<Period>("monthly");
+  const groups = useMemo(
+    () => groupByPeriod(timeline, period),
+    [timeline, period],
+  );
 
   // Same destination as the map search: the map flies to the region and
   // opens its drawer, which highlights the cases of this date.
@@ -213,39 +235,57 @@ export function StatsCardsDialog({
           </Badge>
         </span>
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-2xl">
+        <DialogHeader className="shrink-0 border-b pb-3">
           <DialogTitle>Riwayat hari keracunan</DialogTitle>
-          <DialogDescription>
-            {first
-              ? `Sejak ${formatDate(first)}`
-              : "Belum ada kasus bertanggal"}
-          </DialogDescription>
-        </DialogHeader>
-        {months.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            Belum ada data untuk ditampilkan.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-5">
-            {months.map((month) => (
-              <section key={month.key} aria-label={month.label}>
-                <div className="sticky top-0 z-10 -mx-1 bg-popover px-1 py-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold">{month.label}</h3>
-                    <Badge variant="destructive-light" size="sm">
-                      {month.cases} kejadian
-                    </Badge>
-                    <Badge variant="outline" size="sm">
-                      {month.victims.toLocaleString("id-ID")} korban
-                    </Badge>
-                  </div>
-                </div>
-                <MonthGrid days={month.days} onSelectArea={handleSelectArea} />
-              </section>
-            ))}
+          <div className="flex items-center gap-2 pt-1">
+            <label htmlFor="period" className="text-sm text-muted-foreground">
+              Periode
+            </label>
+            <Select
+              value={period}
+              onValueChange={(value) => setPeriod(value as Period)}
+            >
+              <SelectTrigger id="period" size="sm" className="min-w-32">
+                <SelectValue>{() => periodLabels[period]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly">Mingguan</SelectItem>
+                <SelectItem value="monthly">Bulanan</SelectItem>
+                <SelectItem value="yearly">Tahunan</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {groups.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Belum ada data untuk ditampilkan.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {groups.map((group) => (
+                <section key={group.key} aria-label={group.label}>
+                  <div className="sticky top-0 z-10 bg-popover py-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold">{group.label}</h3>
+                      <Badge variant="destructive-light" size="sm">
+                        {group.cases} kasus
+                      </Badge>
+                      <Badge variant="outline" size="sm">
+                        {group.victims.toLocaleString("id-ID")} korban
+                      </Badge>
+                    </div>
+                  </div>
+                  <MonthGrid
+                    days={group.days}
+                    onSelectArea={handleSelectArea}
+                  />
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

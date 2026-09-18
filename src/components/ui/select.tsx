@@ -75,7 +75,9 @@ function SelectContent({
         align={align}
         alignOffset={alignOffset}
         alignItemWithTrigger={alignItemWithTrigger}
-        className="isolate z-50"
+        // z-[1100]: popup must sit above the dialog overlay (z-1000) and
+        // content (z-1001) when a select is used inside a dialog.
+        className="isolate z-[1100]"
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
