@@ -115,7 +115,7 @@ Lessons already paid for in debug time. Follow them.
 - Runtime: Next.js 16 App Router (Turbopack), React 19, Tailwind CSS v4. Theme tokens live in `@theme`, dark mode runs on class via next-themes.
 - Data: Supabase Postgres plus Auth, `pg_cron`/`pg_net`, and Vault. TanStack Query v5 caches client reads.
 - Map: Leaflet plus react-leaflet plus one static GeoJSON file. Not MapLibre and not vector tiles. See the backlog.
-- UI: shadcn components in the Base-UI generation (components.json style `base-nova`), ReUI free components in `src/components/reui` (frame, badge, alert, icon-tile, icon-stack, cascader, autocomplete, data-grid) installed via CLI only. Admin surfaces use ReUI Frame, public surfaces stay shadcn Card. Lucide icons. `react-day-picker` v10 with the `date-fns` Indonesian locale.
+- UI: shadcn components in the Base-UI generation (components.json style `base-nova`), ReUI free components in `src/components/reui` (frame, badge, alert, icon-tile, icon-stack, cascader, data-grid) installed via CLI only. Admin surfaces use ReUI Frame, public surfaces stay shadcn Card. Lucide icons. `react-day-picker` v10 with the `date-fns` Indonesian locale.
 - LLM: Gemini through plain REST, no SDK. The model name is pinned in `src/lib/enrich.ts`.
 
 Do not change these without asking: cron lives in Supabase, public reads use the anon key under RLS, and human curation stays required before anything publishes.
