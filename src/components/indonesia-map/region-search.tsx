@@ -19,16 +19,11 @@ import {
   CascaderNav,
 } from "../reui/cascader/cascader-nav";
 import type { CascaderNode } from "../reui/cascader/cascader-types";
-import { IconTile } from "../reui/icon-tile";
 import type { SummaryRow } from "./types";
 
 // Grouped by province (ReUI Cascader), searchable deep. Same setSelected
 // path as a marker click, plus a zoom-in flight.
 type RegionSearchNode = CascaderNode<{ count: number }>;
-
-// -32 = IconTile sm height: panel top lands on the trigger's top edge,
-// so the panel grows from the button's own top-left corner.
-const SEARCH_PANEL_OFFSET = -32;
 
 function buildRegionSearchTree(rows: SummaryRow[]): RegionSearchNode[] {
   const byProvince = new Map<string, RegionSearchNode>();
@@ -96,24 +91,25 @@ export function RegionSearch({
         back: "Kembali",
       }}
     >
+      {/* h-[41px] mirrors the panel header: nav py-1 (8) + input row h-8 (32) + border-b (1). */}
       <CascaderTrigger
         showIcon={false}
-        render={
-          <IconTile
-            variant="outline"
-            size="sm"
-            className="absolute top-3 left-3 z-1000 shrink-0 shadow-md dark:bg-background aria-expanded:opacity-0 aria-expanded:pointer-events-none"
-            render={<button type="button" aria-label="Cari kabupaten/kota" />}
-          >
-            <Search className="size-4" />
-          </IconTile>
-        }
-      ></CascaderTrigger>
+        aria-label="Cari kabupaten/kota"
+        className="absolute top-3 left-3 z-1000 flex h-[41px] w-64 max-w-[calc(100%-4.5rem)] items-center gap-2 rounded-lg bg-popover px-3 text-muted-foreground shadow-md ring-1 ring-foreground/10 transition-opacity md:w-80 aria-expanded:pointer-events-none aria-expanded:opacity-0"
+        render={<button type="button" />}
+      >
+        <span className="min-w-0 flex-1 truncate text-start text-base">
+          Cari kabupaten/kota...
+        </span>
+        <Search className="size-4 shrink-0" />
+      </CascaderTrigger>
       <CascaderContent
         align="start"
-        sideOffset={SEARCH_PANEL_OFFSET}
+        // -41 = bar height (h-[41px]): panel top lands on the bar's top edge
+        // and grows downward while the bar fades out via aria-expanded.
+        sideOffset={-41}
         container={container}
-        className="w-64 shadow-sm"
+        className="w-64 shadow-md md:w-80 data-open:animate-none data-closed:animate-none"
       >
         <CascaderPanel>
           <CascaderNav>
