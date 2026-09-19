@@ -1,10 +1,9 @@
-import { FileText, ShieldCheck, Users } from "lucide-react";
+import { FileText, ShieldCheck, Siren, Users } from "lucide-react";
 import { Alert, AlertTitle } from "@/components/reui/alert";
 import { Badge } from "@/components/reui/badge";
 import { IconTile } from "@/components/reui/icon-tile";
-import { StatsCardsDialog } from "@/components/stats-cards-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { buildFootnote, countSafeDays } from "@/lib/timeline";
+import { buildFootnote, countSafeDays, formatDate } from "@/lib/timeline";
 import { fetchTimeline } from "@/lib/timeline-data";
 
 export async function StatsCards() {
@@ -72,11 +71,26 @@ export async function StatsCards() {
             </Badge>
           </CardContent>
         </Card>
-        <StatsCardsDialog
-          timeline={timeline}
-          first={first}
-          poisonedDays={poisonedDays}
-        />
+        <Card size="sm" className="gap-2">
+          <CardHeader>
+            <span className="flex items-center gap-2">
+              <IconTile variant="soft" size="sm" className="text-destructive">
+                <Siren />
+              </IconTile>
+              <span className="text-sm font-medium text-muted-foreground">
+                Hari keracunan
+              </span>
+            </span>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1.5">
+            <span className={numberClass}>
+              {poisonedDays.toLocaleString("id-ID")}
+            </span>
+            <Badge variant="destructive-light" size="sm" radius="full">
+              {first ? `sejak ${formatDate(first)}` : "belum ada data"}
+            </Badge>
+          </CardContent>
+        </Card>
         <Card size="sm" className="gap-2">
           <CardHeader>
             <span className="flex items-center gap-2">

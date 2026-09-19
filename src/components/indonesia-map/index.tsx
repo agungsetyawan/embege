@@ -43,6 +43,13 @@ const RegionDetailDrawer = dynamic(
   { ssr: false },
 );
 
+// Timeline pill + dialog content (DataGrid, chart) outside the map first paint.
+const TimelineHistoryDialog = dynamic(
+  () =>
+    import("./timeline-history-dialog").then((m) => m.TimelineHistoryDialog),
+  { ssr: false },
+);
+
 function isDateParam(value: string | null): value is string {
   if (!value || !isDateString(value)) return false;
   return !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
@@ -83,15 +90,18 @@ export function IndonesiaMap() {
   // Pseudo-fullscreen via CSS class: works on iOS Safari (no Fullscreen API
   // on iPhone) and Esc reaches the page so the drawer closes first.
   const [expanded, setExpanded] = useState(false);
-  // Esc order: drawer open = let it close itself, otherwise exit expanded.
+  // Esc order: drawer/dialog open = let them close themselves, otherwise
+  // exit expanded.
+  const [historyOpen, setHistoryOpen] = useState(false);
   useEffect(() => {
     if (!expanded) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selected === null) setExpanded(false);
+      if (e.key === "Escape" && selected === null && !historyOpen)
+        setExpanded(false);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [expanded, selected]);
+  }, [expanded, selected, historyOpen]);
   // Lock background scroll while expanded.
   useEffect(() => {
     if (!expanded) return;
@@ -295,6 +305,10 @@ export function IndonesiaMap() {
           />
           <MapAttributionControl />
         </MapContainer>
+        <TimelineHistoryDialog
+          container={cardEl ?? undefined}
+          onOpenChange={setHistoryOpen}
+        />
         {!selected && (
           <RegionSearch
             rows={allSummary}

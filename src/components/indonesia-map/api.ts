@@ -1,4 +1,5 @@
 import type { FeatureCollection } from "geojson";
+import type { TimelineResponse } from "@/lib/timeline";
 import type { CaseRow, SummaryRow } from "./types";
 
 export const CASE_STALE_TIME = 5 * 60 * 1000;
@@ -22,5 +23,13 @@ export async function fetchRegionCases(
 ): Promise<{ cases: CaseRow[] }> {
   const res = await fetch(`/api/cases?region_id=${regionId}`);
   if (!res.ok) throw new Error("Failed to load case data");
+  return res.json();
+}
+
+// Poisoning-days timeline. Fetched with enabled: open so it loads only
+// when the Timeline dialog opens (outside the map first paint).
+export async function fetchTimeline(): Promise<TimelineResponse> {
+  const res = await fetch("/api/timeline");
+  if (!res.ok) throw new Error("Failed to load timeline data");
   return res.json();
 }
