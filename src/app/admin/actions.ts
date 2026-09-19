@@ -180,7 +180,7 @@ export async function moveReportCase(formData: FormData) {
 }
 
 // Soft-delete the reported duplicate so it can be restored from the
-// "Terhapus" tab if the call turns out to be wrong.
+// "Deleted" tab if the call turns out to be wrong.
 export async function deleteReportedCase(formData: FormData) {
   const { supabase, log } = await requireAdmin();
   const caseId = String(formData.get("caseId"));

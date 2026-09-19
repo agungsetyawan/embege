@@ -2,6 +2,7 @@
 
 import { type ColumnDef, useTable } from "@tanstack/react-table";
 import { ChevronDown, ChevronRight, Siren } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/reui/badge";
@@ -29,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   areaName,
   formatDate,
@@ -43,6 +45,20 @@ const periodLabels: Record<Period, string> = {
   monthly: "Bulanan",
   yearly: "Tahunan",
 };
+
+const TrendChart = dynamic(
+  () => import("@/components/trend-chart").then((m) => m.TrendChart),
+  {
+    ssr: false,
+    loading: () => (
+      <p className="py-6 text-center text-sm text-muted-foreground">
+        Memuat grafik…
+      </p>
+    ),
+  },
+);
+
+type View = "list" | "chart";
 
 function MonthGrid({
   days,
@@ -193,6 +209,7 @@ export function StatsCardsDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [period, setPeriod] = useState<Period>("monthly");
+  const [view, setView] = useState<View>("list");
   const groups = useMemo(
     () => groupByPeriod(timeline, period),
     [timeline, period],
@@ -238,27 +255,41 @@ export function StatsCardsDialog({
       <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b pb-3">
           <DialogTitle>Riwayat hari keracunan</DialogTitle>
-          <div className="flex items-center gap-2 pt-1">
-            <label htmlFor="period" className="text-sm text-muted-foreground">
-              Periode
-            </label>
-            <Select
-              value={period}
-              onValueChange={(value) => setPeriod(value as Period)}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div className="flex items-center gap-2">
+              <label htmlFor="period" className="text-sm text-muted-foreground">
+                Periode
+              </label>
+              <Select
+                value={period}
+                onValueChange={(value) => setPeriod(value as Period)}
+              >
+                <SelectTrigger id="period" size="sm" className="min-w-32">
+                  <SelectValue>{() => periodLabels[period]}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Mingguan</SelectItem>
+                  <SelectItem value="monthly">Bulanan</SelectItem>
+                  <SelectItem value="yearly">Tahunan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Tabs
+              value={view}
+              onValueChange={(v) => setView(v as View)}
+              aria-label="Pilih tampilan riwayat"
             >
-              <SelectTrigger id="period" size="sm" className="min-w-32">
-                <SelectValue>{() => periodLabels[period]}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="weekly">Mingguan</SelectItem>
-                <SelectItem value="monthly">Bulanan</SelectItem>
-                <SelectItem value="yearly">Tahunan</SelectItem>
-              </SelectContent>
-            </Select>
+              <TabsList>
+                <TabsTrigger value="list">Daftar</TabsTrigger>
+                <TabsTrigger value="chart">Grafik</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {groups.length === 0 ? (
+          {view === "chart" ? (
+            <TrendChart groups={groups} />
+          ) : groups.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Belum ada data untuk ditampilkan.
             </p>

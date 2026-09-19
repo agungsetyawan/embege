@@ -119,7 +119,7 @@ export default async function AdminPage({
       .order("district"),
   ]);
 
-  // Candidate duplicates for "berita ganda" reports: same source URL
+  // Candidate duplicates for "duplicate-news" reports: same source URL
   // (classic double-approve) or same region + same date.
   const twinsByReport = new Map<string, CaseTwin[]>();
   if (tab === "reports") {
