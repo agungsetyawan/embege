@@ -6,7 +6,7 @@ Production: https://embege-poisoning.vercel.app
 
 ## Features
 
-The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district, and nearby markers cluster by zoom level. Clicking a marker opens a side sheet that lists each case with its date, victim count, and source link. A search bar on the map opens a province-grouped picker covering all 514 districts; picking a district flies the map there and opens the same side sheet, with a case-count badge on districts that have cases. The page supports dark mode. The map has an expand button for a full-viewport view, and the gray basemap follows the light or dark theme. The Hari keracunan card opens a dialog of poisoning days with a Mingguan/Bulanan/Tahunan period filter and a Daftar/Grafik view toggle; the Grafik tab shows the chronological bar trend of cases or victims per period. Clicking a district in an expanded day closes the dialog, flies the map to that district, and highlights that date's cases in the side sheet. The drawer header has an icon-only share button for the district link (`?region_id=`), and each case in the side sheet has a Bagikan button that adds `date=` to highlight that date's cases; opening either link reproduces the same flight and highlight.
+The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district, and nearby markers cluster by zoom level. Clicking a marker opens a side sheet that lists each case with its date, victim count, and source link. A search bar on the map opens a province-grouped picker covering all 514 districts; picking a district flies the map there and opens the same side sheet, with a case-count badge on districts that have cases. The page supports dark mode. The map has an expand button for a full-viewport view, and the gray basemap follows the light or dark theme. A Linimasa pill on the map opens a dialog of poisoning days with a Mingguan/Bulanan/Tahunan period filter and a Daftar/Grafik view toggle; the Grafik tab shows the chronological bar trend of cases or victims per period. Clicking a district in an expanded day closes the dialog, flies the map to that district, and highlights that date's cases in the side sheet. The drawer header has an icon-only share button for the district link (`?region_id=`), and each case in the side sheet has a Bagikan button that adds `date=` to highlight that date's cases; opening either link reproduces the same flight and highlight.
 
 The crawler reads RSS feeds from four active outlets every hour. It filters items by keyword and stores matches for review. Duplicate URLs never create a second row.
 
@@ -84,9 +84,10 @@ Row Level Security allows public reads of `regions` and published `cases` only. 
 
 ## API Contract
 
-The app exposes four JSON endpoints:
+The app exposes five JSON endpoints:
 
 - `GET /api/cases`: public. Without params it returns the per-region summary of all 514 districts ordered by province and district, including zero-case rows used by the markers and the search picker. With `?region_id=` it returns that district's published cases. The response carries `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
+- `GET /api/timeline`: public. It returns the per-day timeline of poisoning days (case and victim counts with districts per date) used by the Linimasa dialog on the map. The response carries `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
 - `POST /api/reports`: public. It stores a correction report for a published case after a bot check. It returns 201 on success, 400 for invalid input, 403 for bots, and 429 when the same visitor already reported the case within an hour.
 - `GET /api/cron/crawl`: needs `Authorization: Bearer <CRON_SECRET>`. It crawls active feeds and returns counts of sources, fetched items, and new rows.
 - `GET /api/cron/enrich`: needs `Authorization: Bearer <CRON_SECRET>`. It enriches pending items and returns counts of processed, enriched, and failed items.
