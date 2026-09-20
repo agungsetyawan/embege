@@ -253,13 +253,13 @@ export function IndonesiaMap() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 lg:h-full">
       <Suspense fallback={null}>
         <MapUrlSync onParams={applyFromUrl} />
       </Suspense>
       <Card
         ref={setCardEl}
-        className={`mbg-map-card relative gap-0 overflow-hidden p-0 ${
+        className={`mbg-map-card relative gap-0 overflow-hidden rounded-none p-0 md:rounded-xl lg:flex-1 lg:min-h-0 ${
           expanded ? "mbg-map-card--expanded" : ""
         }`}
       >
@@ -277,7 +277,7 @@ export function IndonesiaMap() {
           scrollWheelZoom
           zoomControl={false}
           attributionControl={false}
-          className="mbg-map h-[60vh] md:h-[70vh] w-full"
+          className="mbg-map h-[72vh] md:h-[75vh] lg:h-full w-full"
         >
           <TileLayer
             key={tiles.id}
@@ -316,6 +316,9 @@ export function IndonesiaMap() {
             onSelect={handleSelectSearch}
           />
         )}
+        <div className="absolute bottom-3 left-3 z-1000">
+          <MapLegend />
+        </div>
       </Card>
       <RegionDetailDrawer
         selected={selected}
@@ -325,7 +328,6 @@ export function IndonesiaMap() {
         container={cardEl ?? undefined}
         onClose={handleCloseDrawer}
       />
-      <MapLegend />
     </div>
   );
 }

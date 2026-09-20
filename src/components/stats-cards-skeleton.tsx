@@ -5,12 +5,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function StatsCardsSkeleton() {
   return (
     <output
-      className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
+      className="flex gap-2 overflow-hidden pb-1 lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0"
       aria-busy="true"
       aria-label="Memuat statistik"
     >
       {[0, 1, 2, 3].map((i) => (
-        <Card key={i} size="sm" className="gap-2">
+        <Card key={i} size="sm" className="min-w-[170px] gap-2 lg:min-w-0">
           <CardHeader className="flex items-center gap-2">
             <Skeleton className="h-8 w-8" />
             <Skeleton className="h-5 w-25" />

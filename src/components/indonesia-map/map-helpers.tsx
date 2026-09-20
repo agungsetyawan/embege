@@ -95,7 +95,7 @@ export function MapZoomControl() {
   const atMax = zoom >= limits.max;
 
   return (
-    <div ref={boxRef} className="absolute right-3 bottom-3 z-1000">
+    <div ref={boxRef} className="absolute right-3 bottom-14 z-1000">
       <ButtonGroup orientation="vertical">
         <IconTile
           variant="outline"
@@ -235,15 +235,12 @@ export function MapAttributionControl() {
     L.DomEvent.disableScrollPropagation(node);
   }, []);
   return (
-    <div
-      ref={boxRef}
-      className="group absolute bottom-3 left-3 z-1000 flex flex-col items-start gap-1.5"
-    >
+    <div ref={boxRef} className="group absolute right-3 bottom-3 z-1000">
       <div
         role="note"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: static first-party Esri credit, no user input
         dangerouslySetInnerHTML={{ __html: ESRI_ATTR }}
-        className={`max-w-64 rounded-md border bg-popover px-2.5 py-1.5 text-[11px] leading-relaxed text-popover-foreground shadow-md transition-opacity [&_a]:underline ${
+        className={`absolute right-0 bottom-full mb-1.5 w-64 rounded-md border bg-popover px-2.5 py-1.5 text-[11px] leading-relaxed text-popover-foreground shadow-md transition-opacity [&_a]:underline ${
           open
             ? "visible opacity-100"
             : "invisible opacity-0 group-hover:visible group-hover:opacity-100"

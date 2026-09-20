@@ -102,6 +102,7 @@ Lessons already paid for in debug time. Follow them.
 - Labels in natural Indonesian, Lucide icons only (no emoji, no text arrows, no em dashes in UI copy).
 - Fullscreen API does not exist on iPhone Safari (`requestFullscreen` is undefined). Use CSS pseudo-fullscreen (fixed inset-0 card) instead of feature-detect plus prefix.
 - Base UI portals mount to `document.body`, so they vanish inside a fullscreen subtree. Pass `container` to mount them inside, or wrap in an outer portal: a nested portal without `container` resolves to the parent portal node.
+- Hover-reveal bubbles inside the map card (`group-hover:visible`) must be `absolute`: an `invisible` element still occupies layout space and will block clicks on overlapping controls (paid for by the attribution note covering zoom-out).
 - Deep links drive the map through `?region_id=&date=`: validate with `isUuid`/`isDateString`, ignore invalid params, and clear both params when the drawer closes.
 - The forwarded `MapContainer` ref only resolves a commit after mount. Never gate a flight on it; report readiness with a `useMap()` probe inside the container instead.
 

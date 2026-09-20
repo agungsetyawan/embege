@@ -26,12 +26,12 @@ export async function StatsCards() {
   const footnote = buildFootnote(unknownDate, future);
 
   const numberClass =
-    "text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl";
+    "text-xl font-semibold tracking-tight tabular-nums sm:text-2xl";
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-        <Card size="sm" className="gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0">
+        <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
               <IconTile variant="soft" size="sm" className="text-info">
@@ -51,7 +51,7 @@ export async function StatsCards() {
             </Badge>
           </CardContent>
         </Card>
-        <Card size="sm" className="gap-2">
+        <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
               <IconTile variant="soft" size="sm" className="text-warning">
@@ -71,7 +71,7 @@ export async function StatsCards() {
             </Badge>
           </CardContent>
         </Card>
-        <Card size="sm" className="gap-2">
+        <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
               <IconTile variant="soft" size="sm" className="text-destructive">
@@ -91,7 +91,7 @@ export async function StatsCards() {
             </Badge>
           </CardContent>
         </Card>
-        <Card size="sm" className="gap-2">
+        <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
               <IconTile variant="soft" size="sm" className="text-success">

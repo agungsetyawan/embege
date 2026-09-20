@@ -5,9 +5,13 @@ import { Card } from "@/components/ui/card";
 // instead of the SVG's hardcoded green fill.
 export function IndonesiaMapSkeleton() {
   return (
-    <output aria-busy="true" aria-label="Memuat peta">
-      <Card className="overflow-hidden p-0">
-        <div className="flex h-[60vh] md:h-[70vh] w-full items-center justify-center bg-muted p-6">
+    <output
+      aria-busy="true"
+      aria-label="Memuat peta"
+      className="flex flex-col gap-3 lg:h-full"
+    >
+      <Card className="overflow-hidden rounded-none p-0 md:rounded-xl lg:flex-1 lg:min-h-0">
+        <div className="flex h-[72vh] md:h-[75vh] lg:h-full w-full items-center justify-center bg-muted p-6">
           <div
             aria-hidden="true"
             className="h-full w-full animate-pulse bg-muted-foreground/30"
