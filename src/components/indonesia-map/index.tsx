@@ -25,7 +25,6 @@ import { Card } from "../ui/card";
 import { CASE_STALE_TIME, fetchDistricts, fetchSummary } from "./api";
 import { MapLegend } from "./legend";
 import {
-  FitToCases,
   MapAttributionControl,
   MapReadyProbe,
   MapToolbar,
@@ -286,7 +285,6 @@ export function IndonesiaMap() {
           />
           <TileLayer url={tiles.overlayUrl} />
           <DimOutsideIndonesia geo={geo.data} />
-          <FitToCases summary={summary} />
           <MapReadyProbe onReady={handleMapReady} />
           <DistrictLayer
             geo={geo.data}

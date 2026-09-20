@@ -8,40 +8,6 @@ import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import { IconTile } from "../reui/icon-tile";
 import { ButtonGroup } from "../ui/button-group";
-import type { SummaryRow } from "./types";
-
-// Fly to the bounding box of regions with cases once on load.
-// Zero cases = keep the default Indonesia-wide view. After the user zooms/clicks,
-// never steal the frame back (marker clicks re-render the page).
-export function FitToCases({ summary }: { summary: SummaryRow[] }) {
-  const map = useMap();
-  const fitted = useRef(false);
-  useEffect(() => {
-    if (fitted.current) return;
-    const active = summary.filter((s) => s.count > 0);
-    if (active.length === 0) return;
-    fitted.current = true;
-    let minLat = Infinity;
-    let maxLat = -Infinity;
-    let minLng = Infinity;
-    let maxLng = -Infinity;
-    for (const s of active) {
-      if (s.lat < minLat) minLat = s.lat;
-      if (s.lat > maxLat) maxLat = s.lat;
-      if (s.lng < minLng) minLng = s.lng;
-      if (s.lng > maxLng) maxLng = s.lng;
-    }
-    const pad = active.length === 1 ? 1.5 : 0.5;
-    map.fitBounds(
-      [
-        [minLat - pad, minLng - pad],
-        [maxLat + pad, maxLng + pad],
-      ],
-      { padding: [20, 20], animate: false },
-    );
-  }, [map, summary]);
-  return null;
-}
 
 export function FocusRegion({ feature }: { feature?: Feature }) {
   const map = useMap();
