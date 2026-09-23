@@ -14,9 +14,9 @@ The admin dashboard lists pending items with an AI summary and a location guess 
 
 Anyone can report a wrong victim count or a wrong date on a published case from a dialog on the map. Reports are anonymous. The submit endpoint runs an invisible bot check, a honeypot field, and an hourly per-case rate limit. The admin reviews reports in a Laporan tab and can apply the suggested values, move the case to another district, or soft-delete a reported duplicate. Soft-deleted cases stay recoverable in a Terhapus tab.
 
-The enrichment step calls the Gemini API for pending items. It writes a short neutral summary and a district guess with a confidence score. The code checks the guess against the district table and drops guesses that do not match. Failures fall back to the RSS snippet and the text match.
+The enrichment step calls the Gemini API for pending items. It writes a short neutral summary and a district guess with a confidence score. The code checks the guess against the district table and drops guesses that do not match. It then compares the item against published cases in the same district and date window; same-event news is auto-rejected at high confidence, while suspected victim-count updates stay queued with a duplicate badge. Failures fall back to the RSS snippet and the text match.
 
-The settings page edits crawler sources, keywords, batch size, and cron schedules without a new deploy.
+The settings page edits keywords, batch size, and cron schedules without a new deploy.
 
 ## Tech Stack
 
@@ -38,7 +38,7 @@ The list below names each layer and its role:
 News flows through five stages:
 
 1. The crawl job runs at minute 0 of each hour. It runs one Google News search per active keyword, filters by active keywords, and inserts matches into `crawl_items` with status `pending`.
-2. The enrich job runs at minute 10. It takes up to five pending items without a summary, fetches each article page, and calls Gemini once per item.
+2. The enrich job runs on its schedule every few minutes. It takes up to five pending items without a summary, fetches each article page, and calls Gemini up to twice per item (enrichment, plus a duplicate check when published candidates exist).
 3. The admin opens `/admin`, checks each item, and approves or rejects it. Approval creates a row in `cases`.
 4. The public map reads published cases from `GET /api/cases`. The response stays cached for five minutes.
 5. New approvals appear on the map within five minutes.
@@ -74,7 +74,7 @@ The schema has eight tables:
 - `regions`: 514 districts with province, centroid coordinates, and a `centroid_ok` flag. The flag is false for 12 districts with weak source geometry. Those districts need manual coordinate checks.
 - `crawl_sources`: legacy table, no longer read by the crawler (kept for history).
 - `crawl_keywords`: filter words with active flag. Words of five letters or fewer match whole words only. Longer words match substrings.
-- `crawl_items`: raw crawl results with status `pending`, `approved`, or `rejected`, plus AI summary, guessed district, and confidence score.
+- `crawl_items`: raw crawl results with status `pending`, `approved`, or `rejected`, plus AI summary, guessed district, confidence score, and duplicate hints (referenced case, confidence, reason).
 - `cases`: approved public cases linked to a district. A soft delete through `deleted_at` hides a case from the map without removing the row. `updated_at` and `updated_by_email` record the last admin edit.
 - `admin_audit_log`: append-only trail of every admin write (actor, action, row, before/after diff) for multi-admin accountability. Authenticated admins only.
 - `case_reports`: public correction reports per case, with a reason, suggested values, and a status of `open`, `resolved`, or `dismissed`.
@@ -89,8 +89,8 @@ The app exposes five JSON endpoints:
 - `GET /api/cases`: public. Without params it returns the per-region summary of all 514 districts ordered by province and district, including zero-case rows used by the markers and the search picker. With `?region_id=` it returns that district's published cases. The response carries `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
 - `GET /api/timeline`: public. It returns the per-day timeline of poisoning days (case and victim counts with districts per date) used by the Linimasa dialog on the map. The response carries `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
 - `POST /api/reports`: public. It stores a correction report for a published case after a bot check. It returns 201 on success, 400 for invalid input, 403 for bots, and 429 when the same visitor already reported the case within an hour.
-- `GET /api/cron/crawl`: needs `Authorization: Bearer <CRON_SECRET>`. It crawls active feeds and returns counts of sources, fetched items, and new rows.
-- `GET /api/cron/enrich`: needs `Authorization: Bearer <CRON_SECRET>`. It enriches pending items and returns counts of processed, enriched, and failed items.
+- `GET /api/cron/crawl`: needs `Authorization: Bearer <CRON_SECRET>`. It runs one Google News search per active keyword and returns counts of keywords, fetched items, and new rows.
+- `GET /api/cron/enrich`: needs `Authorization: Bearer <CRON_SECRET>`. It enriches pending items and returns counts of processed, enriched, auto-rejected, duplicate-rejected, and failed items.
 
 The `/admin` pages need a signed-in admin. They use Server Components and Server Actions. No browser code talks to Supabase with write access.
 

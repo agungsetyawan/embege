@@ -51,6 +51,9 @@ export type LlmResult = {
 };
 
 // Normalize one LLM JSON object into LlmResult. Validation failure -> null.
+const clamp01 = (n: number) =>
+  Number.isNaN(n) ? 0 : Math.min(1, Math.max(0, n));
+
 function parseLlmResult(parsed: unknown): LlmResult | null {
   if (!parsed || typeof parsed !== "object") return null;
   const p = parsed as Record<string, unknown>;
@@ -69,11 +72,9 @@ function parseLlmResult(parsed: unknown): LlmResult | null {
       typeof p.district === "string" && p.district.trim()
         ? p.district.trim()
         : null,
-    confidence: Number.isNaN(conf) ? 0 : Math.min(1, Math.max(0, conf)),
+    confidence: clamp01(conf),
     isPoisonRelated: p.is_poison_related !== false,
-    relevanceConfidence: Number.isNaN(relConf)
-      ? 0
-      : Math.min(1, Math.max(0, relConf)),
+    relevanceConfidence: clamp01(relConf),
     rejectReason:
       typeof p.reject_reason === "string" && p.reject_reason.trim()
         ? p.reject_reason.trim().slice(0, 500)
@@ -111,7 +112,11 @@ const ITEM_SCHEMA = {
   ],
 };
 
-async function callGemini(contents: unknown, responseSchema: unknown) {
+async function callGemini(
+  contents: unknown,
+  responseSchema: unknown,
+  systemPrompt: string = CURATOR_PROMPT,
+) {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${requiredEnv("GEMINI_API_KEY")}`,
     // `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${requiredEnv("GEMINI_API_KEY")}`,
@@ -119,7 +124,7 @@ async function callGemini(contents: unknown, responseSchema: unknown) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: CURATOR_PROMPT }] },
+        system_instruction: { parts: [{ text: systemPrompt }] },
         contents,
         generationConfig: {
           response_mime_type: "application/json",
@@ -136,6 +141,91 @@ async function callGemini(contents: unknown, responseSchema: unknown) {
   return JSON.parse(raw) as unknown;
 }
 
+export type DuplicateCandidate = {
+  id: string;
+  summary: string;
+  victims: number | null;
+  occurred_on: string | null;
+  source_media: string;
+};
+
+export type DuplicateResult = {
+  isDuplicate: boolean;
+  duplicateOfCaseId: string | null;
+  confidence: number;
+  isUpdate: boolean;
+  reason: string | null;
+};
+
+const DEDUP_PROMPT =
+  "Kamu pembanding berita keracunan MBG. Diberi satu berita baru dan daftar kasus yang sudah terbit (sama kabupaten/kota, tanggal berdekatan). Duplikat (is_duplicate=true) HANYA jika peristiwa sama: lokasi dan tanggal kejadian cocok dan korban sekelompok (toleransi beda angka karena update). Jika berita baru membawa angka korban lebih baru atau detail perkembangan dari peristiwa yang sama, tetap is_duplicate=true tapi is_update=true. Jika lokasi beda, tanggal beda jauh (>7 hari tanpa kaitan eksplisit), atau peristiwa berbeda, is_duplicate=false. duplicate_of_case_id = id kandidat yang cocok, null jika bukan duplikat. Jawab HANYA JSON valid, tanpa markdown.";
+
+const DEDUP_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    is_duplicate: { type: "BOOLEAN" },
+    duplicate_of_case_id: { type: "STRING", nullable: true },
+    confidence: { type: "NUMBER" },
+    is_update: { type: "BOOLEAN" },
+    reason: { type: "STRING", nullable: true },
+  },
+  required: ["is_duplicate", "confidence", "is_update"],
+};
+
+function parseDuplicateResult(
+  parsed: unknown,
+  candidates: DuplicateCandidate[],
+): DuplicateResult | null {
+  if (!parsed || typeof parsed !== "object") return null;
+  const p = parsed as Record<string, unknown>;
+  const conf = Number(p.confidence);
+  const rawId =
+    typeof p.duplicate_of_case_id === "string"
+      ? p.duplicate_of_case_id.trim()
+      : null;
+  const match = candidates.some((c) => c.id === rawId) ? rawId : null;
+  const isDup = p.is_duplicate === true && match !== null;
+  return {
+    isDuplicate: isDup,
+    duplicateOfCaseId: isDup ? match : null,
+    confidence: clamp01(conf),
+    isUpdate: p.is_update === true,
+    reason:
+      typeof p.reason === "string" && p.reason.trim()
+        ? p.reason.trim().slice(0, 500)
+        : null,
+  };
+}
+
+// One Gemini call: is the new item the same event as an already-published case? Any failure -> null.
+export async function checkDuplicateWithGemini(
+  title: string,
+  summary: string,
+  candidates: DuplicateCandidate[],
+): Promise<DuplicateResult | null> {
+  try {
+    const lines = candidates.map(
+      (c, i) =>
+        `${i + 1}. id=${c.id} tanggal=${c.occurred_on ?? "?"} korban=${c.victims ?? "?"} media=${c.source_media} ringkasan=${c.summary.slice(0, 500)}`,
+    );
+    const parsed = await callGemini(
+      [
+        {
+          parts: [
+            {
+              text: `Berita baru: ${title} — ${summary.slice(0, 1000)}\nKandidat:\n${lines.join("\n")}`,
+            },
+          ],
+        },
+      ],
+      DEDUP_SCHEMA,
+      DEDUP_PROMPT,
+    );
+    return parsed ? parseDuplicateResult(parsed, candidates) : null;
+  } catch {
+    return null;
+  }
+}
 // One Gemini call: summary + location + MBG poisoning relevance. Any failure -> null.
 export async function enrichWithGemini(
   title: string,

@@ -77,7 +77,7 @@ Lessons already paid for in debug time. Follow them.
 
 **Cron**
 - Cron runs in Supabase (`pg_cron` + `pg_net`), not in Vercel. `pg_net` lives in the `net` schema, not `extensions`.
-- Cron endpoints must be idempotent (`url_hash` dedup) and answer in under 60 seconds. Cap enrich batch size via `app_settings.enrich_batch`.
+- Cron endpoints must be idempotent (`url_hash` dedup) and answer in under 60 seconds. Cap enrich batch size via `app_settings.enrich_batch` (enrich makes up to 2 Gemini calls per item, so the batch sizes the 60-second budget).
 
 **Database**
 - RLS: public reads `regions` and published `cases` only. Public writes go only through the `submit_case_report()` RPC (1 report per case per IP per hour). Every other write needs an authenticated admin.
@@ -91,6 +91,7 @@ Lessons already paid for in debug time. Follow them.
 **LLM**
 - Pin the working Gemini model name in `src/lib/enrich.ts`. Models retire without warning.
 - Validate every LLM output against the `regions` table before saving. Drop what does not match.
+- Duplicate auto-reject needs confidence >= 0.9 and never fires on victim-count updates (`is_update` stays queued with a badge).
 - Human curation stays required before anything publishes.
 
 **Language**

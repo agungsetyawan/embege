@@ -47,6 +47,17 @@ export type PendingItemData = {
   llm_summary: string | null;
   llm_victims: number | null;
   geo_confidence: number | null;
+  duplicate_of_case_id: string | null;
+  duplicate_confidence: number | null;
+  duplicate_reason: string | null;
+};
+
+export type DuplicateCase = {
+  id: string;
+  summary: string;
+  victims: number | null;
+  occurred_on: string | null;
+  source_media: string;
 };
 
 type RegionNode = CascaderNode<{ centroidOk: boolean }>;
@@ -88,9 +99,11 @@ export function renderRegionLabel(node: RegionNode) {
 export function PendingItem({
   item,
   regions,
+  duplicate,
 }: {
   item: PendingItemData;
   regions: RegionOption[];
+  duplicate: DuplicateCase | null;
 }) {
   const guessed = regions.find((r) => r.id === item.guessed_region_id);
   const dateDefault = item.published_at ? item.published_at.slice(0, 10) : "";
@@ -125,6 +138,15 @@ export function PendingItem({
                 {item.llm_victims} korban
               </Badge>
             )}
+            {duplicate && (
+              <Badge variant="outline">
+                <Sparkles />
+                Mirip kasus terbit
+                {duplicate.occurred_on ? ` (${duplicate.occurred_on})` : ""}
+                {item.duplicate_confidence !== null &&
+                  ` · ${Math.round(item.duplicate_confidence * 100)}%`}
+              </Badge>
+            )}
           </div>
         </div>
         <a
@@ -136,6 +158,15 @@ export function PendingItem({
           {item.title}
         </a>
       </FrameHeader>
+      {duplicate && (
+        <p className="pt-2 text-sm text-muted-foreground">
+          {item.duplicate_reason ??
+            "Peristiwa sama dengan kasus yang sudah terbit."}{" "}
+          <span className="line-clamp-2">
+            ({duplicate.source_media}: {duplicate.summary})
+          </span>
+        </p>
+      )}
       <div className="flex flex-col py-4">
         <form
           id={`approve-${item.id}`}

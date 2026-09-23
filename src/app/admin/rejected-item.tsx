@@ -30,7 +30,9 @@ export function RejectedItem({ item }: { item: RejectedItemData }) {
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
             <Badge variant="outline">
               <Bot />
-              Ditolak otomatis
+              {item.llm_reject_reason?.startsWith("Duplikat")
+                ? "Duplikat otomatis"
+                : "Ditolak otomatis"}
             </Badge>
           </div>
         </div>

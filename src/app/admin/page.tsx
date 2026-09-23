@@ -9,7 +9,11 @@ import { NavLinkStatus } from "@/components/ui/nav-link-status";
 import { createClient } from "@/lib/supabase/server";
 import { AdminHeader } from "./admin-header";
 import { DeletedItem, type DeletedItemData } from "./deleted-item";
-import { PendingItem, type PendingItemData } from "./pending-item";
+import {
+  type DuplicateCase,
+  PendingItem,
+  type PendingItemData,
+} from "./pending-item";
 import { RejectedItem, type RejectedItemData } from "./rejected-item";
 import { type CaseTwin, ReportItem, type ReportItemData } from "./report-item";
 
@@ -107,7 +111,7 @@ export default async function AdminPage({
           : supabase
               .from("crawl_items")
               .select(
-                "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,geo_confidence",
+                "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,geo_confidence,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
               )
               .eq("status", "pending")
               .order("published_at", { ascending: false, nullsFirst: false })
@@ -170,6 +174,21 @@ export default async function AdminPage({
         : tab === "deleted"
           ? `/admin?tab=deleted&page=${p}`
           : `/admin?page=${p}`;
+
+  // Duplicate hints for pending items: fetch the referenced published cases.
+  const duplicatesByItem = new Map<string, DuplicateCase>();
+  if (tab === "pending") {
+    const ids = ((items as unknown as PendingItemData[] | undefined) ?? [])
+      .map((i) => i.duplicate_of_case_id)
+      .filter(Boolean) as string[];
+    if (ids.length > 0) {
+      const { data: dupCases } = await supabase
+        .from("cases")
+        .select("id,summary,victims,occurred_on,source_media")
+        .in("id", [...new Set(ids)]);
+      for (const c of dupCases ?? []) duplicatesByItem.set(c.id, c);
+    }
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
@@ -234,6 +253,12 @@ export default async function AdminPage({
                       key={item.id}
                       item={item}
                       regions={regions ?? []}
+                      duplicate={
+                        item.duplicate_of_case_id
+                          ? (duplicatesByItem.get(item.duplicate_of_case_id) ??
+                            null)
+                          : null
+                      }
                     />
                   ))}
         </Frame>

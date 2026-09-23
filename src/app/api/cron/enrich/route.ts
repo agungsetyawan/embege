@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import {
+  checkDuplicateWithGemini,
   enrichWithGemini,
   fetchArticleText,
   type LlmResult,
@@ -13,6 +14,10 @@ const DEFAULT_BATCH = 5;
 const MAX_BATCH = 20;
 // The LLM may only auto-reject when highly confident. In doubt = keep queued.
 const AUTO_REJECT_MIN_CONFIDENCE = 0.8;
+// Duplicates auto-reject on a stricter bar: a wrong reject hides a victim update.
+const DEDUP_MIN_CONFIDENCE = 0.9;
+const DEDUP_CANDIDATES = 5;
+const DEFAULT_DEDUP_WINDOW_DAYS = 7;
 
 // Match the LLM output against the regions table (uppercase, KOTA-prefix tolerant).
 function matchRegion(
@@ -38,21 +43,31 @@ export async function GET(req: Request) {
     requiredEnv("SUPABASE_SECRET_KEY"),
   );
 
-  const { data: setting } = await supabase
+  const { data: settings } = await supabase
     .from("app_settings")
-    .select("value")
-    .eq("key", "enrich_batch")
-    .single();
-  const parsed = Number.parseInt(setting?.value ?? "", 10);
-  const batch =
-    Number.isNaN(parsed) || parsed < 1
-      ? DEFAULT_BATCH
-      : Math.min(parsed, MAX_BATCH);
+    .select("key,value")
+    .in("key", ["enrich_batch", "dedup_window_days"]);
+  const settingValue = (k: string) =>
+    settings?.find((s) => s.key === k)?.value ?? "";
+  const clampInt = (raw: string, def: number, max: number) => {
+    const n = Number.parseInt(raw, 10);
+    return Number.isNaN(n) || n < 1 ? def : Math.min(n, max);
+  };
+  const batch = clampInt(
+    settingValue("enrich_batch"),
+    DEFAULT_BATCH,
+    MAX_BATCH,
+  );
+  const windowDays = clampInt(
+    settingValue("dedup_window_days"),
+    DEFAULT_DEDUP_WINDOW_DAYS,
+    30,
+  );
 
   const [{ data: items }, { data: regions }] = await Promise.all([
     supabase
       .from("crawl_items")
-      .select("id,title,summary,url,guessed_region_id")
+      .select("id,title,summary,url,published_at,guessed_region_id")
       .eq("status", "pending")
       .is("llm_summary", null)
       .order("created_at", { ascending: true })
@@ -65,6 +80,7 @@ export async function GET(req: Request) {
 
   let enriched = 0;
   let autoRejected = 0;
+  let duplicateRejected = 0;
   let failed = 0;
 
   // Fetch article texts in parallel (I/O bound), then enrich each item in
@@ -85,7 +101,7 @@ export async function GET(req: Request) {
   const handleItem = async (
     item: (typeof items)[number],
     result: LlmResult | undefined,
-  ): Promise<"enriched" | "rejected" | "failed"> => {
+  ): Promise<"enriched" | "rejected" | "duplicate" | "failed"> => {
     try {
       if (!result) return "failed";
       // High-confidence non-MBG-poisoning news: auto-reject.
@@ -111,6 +127,9 @@ export async function GET(req: Request) {
         llm_victims: number | null;
         guessed_region_id?: string | null;
         geo_confidence?: number | null;
+        duplicate_of_case_id?: string | null;
+        duplicate_confidence?: number | null;
+        duplicate_reason?: string | null;
       } = {
         llm_summary: result.summary,
         llm_is_relevant: true,
@@ -121,6 +140,52 @@ export async function GET(req: Request) {
         // Overwrite the substring guess only when: no guess yet, or the LLM is confident.
         if (!item.guessed_region_id || result.confidence >= 0.7) {
           update.guessed_region_id = candidate;
+        }
+      }
+      // Dedup against published cases: same region, occurred_on near the
+      // item date. LLM verifies; confident same-event (not an update) rejects.
+      const regionId = update.guessed_region_id ?? item.guessed_region_id;
+      const anchor = item.published_at ? item.published_at.slice(0, 10) : null;
+      if (regionId && anchor) {
+        const from = new Date(anchor);
+        from.setDate(from.getDate() - windowDays);
+        const to = new Date(anchor);
+        to.setDate(to.getDate() + windowDays);
+        const { data: published } = await supabase
+          .from("cases")
+          .select("id,summary,victims,occurred_on,source_media")
+          .eq("region_id", regionId)
+          .eq("published", true)
+          .is("deleted_at", null)
+          .gte("occurred_on", from.toISOString().slice(0, 10))
+          .lte("occurred_on", to.toISOString().slice(0, 10))
+          .order("occurred_on", { ascending: false })
+          .limit(DEDUP_CANDIDATES);
+        if (published && published.length > 0) {
+          const dup = await checkDuplicateWithGemini(
+            item.title,
+            result.summary,
+            published,
+          );
+          if (dup?.isDuplicate && dup.duplicateOfCaseId) {
+            update.duplicate_of_case_id = dup.duplicateOfCaseId;
+            update.duplicate_confidence = dup.confidence;
+            update.duplicate_reason = dup.reason;
+            if (!dup.isUpdate && dup.confidence >= DEDUP_MIN_CONFIDENCE) {
+              const { error } = await supabase
+                .from("crawl_items")
+                .update({
+                  ...update,
+                  status: "rejected",
+                  llm_is_relevant: false,
+                  llm_reject_reason: dup.reason
+                    ? `Duplikat: ${dup.reason}`.slice(0, 500)
+                    : "Duplikat dari kasus yang sudah terbit.",
+                })
+                .eq("id", item.id);
+              return error ? "failed" : "duplicate";
+            }
+          }
         }
       }
       const { error } = await supabase
@@ -140,12 +205,14 @@ export async function GET(req: Request) {
   for (const o of outcomes) {
     if (o === "enriched") enriched++;
     else if (o === "rejected") autoRejected++;
+    else if (o === "duplicate") duplicateRejected++;
     else failed++;
   }
   return Response.json({
     processed: items.length,
     enriched,
     autoRejected,
+    duplicateRejected,
     failed,
   });
 }
