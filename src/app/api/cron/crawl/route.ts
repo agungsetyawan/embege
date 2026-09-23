@@ -2,11 +2,37 @@ import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import Parser from "rss-parser";
 import { requiredEnv } from "@/lib/env";
+import { isHttpUrl } from "@/lib/validate";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const parser = new Parser({ timeout: 15000 });
+const parser = new Parser({
+  timeout: 15000,
+  // <source> carries the publisher name; rss-parser does not expose it by default.
+  customFields: { item: ["source"] },
+});
+
+// Fixed search window. The crawl runs hourly and url_hash dedup makes the
+// overlap free, so a wide window only protects against missed runs and slow
+// indexing. One-line change if the window ever needs tuning.
+const GOOGLE_NEWS_WINDOW = "3d";
+
+function googleNewsUrl(keyword: string): string {
+  const params = new URLSearchParams({
+    q: `${keyword} when:${GOOGLE_NEWS_WINDOW}`,
+    hl: "id",
+    gl: "ID",
+    ceid: "ID:id",
+  });
+  return `https://news.google.com/rss/search?${params.toString()}`;
+}
+
+// Google wraps the publisher URL in a redirect link
+// (news.google.com/rss/articles/CBMi...). The link is stable per article, so
+// it dedups by url_hash like any other URL, and browsers follow it to the
+// publisher when a visitor clicks "Sumber". No server-side resolve: the page
+// is a JS app with an encrypted payload, so fetch can never see the target.
 
 type Region = { id: string; province: string; district: string };
 
@@ -22,6 +48,28 @@ function guessRegion(text: string, regions: Region[]): string | null {
   return null;
 }
 
+// Split "Title - Publisher" using the exact <source> value, so only a real
+// publisher suffix is trimmed — never a lookalike tail like " - Update Terkini".
+function splitPublisher(
+  title: string,
+  source: string | null,
+): { title: string; media: string } {
+  const name = source?.trim();
+  if (!name) return { title, media: "Google News" };
+  const suffix = ` - ${name}`;
+  return {
+    title: title.endsWith(suffix) ? title.slice(0, -suffix.length) : title,
+    media: name,
+  };
+}
+
+type Candidate = {
+  title: string;
+  source: string | null;
+  snippet: string;
+  isoDate: string | null;
+};
+
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${requiredEnv("CRON_SECRET")}`) {
@@ -33,17 +81,11 @@ export async function GET(req: Request) {
     requiredEnv("SUPABASE_SECRET_KEY"),
   );
 
-  const [{ data: sources }, { data: keywords }, { data: regions }] =
-    await Promise.all([
-      supabase
-        .from("crawl_sources")
-        .select("name,rss_url")
-        .eq("active", true)
-        .not("rss_url", "is", null),
-      supabase.from("crawl_keywords").select("keyword").eq("active", true),
-      supabase.from("regions").select("id,province,district"),
-    ]);
-  if (!sources || !keywords || !regions) {
+  const [{ data: keywords }, { data: regions }] = await Promise.all([
+    supabase.from("crawl_keywords").select("keyword").eq("active", true),
+    supabase.from("regions").select("id,province,district"),
+  ]);
+  if (!keywords || !regions) {
     return Response.json(
       { error: "gagal membaca konfigurasi" },
       { status: 500 },
@@ -57,39 +99,58 @@ export async function GET(req: Request) {
       : (t: string) => t.includes(k),
   );
 
-  let fetched = 0;
-  let inserted = 0;
-  for (const src of sources) {
+  // One query per keyword. Each feed caps at 100 items; the same article
+  // carries an identical link across queries, so dedup by link here.
+  const seen = new Map<string, Candidate>();
+  for (const kw of keywords) {
     // One dead feed must not fail the others.
-    const feed = await parser.parseURL(src.rss_url as string).catch(() => null);
+    const feed = await parser
+      .parseURL(googleNewsUrl(kw.keyword))
+      .catch(() => null);
     if (!feed) continue;
-    const rows = [];
     for (const item of feed.items ?? []) {
       const title = item.title ?? "";
       const text = `${title} ${item.contentSnippet ?? ""}`;
-      const lower = text.toLowerCase();
-      if (!tests.some((t) => t(lower))) continue;
-      if (!item.link) continue;
-      fetched++;
-      rows.push({
-        url_hash: createHash("sha256").update(item.link).digest("hex"),
-        title: title.slice(0, 500),
-        summary: (item.contentSnippet ?? "").slice(0, 1000) || null,
-        url: item.link,
-        media: src.name,
-        published_at: item.isoDate
-          ? new Date(item.isoDate).toISOString()
-          : null,
-        guessed_region_id: guessRegion(text, regions),
-      });
-    }
-    if (rows.length > 0) {
-      const { data, error } = await supabase
-        .from("crawl_items")
-        .upsert(rows, { onConflict: "url_hash", ignoreDuplicates: true })
-        .select("id");
-      if (!error) inserted += data?.length ?? 0;
+      if (!tests.some((t) => t(text.toLowerCase()))) continue;
+      if (!item.link || !isHttpUrl(item.link)) continue;
+      if (!seen.has(item.link)) {
+        const rawSource = (item as { source?: unknown }).source;
+        seen.set(item.link, {
+          title,
+          source: typeof rawSource === "string" ? rawSource : null,
+          snippet: item.contentSnippet ?? "",
+          isoDate: item.isoDate ?? null,
+        });
+      }
     }
   }
-  return Response.json({ sources: sources.length, fetched, inserted });
+
+  const rows = [...seen.entries()].map(([link, item]) => {
+    // Filter and region guess ran on the raw title above; only storage is trimmed.
+    const { title, media } = splitPublisher(item.title, item.source);
+    const text = `${item.title} ${item.snippet}`;
+    return {
+      url_hash: createHash("sha256").update(link).digest("hex"),
+      title: title.slice(0, 500),
+      summary: item.snippet.slice(0, 1000) || null,
+      url: link,
+      media,
+      published_at: item.isoDate ? new Date(item.isoDate).toISOString() : null,
+      guessed_region_id: guessRegion(text, regions),
+    };
+  });
+
+  let inserted = 0;
+  if (rows.length > 0) {
+    const { data, error } = await supabase
+      .from("crawl_items")
+      .upsert(rows, { onConflict: "url_hash", ignoreDuplicates: true })
+      .select("id");
+    if (!error) inserted = data?.length ?? 0;
+  }
+  return Response.json({
+    keywords: keywords.length,
+    fetched: seen.size,
+    inserted,
+  });
 }

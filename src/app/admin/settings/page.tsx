@@ -9,11 +9,8 @@ import { AdminHeader } from "../admin-header";
 import {
   addKeyword,
   addSetting,
-  addSource,
   deleteKeyword,
-  deleteSource,
   toggleKeyword,
-  toggleSource,
   updateSetting,
 } from "./actions";
 import { ApplyButton } from "./apply-button";
@@ -31,18 +28,13 @@ export default async function SettingsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/admin/login");
 
-  const [{ data: settings }, { data: sources }, { data: keywords }] =
-    await Promise.all([
-      supabase.from("app_settings").select("key,value,updated_at").order("key"),
-      supabase
-        .from("crawl_sources")
-        .select("id,name,rss_url,active")
-        .order("name"),
-      supabase
-        .from("crawl_keywords")
-        .select("id,keyword,active")
-        .order("keyword"),
-    ]);
+  const [{ data: settings }, { data: keywords }] = await Promise.all([
+    supabase.from("app_settings").select("key,value,updated_at").order("key"),
+    supabase
+      .from("crawl_keywords")
+      .select("id,keyword,active")
+      .order("keyword"),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4">
@@ -107,69 +99,10 @@ export default async function SettingsPage() {
 
       <section className="flex flex-col gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Sumber berita</h2>
-          <p className="text-xs text-muted-foreground">
-            Berlaku di crawl berikutnya. Sumber mati otomatis dilewati crawler.
-          </p>
-        </div>
-        <Frame stacked>
-          {sources?.map((s) => (
-            <FramePanel key={s.id}>
-              <div className="flex flex-col gap-2 text-sm">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium">{s.name}</span>
-                  <Badge variant={s.active ? "secondary" : "outline"}>
-                    {s.active ? "Aktif" : "Mati"}
-                  </Badge>
-                </div>
-                <span className="truncate font-mono text-xs text-muted-foreground">
-                  {s.rss_url ?? "(URL belum diisi)"}
-                </span>
-                <div className="flex gap-2">
-                  <form action={toggleSource}>
-                    <input type="hidden" name="id" value={s.id} />
-                    <SubmitButton type="submit" variant="outline" size="sm">
-                      {s.active ? "Matikan" : "Aktifkan"}
-                    </SubmitButton>
-                  </form>
-                  <form action={deleteSource}>
-                    <input type="hidden" name="id" value={s.id} />
-                    <SubmitButton type="submit" variant="outline" size="sm">
-                      Hapus
-                    </SubmitButton>
-                  </form>
-                </div>
-              </div>
-            </FramePanel>
-          ))}
-        </Frame>
-        <form action={addSource} className="flex gap-2">
-          <Input
-            name="name"
-            required
-            placeholder="Nama media"
-            className="w-40"
-          />
-          <Input
-            name="rss_url"
-            required
-            placeholder="https://contoh.id/rss"
-            className="flex-1 font-mono"
-          />
-          <SubmitButton type="submit" variant="outline">
-            Tambah
-          </SubmitButton>
-        </form>
-      </section>
-
-      <Separator />
-
-      <section className="flex flex-col gap-3">
-        <div>
           <h2 className="text-lg font-semibold">Keyword</h2>
           <p className="text-xs text-muted-foreground">
-            ≤5 huruf match utuh (MBG tidak match “lambung”), selebihnya
-            substring.
+            Satu keyword = satu pencarian Google News 3 hari terakhir. ≤5 huruf
+            match utuh (MBG tidak match “lambung”), selebihnya substring.
           </p>
         </div>
         <Frame stacked>

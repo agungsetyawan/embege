@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isHttpUrl, isUuid } from "@/lib/validate";
+import { isUuid } from "@/lib/validate";
 import { requireAdmin } from "../actions";
 
 const UPDATABLE_SETTINGS = new Set([
@@ -39,56 +39,6 @@ export async function addSetting(formData: FormData) {
     action: "settings.add",
     table: "app_settings",
     diff: { key, value },
-  });
-  revalidatePath("/admin/settings");
-}
-
-export async function addSource(formData: FormData) {
-  const { supabase, log } = await requireAdmin();
-  const name = String(formData.get("name") ?? "").trim();
-  const rssUrl = String(formData.get("rss_url") ?? "").trim();
-  if (!name || name.length > 100 || !isHttpUrl(rssUrl)) return;
-  await supabase.from("crawl_sources").insert({ name, rss_url: rssUrl });
-  await log({
-    action: "settings.add_source",
-    table: "crawl_sources",
-    diff: { name },
-  });
-  revalidatePath("/admin/settings");
-}
-
-export async function toggleSource(formData: FormData) {
-  const { supabase, log } = await requireAdmin();
-  const id = String(formData.get("id"));
-  if (!isUuid(id)) return;
-  const { data } = await supabase
-    .from("crawl_sources")
-    .select("active")
-    .eq("id", id)
-    .single();
-  if (!data) return;
-  await supabase
-    .from("crawl_sources")
-    .update({ active: !data.active })
-    .eq("id", id);
-  await log({
-    action: "settings.toggle_source",
-    table: "crawl_sources",
-    rowId: id,
-    diff: { active: !data.active },
-  });
-  revalidatePath("/admin/settings");
-}
-
-export async function deleteSource(formData: FormData) {
-  const { supabase, log } = await requireAdmin();
-  const id = String(formData.get("id"));
-  if (!isUuid(id)) return;
-  await supabase.from("crawl_sources").delete().eq("id", id);
-  await log({
-    action: "settings.delete_source",
-    table: "crawl_sources",
-    rowId: id,
   });
   revalidatePath("/admin/settings");
 }

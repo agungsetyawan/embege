@@ -8,7 +8,7 @@ Production: https://embege-poisoning.vercel.app
 
 The public map shows case counts per district (a district is a kabupaten or kota, the second level of local government). Markers group all cases in one district, and nearby markers cluster by zoom level. Clicking a marker opens a side sheet that lists each case with its date, victim count, and source link. A search bar on the map opens a province-grouped picker covering all 514 districts; picking a district flies the map there and opens the same side sheet, with a case-count badge on districts that have cases. The page supports dark mode. The map has an expand button for a full-viewport view, and the gray basemap follows the light or dark theme. A Linimasa pill on the map opens a dialog of poisoning days with a Mingguan/Bulanan/Tahunan period filter and a Daftar/Grafik view toggle; the Grafik tab shows the chronological bar trend of cases or victims per period. Clicking a district in an expanded day closes the dialog, flies the map to that district, and highlights that date's cases in the side sheet. The drawer header has an icon-only share button for the district link (`?region_id=`), and each case in the side sheet has a Bagikan button that adds `date=` to highlight that date's cases; opening either link reproduces the same flight and highlight.
 
-The crawler reads RSS feeds from four active outlets every hour. It filters items by keyword and stores matches for review. Duplicate URLs never create a second row.
+The crawler runs one Google News RSS search per active keyword every hour (last 3 days, Indonesian edition). It filters items by keyword and stores matches for review. Duplicate URLs never create a second row.
 
 The admin dashboard lists pending items with an AI summary and a location guess for each item. The admin picks the district, edits the summary, then approves or rejects the item. Approved items appear on the public map. A separate `/admin/cases` page lists all cases in a filterable table where the admin can edit, soft-delete, and restore rows; each row links its per-case action history.
 
@@ -37,7 +37,7 @@ The list below names each layer and its role:
 
 News flows through five stages:
 
-1. The crawl job runs at minute 0 of each hour. It reads active RSS feeds, filters by active keywords, and inserts matches into `crawl_items` with status `pending`.
+1. The crawl job runs at minute 0 of each hour. It runs one Google News search per active keyword, filters by active keywords, and inserts matches into `crawl_items` with status `pending`.
 2. The enrich job runs at minute 10. It takes up to five pending items without a summary, fetches each article page, and calls Gemini once per item.
 3. The admin opens `/admin`, checks each item, and approves or rejects it. Approval creates a row in `cases`.
 4. The public map reads published cases from `GET /api/cases`. The response stays cached for five minutes.
@@ -72,7 +72,7 @@ The table below lists each variable, its source, and its scope:
 The schema has eight tables:
 
 - `regions`: 514 districts with province, centroid coordinates, and a `centroid_ok` flag. The flag is false for 12 districts with weak source geometry. Those districts need manual coordinate checks.
-- `crawl_sources`: news outlets with RSS URL and active flag.
+- `crawl_sources`: legacy table, no longer read by the crawler (kept for history).
 - `crawl_keywords`: filter words with active flag. Words of five letters or fewer match whole words only. Longer words match substrings.
 - `crawl_items`: raw crawl results with status `pending`, `approved`, or `rejected`, plus AI summary, guessed district, and confidence score.
 - `cases`: approved public cases linked to a district. A soft delete through `deleted_at` hides a case from the map without removing the row. `updated_at` and `updated_by_email` record the last admin edit.
@@ -119,7 +119,6 @@ The list below pairs each known problem with its fix:
 - A cron job fails with "function does not exist": `pg_net` lives in the `net` schema, not in `extensions`. Call `net.http_get`.
 - A cron HTTP call times out at five seconds: the crawl takes longer. Set `timeout_milliseconds` to 60000 in the job definition.
 - A district marker sits in the wrong place: its `centroid_ok` flag is false. Fix the coordinates with one `UPDATE` on `regions`.
-- Kompas stays inactive: its RSS needs an API key. Add the feed URL in the settings page when one is available.
 
 ## Backlog
 
