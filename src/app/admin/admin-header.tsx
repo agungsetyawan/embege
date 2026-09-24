@@ -29,15 +29,17 @@ export function AdminHeader({
   meta,
   description,
   email,
+  children,
 }: {
   active: AdminNavKey;
   title: ReactNode;
   meta?: ReactNode;
   description?: ReactNode;
   email?: string | null;
+  children?: ReactNode;
 }) {
   return (
-    <div className="sticky top-0 z-30 flex flex-col gap-4 bg-background/95 py-3 backdrop-blur">
+    <div className="sticky top-0 z-30 flex flex-col gap-4 border-b border-border bg-background/95 py-3 backdrop-blur">
       <header className="flex items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-3">
@@ -77,6 +79,7 @@ export function AdminHeader({
           </Button>
         ))}
       </nav>
+      {children}
     </div>
   );
 }
