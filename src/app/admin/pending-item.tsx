@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormSubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
-import { approveItem, rejectItem } from "./actions";
+import { applyItemUpdate, approveItem, rejectItem } from "./actions";
 
 export type RegionOption = {
   id: string;
@@ -159,13 +159,24 @@ export function PendingItem({
         </a>
       </FrameHeader>
       {duplicate && (
-        <p className="pt-2 text-sm text-muted-foreground">
-          {item.duplicate_reason ??
-            "Peristiwa sama dengan kasus yang sudah terbit."}{" "}
-          <span className="line-clamp-2">
-            ({duplicate.source_media}: {duplicate.summary})
-          </span>
-        </p>
+        <div className="flex flex-col gap-1 pt-2 text-sm text-muted-foreground">
+          {item.llm_victims !== null && (
+            <p>
+              Kasus terbit: {duplicate.victims ?? "?"} korban → berita ini:{" "}
+              {item.llm_victims} korban
+            </p>
+          )}
+          <p>
+            {item.duplicate_reason ??
+              "Peristiwa sama dengan kasus yang sudah terbit."}{" "}
+            <span className="line-clamp-2">
+              ({duplicate.source_media}: {duplicate.summary})
+            </span>
+          </p>
+          <p>
+            Ini update dari kasus terbit. Terapkan untuk update, jangan Setujui.
+          </p>
+        </div>
       )}
       <div className="flex flex-col py-4">
         <form
@@ -252,6 +263,9 @@ export function PendingItem({
         <form id={`reject-${item.id}`} action={rejectItem}>
           <input type="hidden" name="itemId" value={item.id} />
         </form>
+        <form id={`apply-update-${item.id}`} action={applyItemUpdate}>
+          <input type="hidden" name="itemId" value={item.id} />
+        </form>
         {guessed && !guessed.centroid_ok && (
           <Alert variant="warning">
             <TriangleAlert />
@@ -267,9 +281,21 @@ export function PendingItem({
         >
           Tolak
         </FormSubmitButton>
-        <FormSubmitButton formId={`approve-${item.id}`} action={approveItem}>
+        <FormSubmitButton
+          variant={duplicate ? "outline" : undefined}
+          formId={`approve-${item.id}`}
+          action={approveItem}
+        >
           Setujui
         </FormSubmitButton>
+        {duplicate && (
+          <FormSubmitButton
+            formId={`apply-update-${item.id}`}
+            action={applyItemUpdate}
+          >
+            Terapkan update
+          </FormSubmitButton>
+        )}
       </FrameFooter>
     </FramePanel>
   );

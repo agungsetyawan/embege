@@ -92,6 +92,80 @@ export async function rejectItem(formData: FormData) {
   revalidatePath("/admin");
 }
 
+// Apply a duplicate-flagged item as an update to its published case:
+// victims/summary/source move to the newer article, then older pending
+// siblings for the same case are auto-rejected as superseded.
+export async function applyItemUpdate(formData: FormData) {
+  const { supabase, user, log } = await requireAdmin();
+  const itemId = String(formData.get("itemId"));
+  if (!isUuid(itemId)) return;
+
+  const { data: item } = await supabase
+    .from("crawl_items")
+    .select(
+      "status,url,media,published_at,llm_summary,llm_victims,duplicate_of_case_id",
+    )
+    .eq("id", itemId)
+    .single();
+  if (!item || item.status !== "pending" || !item.duplicate_of_case_id) return;
+  if (!item.llm_summary) return;
+
+  const { data: target } = await supabase
+    .from("cases")
+    .select("id,victims,occurred_on")
+    .eq("id", item.duplicate_of_case_id)
+    .is("deleted_at", null)
+    .single();
+  if (!target) return;
+
+  const victims = item.llm_victims ?? target.victims;
+  const { error } = await supabase
+    .from("cases")
+    .update({
+      victims,
+      // The news date is not the event date: only fill an empty one.
+      occurred_on:
+        target.occurred_on ?? item.published_at?.slice(0, 10) ?? null,
+      summary: item.llm_summary,
+      source_url: item.url,
+      source_media: item.media,
+      updated_at: new Date().toISOString(),
+      updated_by_email: user.email ?? null,
+    })
+    .eq("id", target.id);
+  if (error) return;
+
+  await supabase
+    .from("crawl_items")
+    .update({ status: "approved", case_id: target.id })
+    .eq("id", itemId);
+
+  if (item.published_at) {
+    await supabase
+      .from("crawl_items")
+      .update({
+        status: "rejected",
+        llm_is_relevant: false,
+        llm_reject_reason: "Kedaluarsa: sudah ada update lebih baru.",
+      })
+      .eq("status", "pending")
+      .eq("duplicate_of_case_id", target.id)
+      .neq("id", itemId)
+      .lt("published_at", item.published_at);
+  }
+
+  await log({
+    action: "crawl.apply_update",
+    table: "cases",
+    rowId: target.id,
+    diff: {
+      from_item: itemId,
+      victims: { from: target.victims, to: victims },
+    },
+  });
+  revalidatePath("/admin");
+}
+
 export async function restoreItem(formData: FormData) {
   const { supabase, log } = await requireAdmin();
   const itemId = String(formData.get("itemId"));
