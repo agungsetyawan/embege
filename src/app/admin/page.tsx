@@ -1,11 +1,8 @@
 import { Inbox } from "lucide-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/reui/badge";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { IconStack } from "@/components/reui/icon-stack";
-import { Button } from "@/components/ui/button";
-import { NavLinkStatus } from "@/components/ui/nav-link-status";
 import { createClient } from "@/lib/supabase/server";
 import { AdminHeader } from "./admin-header";
 import { DeletedItem, type DeletedItemData } from "./deleted-item";
@@ -14,6 +11,7 @@ import {
   PendingItem,
   type PendingItemData,
 } from "./pending-item";
+import { QueuePagination } from "./queue-pagination";
 import { RejectedItem, type RejectedItemData } from "./rejected-item";
 import { type CaseTwin, ReportItem, type ReportItemData } from "./report-item";
 
@@ -264,44 +262,14 @@ export default async function AdminPage({
         </Frame>
       )}
       {totalPages > 1 && (
-        <nav
-          aria-label="Halaman antrean"
-          className="flex items-center justify-center gap-3"
-        >
-          {page > 1 ? (
-            <Button
-              variant="outline"
-              size="sm"
-              nativeButton={false}
-              render={<Link href={pageQuery(page - 1)} />}
-            >
-              Sebelumnya
-              <NavLinkStatus />
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" disabled>
-              Sebelumnya
-            </Button>
-          )}
-          <span className="text-sm text-muted-foreground">
-            Halaman {page} dari {totalPages}
-          </span>
-          {page < totalPages ? (
-            <Button
-              variant="outline"
-              size="sm"
-              nativeButton={false}
-              render={<Link href={pageQuery(page + 1)} />}
-            >
-              Berikutnya
-              <NavLinkStatus />
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" disabled>
-              Berikutnya
-            </Button>
-          )}
-        </nav>
+        <QueuePagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={PAGE_SIZE}
+          pageQuery={pageQuery}
+          className="sticky bottom-0 z-30 -mx-4 -mb-4 border-t border-border bg-background/95 px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur"
+        />
       )}
     </main>
   );
