@@ -1,18 +1,53 @@
+import { createHash } from "node:crypto";
 import * as cheerio from "cheerio";
 import { requiredEnv } from "@/lib/env";
 
 const MAX_TEXT = 4000;
 const MAX_HTML = 1500000;
 
-// Fetch article text (paragraphs only). Failure (403/timeout/non-HTML) -> null, fallback to the RSS snippet.
-export async function fetchArticleText(url: string): Promise<string | null> {
+// Lowercase host, no query/fragment/trailing slash. Invalid -> null.
+function normalizeCanonical(raw: string): string | null {
   let parsed: URL;
   try {
-    parsed = new URL(url);
+    parsed = new URL(raw.trim());
   } catch {
     return null;
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+  const path = parsed.pathname.replace(/\/+$/, "") || "/";
+  return `${parsed.protocol}//${parsed.host.toLowerCase()}${path}`;
+}
+
+export const sha256OrNull = (s: string | null) =>
+  s ? createHash("sha256").update(s).digest("hex") : null;
+
+// Exact-match headline hash for crawl-time dedup. Empty -> null (never dedups).
+export function titleHash(title: string): string | null {
+  const norm = title
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return sha256OrNull(norm || null);
+}
+
+export type ArticleFetch = {
+  text: string | null;
+  // Normalized <link rel="canonical">, null when absent or invalid.
+  canonical: string | null;
+};
+
+// Fetch article text (paragraphs only) plus canonical URL. Failure
+// (403/timeout/non-HTML) -> nulls, caller falls back to the RSS snippet.
+export async function fetchArticleText(url: string): Promise<ArticleFetch> {
+  const none: ArticleFetch = { text: null, canonical: null };
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return none;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return none;
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 10000);
@@ -21,21 +56,24 @@ export async function fetchArticleText(url: string): Promise<string | null> {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; MBG-SIG/1.0)" },
     }).finally(() => clearTimeout(timer));
     if (!res.ok || !res.headers.get("content-type")?.includes("html"))
-      return null;
+      return none;
     const len = Number(res.headers.get("content-length") ?? "");
-    if (Number.isFinite(len) && len > MAX_HTML) return null;
+    if (Number.isFinite(len) && len > MAX_HTML) return none;
     const html = await res.text();
-    if (html.length > MAX_HTML) return null;
+    if (html.length > MAX_HTML) return none;
     const $ = cheerio.load(html);
+    const canonical = normalizeCanonical(
+      $('link[rel="canonical"]').attr("href") ?? "",
+    );
     $("script, style, nav, header, footer, aside, form").remove();
     const text = $("p")
       .map((_, el) => $(el).text().trim())
       .get()
       .filter((t) => t.length > 40)
       .join(" ");
-    return text ? text.slice(0, MAX_TEXT) : null;
+    return { text: text ? text.slice(0, MAX_TEXT) : null, canonical };
   } catch {
-    return null;
+    return none;
   }
 }
 

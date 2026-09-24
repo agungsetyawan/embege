@@ -91,7 +91,7 @@ Lessons already paid for in debug time. Follow them.
 **LLM**
 - Pin the working Gemini model name in `src/lib/enrich.ts`. Models retire without warning.
 - Validate every LLM output against the `regions` table before saving. Drop what does not match.
-- Duplicate auto-reject needs confidence >= 0.9 and never fires on victim-count updates (`is_update` stays queued with a badge).
+- Duplicate auto-reject needs confidence >= 0.9 and never fires on victim-count updates (`is_update` stays queued with a badge). Identical normalized headlines are skipped at crawl (`title_hash`, earliest kept); canonical URL collisions reject without an LLM call.
 - Human curation stays required before anything publishes.
 
 **Language**

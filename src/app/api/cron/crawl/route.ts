@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import Parser from "rss-parser";
+import { titleHash } from "@/lib/enrich";
 import { requiredEnv } from "@/lib/env";
 import { isHttpUrl } from "@/lib/validate";
 
@@ -125,26 +126,54 @@ export async function GET(req: Request) {
     }
   }
 
-  const rows = [...seen.entries()].map(([link, item]) => {
-    // Filter and region guess ran on the raw title above; only storage is trimmed.
-    const { title, media } = splitPublisher(item.title, item.source);
-    const text = `${item.title} ${item.snippet}`;
-    return {
-      url_hash: createHash("sha256").update(link).digest("hex"),
-      title: title.slice(0, 500),
-      summary: item.snippet.slice(0, 1000) || null,
-      url: link,
-      media,
-      published_at: item.isoDate ? new Date(item.isoDate).toISOString() : null,
-      guessed_region_id: guessRegion(text, regions),
-    };
+  const rows = [...seen.entries()]
+    .map(([link, item]) => {
+      // Filter and region guess ran on the raw title above; only storage is trimmed.
+      const { title, media } = splitPublisher(item.title, item.source);
+      const text = `${item.title} ${item.snippet}`;
+      return {
+        url_hash: createHash("sha256").update(link).digest("hex"),
+        title: title.slice(0, 500),
+        title_hash: titleHash(title),
+        summary: item.snippet.slice(0, 1000) || null,
+        url: link,
+        media,
+        published_at: item.isoDate
+          ? new Date(item.isoDate).toISOString()
+          : null,
+        guessed_region_id: guessRegion(text, regions),
+      };
+    })
+    // Same normalized headline, different URL (subdomain/AMP/syndication):
+    // keep the earliest published, skip the rest.
+    .sort((a, b) => (a.published_at ?? "").localeCompare(b.published_at ?? ""));
+
+  let skippedTitleDupes = 0;
+  const hashes = rows.map((r) => r.title_hash).filter((h): h is string => !!h);
+  const taken = new Set<string>();
+  if (hashes.length > 0) {
+    const { data: existing } = await supabase
+      .from("crawl_items")
+      .select("title_hash")
+      .in("title_hash", hashes);
+    for (const e of existing ?? []) if (e.title_hash) taken.add(e.title_hash);
+  }
+  const fresh = rows.filter((r) => {
+    const h = r.title_hash;
+    if (!h) return true;
+    if (taken.has(h)) {
+      skippedTitleDupes++;
+      return false;
+    }
+    taken.add(h);
+    return true;
   });
 
   let inserted = 0;
-  if (rows.length > 0) {
+  if (fresh.length > 0) {
     const { data, error } = await supabase
       .from("crawl_items")
-      .upsert(rows, { onConflict: "url_hash", ignoreDuplicates: true })
+      .upsert(fresh, { onConflict: "url_hash", ignoreDuplicates: true })
       .select("id");
     if (!error) inserted = data?.length ?? 0;
   }
@@ -152,5 +181,6 @@ export async function GET(req: Request) {
     keywords: keywords.length,
     fetched: seen.size,
     inserted,
+    skippedTitleDupes,
   });
 }

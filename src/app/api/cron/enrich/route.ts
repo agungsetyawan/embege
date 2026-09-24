@@ -4,6 +4,7 @@ import {
   enrichWithGemini,
   fetchArticleText,
   type LlmResult,
+  sha256OrNull,
 } from "@/lib/enrich";
 import { requiredEnv } from "@/lib/env";
 
@@ -85,11 +86,10 @@ export async function GET(req: Request) {
 
   // Fetch article texts in parallel (I/O bound), then enrich each item in
   // its own isolated Gemini call, all in parallel.
-  const texts = await Promise.all(
-    items.map((item) =>
-      fetchArticleText(item.url).then((t) => t ?? item.summary ?? ""),
-    ),
+  const fetches = await Promise.all(
+    items.map((item) => fetchArticleText(item.url)),
   );
+  const texts = fetches.map((f, i) => f.text ?? items[i].summary ?? "");
   const results = new Map<string, LlmResult>();
   await Promise.all(
     items.map(async (item, i) => {
@@ -101,9 +101,17 @@ export async function GET(req: Request) {
   const handleItem = async (
     item: (typeof items)[number],
     result: LlmResult | undefined,
+    canonical: string | null,
   ): Promise<"enriched" | "rejected" | "duplicate" | "failed"> => {
     try {
       if (!result) return "failed";
+      const cHash = sha256OrNull(canonical);
+      const rejectedBase = {
+        status: "rejected",
+        llm_summary: result.summary,
+        llm_is_relevant: false,
+        canonical_hash: cHash,
+      };
       // High-confidence non-MBG-poisoning news: auto-reject.
       if (
         !result.isPoisonRelated &&
@@ -112,13 +120,31 @@ export async function GET(req: Request) {
         const { error } = await supabase
           .from("crawl_items")
           .update({
-            status: "rejected",
-            llm_summary: result.summary,
-            llm_is_relevant: false,
+            ...rejectedBase,
             llm_reject_reason: result.rejectReason,
           })
           .eq("id", item.id);
         return error ? "failed" : "rejected";
+      }
+      // Same canonical URL as another item: same article, no LLM needed.
+      if (cHash) {
+        const { data: same } = await supabase
+          .from("crawl_items")
+          .select("id")
+          .eq("canonical_hash", cHash)
+          .neq("id", item.id)
+          .limit(1);
+        if (same && same.length > 0) {
+          const { error } = await supabase
+            .from("crawl_items")
+            .update({
+              ...rejectedBase,
+              llm_reject_reason:
+                "Duplikat: URL kanonis sama dengan berita lain.",
+            })
+            .eq("id", item.id);
+          return error ? "failed" : "duplicate";
+        }
       }
       const candidate = matchRegion(result.district, regions);
       const update: {
@@ -127,6 +153,7 @@ export async function GET(req: Request) {
         llm_victims: number | null;
         guessed_region_id?: string | null;
         geo_confidence?: number | null;
+        canonical_hash?: string | null;
         duplicate_of_case_id?: string | null;
         duplicate_confidence?: number | null;
         duplicate_reason?: string | null;
@@ -134,6 +161,7 @@ export async function GET(req: Request) {
         llm_summary: result.summary,
         llm_is_relevant: true,
         llm_victims: result.victims,
+        canonical_hash: cHash,
       };
       if (candidate) {
         update.geo_confidence = result.confidence;
@@ -200,7 +228,9 @@ export async function GET(req: Request) {
 
   // DB updates in parallel; count outcomes.
   const outcomes = await Promise.all(
-    items.map((item) => handleItem(item, results.get(item.id))),
+    items.map((item, i) =>
+      handleItem(item, results.get(item.id), fetches[i].canonical),
+    ),
   );
   for (const o of outcomes) {
     if (o === "enriched") enriched++;
