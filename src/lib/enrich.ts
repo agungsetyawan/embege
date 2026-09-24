@@ -86,6 +86,8 @@ export type LlmResult = {
   relevanceConfidence: number;
   rejectReason: string | null;
   victims: number | null;
+  school: string | null;
+  sppg: string | null;
 };
 
 // Normalize one LLM JSON object into LlmResult. Validation failure -> null.
@@ -100,8 +102,12 @@ function parseLlmResult(parsed: unknown): LlmResult | null {
   const conf = Number(p.confidence);
   const relConf = Number(p.relevance_confidence);
   const victimsRaw = Number(p.victims);
+  const cleanText = (v: unknown) =>
+    typeof v === "string" && v.trim() ? v.trim().slice(0, 500) : null;
   return {
     summary: summary.slice(0, 1000),
+    school: cleanText(p.school),
+    sppg: cleanText(p.sppg),
     province:
       typeof p.province === "string" && p.province.trim()
         ? p.province.trim()
@@ -128,7 +134,7 @@ function parseLlmResult(parsed: unknown): LlmResult | null {
 }
 
 const CURATOR_PROMPT =
-  "Kamu kurator berita Indonesia tentang keracunan program MBG (Makan Bergizi Gratis). Relevan (is_poison_related=true) HANYA jika berita melaporkan peristiwa keracunan atau dugaan keracunan yang dikaitkan dengan MBG: korban mual/muntah/diare/dirawat usai makan MBG, jumlah korban, hasil lab, penanganan korban. Tolak (false) untuk kebijakan/anggaran/sosialisasi/pemasok, pernyataan politik, opini/usulan tanpa peristiwa korban baru, klarifikasi hoaks tanpa korban, menu/prestasi umum MBG. Jika ragu, pilih true dengan relevance_confidence rendah. victims = jumlah korban peristiwa keracunan MBG dalam berita, HANYA jika disebut angka eksplisit (contoh: 748 santri, 16 siswa dirawat); null jika tidak disebut atau samar (puluhan, banyak, sejumlah). Jika beberapa angka muncul, ambil total korban peristiwanya (5 intensif dari 100 terdampak berarti 100); jika ada update angka, ambil yang terbaru. Jawab HANYA JSON valid, tanpa markdown.";
+  "Kamu kurator berita Indonesia tentang keracunan program MBG (Makan Bergizi Gratis). Relevan (is_poison_related=true) HANYA jika berita melaporkan peristiwa keracunan atau dugaan keracunan yang dikaitkan dengan MBG: korban mual/muntah/diare/dirawat usai makan MBG, jumlah korban, hasil lab, penanganan korban. Tolak (false) untuk kebijakan/anggaran/sosialisasi/pemasok, pernyataan politik, opini/usulan tanpa peristiwa korban baru, klarifikasi hoaks tanpa korban, menu/prestasi umum MBG. Jika ragu, pilih true dengan relevance_confidence rendah. victims = jumlah korban peristiwa keracunan MBG dalam berita, HANYA jika disebut angka eksplisit (contoh: 748 santri, 16 siswa dirawat); null jika tidak disebut atau samar (puluhan, banyak, sejumlah). Jika beberapa angka muncul, ambil total korban peristiwanya (5 intensif dari 100 terdampak berarti 100); jika ada update angka, ambil yang terbaru. school = nama sekolah yang keracunan plus detail bila disebut (jenjang, alamat, korban per sekolah), verbatim dari berita, beberapa sekolah gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. sppg = nama SPPG/dapur MBG pemasok plus wilayah/penyedia bila disebut, verbatim dari berita, beberapa gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. Jawab HANYA JSON valid, tanpa markdown.";
 
 const ITEM_SCHEMA = {
   type: "OBJECT",
@@ -141,6 +147,8 @@ const ITEM_SCHEMA = {
     relevance_confidence: { type: "NUMBER" },
     reject_reason: { type: "STRING", nullable: true },
     victims: { type: "INTEGER", nullable: true },
+    school: { type: "STRING", nullable: true },
+    sppg: { type: "STRING", nullable: true },
   },
   required: [
     "summary",

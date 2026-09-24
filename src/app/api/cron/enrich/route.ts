@@ -110,6 +110,8 @@ export async function GET(req: Request) {
         status: "rejected",
         llm_summary: result.summary,
         llm_is_relevant: false,
+        llm_school: result.school,
+        llm_sppg: result.sppg,
         canonical_hash: cHash,
       };
       // High-confidence non-MBG-poisoning news: auto-reject.
@@ -151,6 +153,8 @@ export async function GET(req: Request) {
         llm_summary: string;
         llm_is_relevant: boolean;
         llm_victims: number | null;
+        llm_school?: string | null;
+        llm_sppg?: string | null;
         guessed_region_id?: string | null;
         geo_confidence?: number | null;
         canonical_hash?: string | null;
@@ -161,6 +165,8 @@ export async function GET(req: Request) {
         llm_summary: result.summary,
         llm_is_relevant: true,
         llm_victims: result.victims,
+        llm_school: result.school,
+        llm_sppg: result.sppg,
         canonical_hash: cHash,
       };
       if (candidate) {

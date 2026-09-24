@@ -46,6 +46,8 @@ export type PendingItemData = {
   guessed_region_id: string | null;
   llm_summary: string | null;
   llm_victims: number | null;
+  llm_school: string | null;
+  llm_sppg: string | null;
   geo_confidence: number | null;
   duplicate_of_case_id: string | null;
   duplicate_confidence: number | null;
@@ -137,6 +139,12 @@ export function PendingItem({
                 <Users />
                 {item.llm_victims} korban
               </Badge>
+            )}
+            {item.llm_school && (
+              <Badge variant="outline">{item.llm_school.slice(0, 60)}</Badge>
+            )}
+            {item.llm_sppg && (
+              <Badge variant="outline">{item.llm_sppg.slice(0, 60)}</Badge>
             )}
             {duplicate && (
               <Badge variant="outline">
@@ -246,6 +254,30 @@ export function PendingItem({
                 type="number"
                 min={0}
                 defaultValue={item.llm_victims ?? undefined}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor={`school-${item.id}`}>Sekolah</Label>
+              <Input
+                id={`school-${item.id}`}
+                name="school"
+                maxLength={500}
+                autoComplete="off"
+                placeholder="Nama sekolah bila disebut"
+                defaultValue={item.llm_school ?? undefined}
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor={`sppg-${item.id}`}>SPPG/dapur</Label>
+              <Input
+                id={`sppg-${item.id}`}
+                name="sppg"
+                maxLength={500}
+                autoComplete="off"
+                placeholder="Nama SPPG bila disebut"
+                defaultValue={item.llm_sppg ?? undefined}
               />
             </div>
           </div>

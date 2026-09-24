@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     const { data: cases, error } = await supabase
       .from("cases")
       .select(
-        "id,occurred_on,victims,summary,source_url,source_media,region_id",
+        "id,occurred_on,victims,summary,school,sppg,source_url,source_media,region_id",
       )
       .eq("published", true)
       .is("deleted_at", null)

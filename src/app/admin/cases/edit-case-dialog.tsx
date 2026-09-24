@@ -125,6 +125,28 @@ export function EditCaseDialog({
               />
             </div>
           </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor={`edit-school-${row.id}`}>Sekolah</Label>
+              <Input
+                id={`edit-school-${row.id}`}
+                name="school"
+                maxLength={500}
+                autoComplete="off"
+                defaultValue={row.school ?? undefined}
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Label htmlFor={`edit-sppg-${row.id}`}>SPPG/dapur</Label>
+              <Input
+                id={`edit-sppg-${row.id}`}
+                name="sppg"
+                maxLength={500}
+                autoComplete="off"
+                defaultValue={row.sppg ?? undefined}
+              />
+            </div>
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={`edit-summary-${row.id}`}>Ringkasan</Label>
             <Textarea

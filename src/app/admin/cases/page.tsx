@@ -57,7 +57,7 @@ export default async function CasesAdminPage({
     let query = supabase
       .from("cases")
       .select(
-        "id,region_id,summary,victims,occurred_on,source_media,source_url,published,created_at,deleted_at,region:regions(province,district,centroid_ok)",
+        "id,region_id,summary,school,sppg,victims,occurred_on,source_media,source_url,published,created_at,deleted_at,region:regions(province,district,centroid_ok)",
         { count: "exact" },
       );
     if (status === "active") query = query.is("deleted_at", null);
@@ -69,7 +69,7 @@ export default async function CasesAdminPage({
       const safe = q.replace(/[%(),]/g, " ").trim();
       if (safe)
         query = query.or(
-          `summary.ilike.%${safe}%,source_media.ilike.%${safe}%,source_url.ilike.%${safe}%`,
+          `summary.ilike.%${safe}%,school.ilike.%${safe}%,sppg.ilike.%${safe}%,source_media.ilike.%${safe}%,source_url.ilike.%${safe}%`,
         );
     }
     return query;

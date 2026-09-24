@@ -46,6 +46,8 @@ export type CaseRow = {
   id: string;
   region_id: string;
   summary: string;
+  school: string | null;
+  sppg: string | null;
   victims: number | null;
   occurred_on: string | null;
   source_media: string;
@@ -139,9 +141,18 @@ export function CasesTable({
         minSize: 220,
         header: "Ringkasan",
         cell: ({ row }) => (
-          <p className="max-w-md truncate text-sm" title={row.original.summary}>
-            {row.original.summary}
-          </p>
+          <div className="flex max-w-md flex-col">
+            <p className="truncate text-sm" title={row.original.summary}>
+              {row.original.summary}
+            </p>
+            {(row.original.school || row.original.sppg) && (
+              <p className="truncate text-xs text-muted-foreground">
+                {[row.original.school, row.original.sppg]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
         ),
       },
       {

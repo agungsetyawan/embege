@@ -108,6 +108,11 @@ export function CaseList({
             )}
           </div>
           <p className="text-sm leading-relaxed">{c.summary}</p>
+          {(c.school || c.sppg) && (
+            <p className="text-xs text-muted-foreground">
+              {[c.school, c.sppg].filter(Boolean).join(" · ")}
+            </p>
+          )}
           <a
             href={c.source_url}
             target="_blank"

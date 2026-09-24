@@ -23,8 +23,11 @@ export async function approveItem(formData: FormData) {
   const summary = String(formData.get("summary") ?? "").trim();
   const occurredRaw = String(formData.get("occurredOn") ?? "");
   const victimsRaw = String(formData.get("victims") ?? "");
+  const schoolRaw = String(formData.get("school") ?? "").trim();
+  const sppgRaw = String(formData.get("sppg") ?? "").trim();
   if (!isUuid(itemId) || !isUuid(regionId)) return;
   if (!summary || summary.length > 5000) return;
+  if (schoolRaw.length > 500 || sppgRaw.length > 500) return;
 
   const victims = victimsRaw === "" ? null : Number(victimsRaw);
   if (
@@ -49,6 +52,8 @@ export async function approveItem(formData: FormData) {
     .single();
   if (!item) return;
 
+  const school = schoolRaw === "" ? null : schoolRaw;
+  const sppg = sppgRaw === "" ? null : sppgRaw;
   const { data: inserted, error } = await supabase
     .from("cases")
     .insert({
@@ -56,6 +61,8 @@ export async function approveItem(formData: FormData) {
       occurred_on: occurredOn,
       victims,
       summary,
+      school,
+      sppg,
       source_url: item.url,
       source_media: item.media,
     })
@@ -103,7 +110,7 @@ export async function applyItemUpdate(formData: FormData) {
   const { data: item } = await supabase
     .from("crawl_items")
     .select(
-      "status,url,media,published_at,llm_summary,llm_victims,duplicate_of_case_id",
+      "status,url,media,published_at,llm_summary,llm_victims,llm_school,llm_sppg,duplicate_of_case_id",
     )
     .eq("id", itemId)
     .single();
@@ -112,7 +119,7 @@ export async function applyItemUpdate(formData: FormData) {
 
   const { data: target } = await supabase
     .from("cases")
-    .select("id,victims,occurred_on")
+    .select("id,victims,occurred_on,school,sppg")
     .eq("id", item.duplicate_of_case_id)
     .is("deleted_at", null)
     .single();
@@ -123,6 +130,8 @@ export async function applyItemUpdate(formData: FormData) {
     .from("cases")
     .update({
       victims,
+      school: item.llm_school ?? target.school,
+      sppg: item.llm_sppg ?? target.sppg,
       // The news date is not the event date: only fill an empty one.
       occurred_on:
         target.occurred_on ?? item.published_at?.slice(0, 10) ?? null,

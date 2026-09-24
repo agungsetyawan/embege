@@ -84,7 +84,15 @@ export default async function AdminPage({
   // guessed_region_id on crawl tabs (the only region signal there), case
   // region on reports/deleted.
   const crawlOr = (s: string) =>
-    ["title", "summary", "llm_summary", "media", "url"]
+    [
+      "title",
+      "summary",
+      "llm_summary",
+      "llm_school",
+      "llm_sppg",
+      "media",
+      "url",
+    ]
       .map((c) => `${c}.ilike.%${s}%`)
       .join(",");
   const buildList = (from: number, to: number) =>
@@ -144,7 +152,7 @@ export default async function AdminPage({
               let query = supabase
                 .from("crawl_items")
                 .select(
-                  "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,geo_confidence,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
+                  "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,geo_confidence,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
                   { count: "exact" },
                 )
                 .eq("status", "pending");

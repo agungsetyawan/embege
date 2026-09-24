@@ -26,20 +26,25 @@ export async function updateCase(formData: FormData) {
   const summary = String(formData.get("summary") ?? "").trim();
   const sourceUrl = String(formData.get("sourceUrl") ?? "").trim();
   const sourceMedia = String(formData.get("sourceMedia") ?? "").trim();
+  const schoolRaw = String(formData.get("school") ?? "").trim();
+  const sppgRaw = String(formData.get("sppg") ?? "").trim();
   if (!isUuid(caseId) || !isUuid(regionId)) return;
   if (!summary || summary.length > 5000) return;
   if (!isHttpUrl(sourceUrl) || sourceUrl.length > 2000) return;
   if (!sourceMedia || sourceMedia.length > 200) return;
+  if (schoolRaw.length > 500 || sppgRaw.length > 500) return;
 
   const victims = parseVictims(String(formData.get("victims") ?? ""));
   const occurredOn = parseDate(String(formData.get("occurredOn") ?? ""));
   if (victims === undefined || occurredOn === undefined) return;
   const published = formData.get("published") === "on";
 
+  const school = schoolRaw === "" ? null : schoolRaw;
+  const sppg = sppgRaw === "" ? null : sppgRaw;
   const { data: before } = await supabase
     .from("cases")
     .select(
-      "region_id,occurred_on,victims,summary,source_url,source_media,published",
+      "region_id,occurred_on,victims,summary,school,sppg,source_url,source_media,published",
     )
     .eq("id", caseId)
     .single();
@@ -50,6 +55,8 @@ export async function updateCase(formData: FormData) {
     occurred_on: occurredOn,
     victims,
     summary,
+    school,
+    sppg,
     source_url: sourceUrl,
     source_media: sourceMedia,
     published,
