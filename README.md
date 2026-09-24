@@ -104,6 +104,10 @@ The list below describes each npm script:
 - `npm run lint`: runs Biome checks.
 - `npm run format`: rewrites files with Biome formatting.
 
+## One-off Scripts
+
+- `npx tsx scripts/backfill-summaries.ts`: regenerates `cases.summary`, `school`, and `sppg` with the current curator prompt. It never touches `victims`, `occurred_on`, or `region_id`. Back up `cases` first. Useful flags: `--dry-run --limit=10` to preview, `--retry-report=PATH` to rerun failed rows, `--fallback-report=A,B` to rerun rows that previously fell back to stored text.
+
 ## Deployment
 
 The app runs on Vercel. Set the five environment variables in the Vercel dashboard. The cron jobs run in Supabase, not in Vercel, because the Vercel Hobby plan limits cron frequency.
@@ -119,6 +123,7 @@ The list below pairs each known problem with its fix:
 - A cron job fails with "function does not exist": `pg_net` lives in the `net` schema, not in `extensions`. Call `net.http_get`.
 - A cron HTTP call times out at five seconds: the crawl takes longer. Set `timeout_milliseconds` to 60000 in the job definition.
 - A district marker sits in the wrong place: its `centroid_ok` flag is false. Fix the coordinates with one `UPDATE` on `regions`.
+- An article fails to fetch with 403: the outlet rejects non-browser clients. `fetchArticleText` in `src/lib/enrich.ts` must keep its browser-compatible headers.
 
 ## Backlog
 

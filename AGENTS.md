@@ -95,6 +95,7 @@ Lessons already paid for in debug time. Follow them.
 - Applied updates link the item to the existing case (`approved` + `case_id`, no new row), auto-reject older pending siblings, and only fill an empty `occurred_on`.
 - `school`/`sppg` are verbatim from the article (several joined with `'; '`, max 500 chars), `null` when not mentioned explicitly — never guessed. Applied updates carry them over (`?? target`), same as victims.
 - Human curation stays required before anything publishes.
+- `fetchArticleText` uses browser-compatible request headers. Some outlets reject non-browser clients with 403 — never simplify it back to a single header.
 
 **Language**
 - Identifiers and code comments in English. User-facing strings (UI copy, aria-labels, metadata, LLM prompts) stay in natural Indonesian.
