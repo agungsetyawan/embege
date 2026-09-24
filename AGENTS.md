@@ -93,6 +93,7 @@ Lessons already paid for in debug time. Follow them.
 - Validate every LLM output against the `regions` table before saving. Drop what does not match.
 - Duplicate auto-reject needs confidence >= 0.9 and never fires on victim-count updates (`is_update` stays queued with a badge). Identical normalized headlines are skipped at crawl (`title_hash`, earliest kept); canonical URL collisions reject without an LLM call.
 - Applied updates link the item to the existing case (`approved` + `case_id`, no new row), auto-reject older pending siblings, and only fill an empty `occurred_on`.
+- `school`/`sppg` are verbatim from the article (several joined with `'; '`, max 500 chars), `null` when not mentioned explicitly — never guessed. Applied updates carry them over (`?? target`), same as victims.
 - Human curation stays required before anything publishes.
 
 **Language**
