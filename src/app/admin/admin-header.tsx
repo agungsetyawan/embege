@@ -37,7 +37,7 @@ export function AdminHeader({
   email?: string | null;
 }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="sticky top-0 z-30 flex flex-col gap-4 bg-background/95 py-3 backdrop-blur">
       <header className="flex items-center justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-3">
