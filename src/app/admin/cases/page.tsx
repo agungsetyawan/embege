@@ -50,7 +50,7 @@ export default async function CasesAdminPage({
     p.status === "deleted" ? "deleted" : p.status === "all" ? "all" : "active";
   const published =
     p.published === "true" ? "true" : p.published === "false" ? "false" : "all";
-  const sort = SORT_KEYS.has(p.sort ?? "") ? (p.sort as string) : "created_at";
+  const sort = SORT_KEYS.has(p.sort ?? "") ? (p.sort as string) : "occurred_on";
   const order = p.order === "asc" ? "asc" : "desc";
 
   const buildQuery = () => {
@@ -75,10 +75,16 @@ export default async function CasesAdminPage({
     return query;
   };
 
+  const orderedQuery = buildQuery().order(sort, {
+    ascending: order === "asc",
+    nullsFirst: false,
+  });
+  // Stable tiebreaker: newest created_at first.
+  if (sort !== "created_at")
+    orderedQuery.order("created_at", { ascending: false, nullsFirst: false });
+
   const [{ data: rows, count: total }, { data: regions }] = await Promise.all([
-    buildQuery()
-      .order(sort, { ascending: order === "asc" })
-      .range((wantPage - 1) * per, wantPage * per - 1),
+    orderedQuery.range((wantPage - 1) * per, wantPage * per - 1),
     supabase
       .from("regions")
       .select("id,province,district,centroid_ok")

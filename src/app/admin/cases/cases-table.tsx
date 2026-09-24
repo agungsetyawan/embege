@@ -288,7 +288,7 @@ export function CasesTable({
     const patch =
       first && ["occurred_on", "created_at", "victims"].includes(first.id)
         ? { sort: first.id, order: first.desc ? "desc" : "asc" }
-        : { sort: "created_at", order: "desc" };
+        : { sort: "occurred_on", order: "desc" };
     pushWith(router, kept, { sort, order, per }, patch);
   };
 
