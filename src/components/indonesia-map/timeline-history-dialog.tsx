@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef, useTable } from "@tanstack/react-table";
-import { ChevronDown, History } from "lucide-react";
+import { ChevronDown, History, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -85,7 +85,9 @@ function MonthGrid({
               isExpanded ? "Tutup rincian hari" : "Lihat rincian hari"
             }
           >
-            <ChevronDown className={isExpanded ? "rotate-180" : ""} />
+            <ChevronDown
+              className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
+            />
           </Button>
         );
       },
@@ -106,8 +108,12 @@ function MonthGrid({
                       type="button"
                       onClick={() => onSelectArea(regionId, day.date)}
                       aria-label={`Lihat kasus di ${areaName(a)} pada ${formatDate(day.date)}`}
-                      className="cursor-pointer text-left font-medium underline-offset-4 hover:underline"
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-sm text-left font-medium text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                     >
+                      <MapPin
+                        className="size-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
                       {areaName(a)}
                     </button>
                   ) : (
@@ -127,9 +133,29 @@ function MonthGrid({
       accessorKey: "date",
       id: "date",
       header: "Tanggal",
-      cell: ({ row }) => (
-        <span className="font-medium">{formatDay(row.original.date)}</span>
-      ),
+      cell: ({ row }) => {
+        if (!row.getCanExpand()) {
+          return (
+            <span className="font-medium">{formatDay(row.original.date)}</span>
+          );
+        }
+        const isExpanded = row.getIsExpanded();
+        return (
+          <button
+            type="button"
+            onClick={row.getToggleExpandedHandler()}
+            aria-expanded={isExpanded}
+            aria-label={
+              isExpanded
+                ? `Tutup rincian ${formatDay(row.original.date)}`
+                : `Lihat rincian ${formatDay(row.original.date)}`
+            }
+            className="cursor-pointer rounded-sm text-left font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+          >
+            {formatDay(row.original.date)}
+          </button>
+        );
+      },
       size: 140,
     },
     {
