@@ -17,6 +17,8 @@ import { ApplyButton } from "./apply-button";
 
 const HINTS: Record<string, string> = {
   enrich_batch: "Jumlah berita per run enrich (1-20).",
+  enrich_max_text: "Potong teks artikel per berita, karakter (1000-30000).",
+  enrich_max_html: "Batas fetch HTML per berita, bytes (100000-5000000).",
   crawl_schedule: "Jadwal crawl, format cron 5 kolom (mnt jam tgl bln hari).",
   enrich_schedule: "Jadwal enrich, format cron 5 kolom.",
 };

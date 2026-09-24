@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import {
   checkDuplicateWithGemini,
+  DEFAULT_MAX_HTML,
+  DEFAULT_MAX_TEXT,
   enrichWithGemini,
   fetchArticleText,
   type LlmResult,
@@ -47,12 +49,17 @@ export async function GET(req: Request) {
   const { data: settings } = await supabase
     .from("app_settings")
     .select("key,value")
-    .in("key", ["enrich_batch", "dedup_window_days"]);
+    .in("key", [
+      "enrich_batch",
+      "dedup_window_days",
+      "enrich_max_text",
+      "enrich_max_html",
+    ]);
   const settingValue = (k: string) =>
     settings?.find((s) => s.key === k)?.value ?? "";
-  const clampInt = (raw: string, def: number, max: number) => {
+  const clampInt = (raw: string, def: number, max: number, min = 1) => {
     const n = Number.parseInt(raw, 10);
-    return Number.isNaN(n) || n < 1 ? def : Math.min(n, max);
+    return Number.isNaN(n) || n < min ? def : Math.min(n, max);
   };
   const batch = clampInt(
     settingValue("enrich_batch"),
@@ -63,6 +70,18 @@ export async function GET(req: Request) {
     settingValue("dedup_window_days"),
     DEFAULT_DEDUP_WINDOW_DAYS,
     30,
+  );
+  const maxText = clampInt(
+    settingValue("enrich_max_text"),
+    DEFAULT_MAX_TEXT,
+    30000,
+    1000,
+  );
+  const maxHtml = clampInt(
+    settingValue("enrich_max_html"),
+    DEFAULT_MAX_HTML,
+    5000000,
+    100000,
   );
 
   const [{ data: items }, { data: regions }] = await Promise.all([
@@ -87,7 +106,7 @@ export async function GET(req: Request) {
   // Fetch article texts in parallel (I/O bound), then enrich each item in
   // its own isolated Gemini call, all in parallel.
   const fetches = await Promise.all(
-    items.map((item) => fetchArticleText(item.url)),
+    items.map((item) => fetchArticleText(item.url, { maxText, maxHtml })),
   );
   const texts = fetches.map((f, i) => f.text ?? items[i].summary ?? "");
   const results = new Map<string, LlmResult>();

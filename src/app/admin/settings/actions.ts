@@ -8,6 +8,8 @@ const UPDATABLE_SETTINGS = new Set([
   "enrich_batch",
   "crawl_schedule",
   "enrich_schedule",
+  "enrich_max_text",
+  "enrich_max_html",
 ]);
 
 export async function updateSetting(formData: FormData) {

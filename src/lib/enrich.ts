@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import * as cheerio from "cheerio";
 import { requiredEnv } from "@/lib/env";
 
-const MAX_TEXT = 4000;
-const MAX_HTML = 1500000;
+export const DEFAULT_MAX_TEXT = 10000;
+export const DEFAULT_MAX_HTML = 1500000;
 
 // Lowercase host, no query/fragment/trailing slash. Invalid -> null.
 function normalizeCanonical(raw: string): string | null {
@@ -39,7 +39,11 @@ export type ArticleFetch = {
 
 // Fetch article text (paragraphs only) plus canonical URL. Failure
 // (403/timeout/non-HTML) -> nulls, caller falls back to the RSS snippet.
-export async function fetchArticleText(url: string): Promise<ArticleFetch> {
+export async function fetchArticleText(
+  url: string,
+  opts: { maxText?: number; maxHtml?: number } = {},
+): Promise<ArticleFetch> {
+  const { maxText = DEFAULT_MAX_TEXT, maxHtml = DEFAULT_MAX_HTML } = opts;
   const none: ArticleFetch = { text: null, canonical: null };
   let parsed: URL;
   try {
@@ -58,9 +62,9 @@ export async function fetchArticleText(url: string): Promise<ArticleFetch> {
     if (!res.ok || !res.headers.get("content-type")?.includes("html"))
       return none;
     const len = Number(res.headers.get("content-length") ?? "");
-    if (Number.isFinite(len) && len > MAX_HTML) return none;
+    if (Number.isFinite(len) && len > maxHtml) return none;
     const html = await res.text();
-    if (html.length > MAX_HTML) return none;
+    if (html.length > maxHtml) return none;
     const $ = cheerio.load(html);
     const canonical = normalizeCanonical(
       $('link[rel="canonical"]').attr("href") ?? "",
@@ -71,7 +75,7 @@ export async function fetchArticleText(url: string): Promise<ArticleFetch> {
       .get()
       .filter((t) => t.length > 40)
       .join(" ");
-    return { text: text ? text.slice(0, MAX_TEXT) : null, canonical };
+    return { text: text ? text.slice(0, maxText) : null, canonical };
   } catch {
     return none;
   }
