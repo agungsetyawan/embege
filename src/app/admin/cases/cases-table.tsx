@@ -345,6 +345,7 @@ export function CasesTable({
       </DataGridContainer>
       {editRow && (
         <EditCaseDialog
+          key={editRow.id}
           row={editRow}
           regions={regions}
           onClose={() => setEditRow(null)}

@@ -65,6 +65,14 @@ export function DateField({
         <Calendar
           mode="single"
           selected={date}
+          // Dropdown caption: jumping to an old year one month at a time is
+          // unusable for correcting past case dates.
+          captionLayout="dropdown"
+          startMonth={new Date(2020, 0, 1)}
+          endMonth={new Date()}
+          // v10 opens on today, not on `selected`: without this an existing
+          // date (e.g. Ubah case) opens the wrong month with nothing marked.
+          defaultMonth={date}
           disabled={{ after: new Date() }}
           onSelect={(d: Date | undefined) => {
             setDate(d);

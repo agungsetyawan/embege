@@ -25,7 +25,12 @@ export function Calendar({
           "inline-flex size-7 items-center justify-center rounded-md bg-transparent p-0 opacity-50 hover:bg-accent hover:text-accent-foreground hover:opacity-100",
         chevron: "size-4 fill-current",
         month_caption: "flex w-full items-center justify-center",
-        caption_label: "text-sm font-medium",
+        caption_label: "inline-flex items-center gap-1 text-sm font-medium",
+        dropdowns: "flex items-center justify-center gap-3",
+        // v10 renders an aria-hidden label + chevron with the native select
+        // overlaid invisible on top: style the label, not the select.
+        dropdown_root: "relative inline-flex items-center",
+        dropdown: "absolute inset-0 h-full w-full cursor-pointer opacity-0",
         month_grid: "w-full border-collapse",
         weekdays: "flex",
         weekday:

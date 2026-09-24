@@ -677,7 +677,8 @@ function CascaderSubmenuContent({
         align={align}
         sideOffset={sideOffset}
         alignOffset={alignOffset}
-        className="isolate z-50"
+        // z-[1100]: portals to body, must sit above Dialog content (z-[1001]).
+        className="isolate z-[1100]"
       >
         <PopoverPrimitive.Popup
           ref={popupRef}

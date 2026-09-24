@@ -2622,7 +2622,9 @@ function CascaderContent({
         {...(collisionPadding !== undefined ? { collisionPadding } : null)}
         {...(sticky !== undefined ? { sticky } : null)}
         {...(positionMethod !== undefined ? { positionMethod } : null)}
-        className="isolate z-50"
+        // z-[1100]: portals to body, must sit above Dialog content
+        // (z-[1001]), e.g. the region picker inside Ubah case.
+        className="isolate z-[1100]"
       >
         <ComboboxPrimitive.Popup
           ref={setPopup}

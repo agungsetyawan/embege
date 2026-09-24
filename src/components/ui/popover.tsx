@@ -31,7 +31,9 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-50"
+        // z-[1100]: popups portal to body and must sit above Dialog
+        // content (z-[1001]), e.g. the calendar inside Ubah case.
+        className="isolate z-[1100]"
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
