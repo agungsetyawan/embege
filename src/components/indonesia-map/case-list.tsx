@@ -3,7 +3,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Ambulance, ExternalLink, TriangleAlert } from "lucide-react";
+import {
+  Ambulance,
+  CookingPot,
+  ExternalLink,
+  GraduationCap,
+  TriangleAlert,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
 import { Alert, AlertAction, AlertTitle } from "../reui/alert";
@@ -109,9 +115,25 @@ export function CaseList({
           </div>
           <p className="text-sm leading-relaxed">{c.summary}</p>
           {(c.school || c.sppg) && (
-            <p className="text-xs text-muted-foreground">
-              {[c.school, c.sppg].filter(Boolean).join(" · ")}
-            </p>
+            <div className="flex flex-col gap-1">
+              {[
+                { key: "school", Icon: GraduationCap, text: c.school },
+                { key: "sppg", Icon: CookingPot, text: c.sppg },
+              ]
+                .filter((row) => row.text)
+                .map(({ key, Icon, text }) => (
+                  <p
+                    key={key}
+                    className="flex items-start gap-1.5 text-xs text-muted-foreground"
+                  >
+                    <Icon
+                      className="mt-0.5 size-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {text}
+                  </p>
+                ))}
+            </div>
           )}
           <a
             href={c.source_url}
