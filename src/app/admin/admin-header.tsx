@@ -12,7 +12,8 @@ export type AdminNavKey =
   | "reports"
   | "deleted"
   | "cases"
-  | "settings";
+  | "settings"
+  | "logs";
 
 const NAV_ITEMS: { key: AdminNavKey; label: string; href: string }[] = [
   { key: "pending", label: "Antrean", href: "/admin" },
@@ -21,6 +22,7 @@ const NAV_ITEMS: { key: AdminNavKey; label: string; href: string }[] = [
   { key: "deleted", label: "Terhapus", href: "/admin?tab=deleted" },
   { key: "cases", label: "Kasus", href: "/admin/cases" },
   { key: "settings", label: "Pengaturan", href: "/admin/settings" },
+  { key: "logs", label: "Cron Logs", href: "/admin/logs" },
 ];
 
 export function AdminHeader({
