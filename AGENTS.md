@@ -110,6 +110,10 @@ Lessons already paid for in debug time. Follow them.
 - Deep links drive the map through `?region_id=&date=`: validate with `isUuid`/`isDateString`, ignore invalid params, and clear both params when the drawer closes.
 - The forwarded `MapContainer` ref only resolves a commit after mount. Never gate a flight on it; report readiness with a `useMap()` probe inside the container instead.
 
+**Changelog**
+- Keep `CHANGELOG.md` current: one dated section per release (newest first), one bullet per change, one short past-tense sentence per bullet, entries in plain English.
+- Follow the existing entries as the pattern. Never rewrite past sections, only add new ones on top.
+
 **Verification bar**
 - `npm run lint` and `npm run build` stay green. Check browser output with chrome-devtools (clean console plus screenshot). Test cron endpoints with and without the secret.
 
