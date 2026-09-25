@@ -11,6 +11,10 @@ The team released the following changes:
 - Added a MapPin icon and improved button accessibility in MonthGrid.
 - Updated the User-Agent and request headers for article fetching.
 - Improved case display with icons for school and SPPG names.
+- Replaced district boundaries and centroids with BIG September 2023 data.
+- Fixed misplaced markers in East Java cities, Gresik, Batu, Sampang, and Sumenep.
+- Kept the centroid_ok flag false for nine archipelagic districts pending manual review.
+- Shrunk the districts GeoJSON from 910KB to 708KB.
 
 ## 2026-09-24
 

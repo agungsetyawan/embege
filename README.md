@@ -71,7 +71,7 @@ The table below lists each variable, its source, and its scope:
 
 The schema has eight tables:
 
-- `regions`: 514 districts with province, centroid coordinates, and a `centroid_ok` flag. The flag is false for 12 districts with weak source geometry. Those districts need manual coordinate checks.
+- `regions`: 514 districts with province, centroid coordinates, and a `centroid_ok` flag. Boundaries and centroids come from BIG September 2023 data; each marker sits on the district's largest island. The flag is false for 9 archipelagic districts where the largest island holds under 40 percent of the area. Those districts need manual coordinate checks.
 - `crawl_sources`: legacy table, no longer read by the crawler (kept for history).
 - `crawl_keywords`: filter words with active flag. Words of five letters or fewer match whole words only. Longer words match substrings.
 - `crawl_items`: raw crawl results with status `pending`, `approved`, or `rejected`, plus AI summary, guessed district, confidence score, school/SPPG guesses (`llm_school`, `llm_sppg`), duplicate hints (referenced case, confidence, reason), headline hash, and canonical URL hash.
