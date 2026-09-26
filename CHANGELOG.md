@@ -9,6 +9,7 @@ The team released the following changes:
 - Replaced the admin top navigation with a ReUI sidebar carrying queue count badges.
 - Showed the active queue count in the admin breadcrumb.
 - Made the admin topbar sticky on scroll.
+- Replaced the cron logs list with a ReUI data table.
 
 ## 2026-09-26
 

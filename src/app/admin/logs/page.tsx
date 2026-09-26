@@ -1,47 +1,9 @@
-import { Activity } from "lucide-react";
 import { redirect } from "next/navigation";
-import { Badge } from "@/components/reui/badge";
-import { Frame, FramePanel } from "@/components/reui/frame";
-import { IconStack } from "@/components/reui/icon-stack";
 import { createClient } from "@/lib/supabase/server";
 import { QueuePagination } from "../queue-pagination";
-
-type CronLogRow = {
-  id: number;
-  job_kind: string;
-  status_code: number | null;
-  timed_out: boolean | null;
-  error_msg: string | null;
-  content: string | null;
-  created: string;
-  full_count: number;
-};
+import { type CronLogRow, CronLogsTable } from "./cron-logs-table";
 
 const PAGE_SIZE = 20;
-
-function asNum(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-// One-line summary of a cron endpoint response body.
-function summarize(row: CronLogRow): string {
-  if (!row.content) return row.error_msg ?? "No response.";
-  try {
-    const data = JSON.parse(row.content) as Record<string, unknown>;
-    if (row.job_kind === "crawl") {
-      return (
-        `${asNum(data.keywords)} keywords, ` +
-        `${asNum(data.fetched)} fetched, ${asNum(data.inserted)} new`
-      );
-    }
-    return (
-      `${asNum(data.processed)} processed, ` +
-      `${asNum(data.enriched)} enriched, ${asNum(data.failed)} failed`
-    );
-  } catch {
-    return row.content.slice(0, 200);
-  }
-}
 
 export default async function LogsPage({
   searchParams,
@@ -82,51 +44,7 @@ export default async function LogsPage({
         Cron HTTP responses from the last 6 hours. Old rows are deleted
         automatically by pg_net.
       </p>
-      {logs.length === 0 ? (
-        <Frame>
-          <FramePanel className="flex flex-col items-center gap-1.5 py-8 text-center">
-            <IconStack aria-hidden="true">
-              <Activity className="size-4" />
-            </IconStack>
-            <p className="font-medium">No cron logs yet.</p>
-            <p className="text-sm text-muted-foreground">
-              Logs appear every time a crawl or enrich job runs.
-            </p>
-          </FramePanel>
-        </Frame>
-      ) : (
-        <Frame stacked>
-          {logs.map((row) => {
-            const failed =
-              row.timed_out === true ||
-              (row.status_code !== null && row.status_code >= 400);
-            return (
-              <FramePanel key={row.id}>
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="font-mono text-muted-foreground">
-                    {new Date(row.created).toLocaleString("en-GB", {
-                      timeZone: "Asia/Jakarta",
-                      day: "2-digit",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  <Badge variant="outline">{row.job_kind}</Badge>
-                  <Badge variant={failed ? "destructive" : "secondary"}>
-                    {row.timed_out === true
-                      ? "Timed out"
-                      : (row.status_code ?? "No status")}
-                  </Badge>
-                  <span className="w-full text-muted-foreground">
-                    {summarize(row)}
-                  </span>
-                </div>
-              </FramePanel>
-            );
-          })}
-        </Frame>
-      )}
+      <CronLogsTable rows={logs} />
       {totalPages > 1 && (
         <QueuePagination
           page={page}
