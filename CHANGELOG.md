@@ -10,6 +10,9 @@ The team released the following changes:
 - Showed the active queue count in the admin breadcrumb.
 - Made the admin topbar sticky on scroll.
 - Replaced the cron logs list with a ReUI data table.
+- Reshaped the admin queue loading skeleton to mirror the filter grid and curation item layout.
+- Reshaped the cases loading skeleton to mirror the filter grid and data table.
+- Added matching loading skeletons for the admin logs and settings pages.
 
 ## 2026-09-26
 
