@@ -7,10 +7,14 @@
 //   FROM cases_backup_20260924 b WHERE c.id=b.id;
 // Usage: npx tsx scripts/backfill-summaries.ts [--dry-run] [--limit=N]
 //   [--after=ID] [--concurrency=N] [--report=PATH]
-//   [--retry-report=PATH] [--fallback-report=A,B,...]
+//   [--retry-report=PATH] [--fallback-report=A,B,...] [--google-url-only]
 import { readFileSync, writeFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { enrichWithGemini, fetchArticleText } from "@/lib/enrich";
+import {
+  enrichWithGemini,
+  fetchArticleText,
+  resolvePublisherUrl,
+} from "@/lib/enrich";
 import { requiredEnv } from "@/lib/env";
 
 // ponytail: tiny dotenv loader, no new dependency for a one-off script.
@@ -31,6 +35,9 @@ const CONCURRENCY = Number(arg("concurrency", "3")) || 3;
 const DELAY_MS = Number(arg("delay-ms", "300")) || 0;
 const RETRY_REPORT = arg("retry-report", "");
 const FALLBACK_REPORTS = arg("fallback-report", "").split(",").filter(Boolean);
+// Only cases still pointing at a Google News redirect, never touched by a
+// human (updated_by_email null or backfill-script).
+const GOOGLE_ONLY = process.argv.includes("--google-url-only");
 const REPORT = arg(
   "report",
   DRY ? "backfill-dry.json" : "backfill-report.json",
@@ -49,12 +56,13 @@ type Row = {
   sppg: string | null;
   source_url: string;
   created_at: string;
+  updated_by_email: string | null;
 };
 
 async function main() {
   const { data: cases, error } = await supabase
     .from("cases")
-    .select("id,summary,school,sppg,source_url,created_at")
+    .select("id,summary,school,sppg,source_url,created_at,updated_by_email")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
   if (error || !cases) throw error ?? new Error("gagal membaca cases");
@@ -76,6 +84,14 @@ async function main() {
   }
 
   let queue = (cases as Row[]).filter((c) => !AFTER || c.created_at > AFTER);
+  if (GOOGLE_ONLY) {
+    queue = queue.filter(
+      (c) =>
+        c.source_url.startsWith("https://news.google.com/") &&
+        (c.updated_by_email === null ||
+          c.updated_by_email === "backfill-script"),
+    );
+  }
   if (RETRY_REPORT) {
     const prev = JSON.parse(readFileSync(RETRY_REPORT, "utf8")) as {
       id: string;
@@ -117,7 +133,8 @@ async function main() {
     try {
       const item = byCase.get(c.id) ?? byUrl.get(c.source_url);
       const title = item?.title ?? c.summary.slice(0, 150);
-      const fetched = await fetchArticleText(c.source_url);
+      const sourceUrl = await resolvePublisherUrl(c.source_url);
+      const fetched = await fetchArticleText(sourceUrl);
       out.fallback = !fetched.text;
       const fallback = [item?.title, item?.summary, c.summary].filter(Boolean);
       const enrichSource = fetched.text
@@ -136,12 +153,14 @@ async function main() {
       out.newLen = result.summary.length;
       if (!DRY) {
         const now = new Date().toISOString();
+        const resolved = sourceUrl !== c.source_url;
         const { error: upErr } = await supabase
           .from("cases")
           .update({
             summary: result.summary,
             school: result.school,
             sppg: result.sppg,
+            ...(resolved ? { source_url: sourceUrl } : null),
             updated_at: now,
             updated_by_email: "backfill-script",
           })
@@ -171,6 +190,9 @@ async function main() {
             fallback: out.fallback,
             old_len: out.oldLen,
             new_len: out.newLen,
+            ...(resolved
+              ? { old_url: c.source_url, new_url: sourceUrl }
+              : null),
           },
         });
       }

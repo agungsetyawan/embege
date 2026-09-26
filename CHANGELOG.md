@@ -7,6 +7,7 @@ This changelog (dated list of changes) records each change to the MBG poisoning 
 The team released the following changes:
 
 - Resolved Google News redirect links to publisher URLs at crawl time so enrichment fetches full article text.
+- Requeued stale pending items and regenerated summaries for cases still on Google News links.
 - Recorded whether each enrichment used the full article or fell back to the RSS snippet.
 - Showed a Dari RSS badge on admin queue items summarized from the RSS snippet.
 
