@@ -89,6 +89,124 @@ export async function fetchArticleText(
   }
 }
 
+// Google News RSS wraps the publisher URL in a redirect
+// (news.google.com/rss/articles/CBMi...). New-style IDs are opaque: the
+// article page carries a signature + timestamp that resolve through Google's
+// batchexecute RPC. Returns the publisher URL, or the original URL when it
+// is not a Google News link or decoding fails, so callers always have
+// something to store and fetch.
+export async function resolvePublisherUrl(raw: string): Promise<string> {
+  let id: string;
+  try {
+    const u = new URL(raw.trim());
+    if (u.hostname.toLowerCase() !== "news.google.com") return raw;
+    const seg = u.pathname.split("/");
+    if (seg.length < 2 || seg[seg.length - 2] !== "articles") return raw;
+    id = seg[seg.length - 1];
+    if (!id) return raw;
+  } catch {
+    return raw;
+  }
+  const ua =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const page = await fetch(`https://news.google.com/rss/articles/${id}`, {
+      signal: ctrl.signal,
+      headers: {
+        "User-Agent": ua,
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "id-ID,id;q=0.9,en;q=0.8",
+        Cookie: "CONSENT=PENDING+987",
+        "Upgrade-Insecure-Requests": "1",
+      },
+    }).finally(() => clearTimeout(timer));
+    if (!page.ok) return raw;
+    const cookies = [
+      "CONSENT=PENDING+987",
+      ...(page.headers.getSetCookie?.() ?? []).map((c) => c.split(";")[0]),
+    ];
+    const html = await page.text();
+    const sg = html.match(/data-n-a-sg="([^"]+)"/)?.[1];
+    const ts = Number(html.match(/data-n-a-ts="([^"]+)"/)?.[1]);
+    if (!sg || !Number.isFinite(ts)) return raw;
+    const inner = JSON.stringify([
+      "garturlreq",
+      [
+        [
+          "X",
+          "X",
+          ["X", "X"],
+          null,
+          null,
+          1,
+          1,
+          "US:en",
+          null,
+          1,
+          null,
+          null,
+          null,
+          null,
+          null,
+          0,
+          1,
+        ],
+        "X",
+        "X",
+        1,
+        [1, 1, 1],
+        1,
+        1,
+        null,
+        0,
+        0,
+        null,
+        0,
+      ],
+      id,
+      ts,
+      sg,
+    ]);
+    const ctrl2 = new AbortController();
+    const timer2 = setTimeout(() => ctrl2.abort(), 10000);
+    const rpc = await fetch(
+      "https://news.google.com/_/DotsSplashUi/data/batchexecute",
+      {
+        method: "POST",
+        signal: ctrl2.signal,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          Origin: "https://news.google.com",
+          Referer: "https://news.google.com/",
+          "X-Same-Domain": "1",
+          "User-Agent": ua,
+          Cookie: cookies.join("; "),
+        },
+        body: `f.req=${encodeURIComponent(JSON.stringify([[["Fbv4je", inner]]]))}`,
+      },
+    ).finally(() => clearTimeout(timer2));
+    if (!rpc.ok) return raw;
+    const frames = JSON.parse(
+      (await rpc.text()).split("\n\n")[1] ?? "",
+    ) as unknown[];
+    const frame = (frames.find((f) => Array.isArray(f) && f[0] === "wrb.fr") ??
+      frames[0]) as unknown[];
+    const decoded =
+      Array.isArray(frame) && typeof frame[2] === "string"
+        ? (JSON.parse(frame[2]) as unknown[])[1]
+        : null;
+    if (typeof decoded !== "string") return raw;
+    const u = new URL(decoded);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return raw;
+    return decoded;
+  } catch {
+    return raw;
+  }
+}
+
 export type LlmResult = {
   summary: string;
   province: string | null;

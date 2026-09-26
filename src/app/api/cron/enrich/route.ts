@@ -109,6 +109,14 @@ export async function GET(req: Request) {
     items.map((item) => fetchArticleText(item.url, { maxText, maxHtml })),
   );
   const texts = fetches.map((f, i) => f.text ?? items[i].summary ?? "");
+  const sources = fetches.map((f, i) =>
+    f.text
+      ? ("article" as const)
+      : items[i].summary
+        ? ("rss" as const)
+        : ("empty" as const),
+  );
+  const fetchedLens = fetches.map((f) => f.text?.length ?? null);
   const results = new Map<string, LlmResult>();
   await Promise.all(
     items.map(async (item, i) => {
@@ -121,6 +129,8 @@ export async function GET(req: Request) {
     item: (typeof items)[number],
     result: LlmResult | undefined,
     canonical: string | null,
+    source: "article" | "rss" | "empty",
+    fetchedLen: number | null,
   ): Promise<"enriched" | "rejected" | "duplicate" | "failed"> => {
     try {
       if (!result) return "failed";
@@ -132,6 +142,8 @@ export async function GET(req: Request) {
         llm_school: result.school,
         llm_sppg: result.sppg,
         canonical_hash: cHash,
+        enrich_source: source,
+        fetched_len: fetchedLen,
       };
       // High-confidence non-MBG-poisoning news: auto-reject.
       if (
@@ -177,6 +189,8 @@ export async function GET(req: Request) {
         guessed_region_id?: string | null;
         geo_confidence?: number | null;
         canonical_hash?: string | null;
+        enrich_source?: string | null;
+        fetched_len?: number | null;
         duplicate_of_case_id?: string | null;
         duplicate_confidence?: number | null;
         duplicate_reason?: string | null;
@@ -187,6 +201,8 @@ export async function GET(req: Request) {
         llm_school: result.school,
         llm_sppg: result.sppg,
         canonical_hash: cHash,
+        enrich_source: source,
+        fetched_len: fetchedLen,
       };
       if (candidate) {
         update.geo_confidence = result.confidence;
@@ -254,7 +270,13 @@ export async function GET(req: Request) {
   // DB updates in parallel; count outcomes.
   const outcomes = await Promise.all(
     items.map((item, i) =>
-      handleItem(item, results.get(item.id), fetches[i].canonical),
+      handleItem(
+        item,
+        results.get(item.id),
+        fetches[i].canonical,
+        sources[i],
+        fetchedLens[i],
+      ),
     ),
   );
   for (const o of outcomes) {

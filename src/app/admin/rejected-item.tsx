@@ -15,6 +15,7 @@ export type RejectedItemData = {
   published_at: string | null;
   llm_summary: string | null;
   llm_reject_reason: string | null;
+  enrich_source: string | null;
 };
 
 export function RejectedItem({ item }: { item: RejectedItemData }) {
@@ -34,6 +35,9 @@ export function RejectedItem({ item }: { item: RejectedItemData }) {
                 ? "Duplikat otomatis"
                 : "Ditolak otomatis"}
             </Badge>
+            {item.enrich_source === "rss" && (
+              <Badge variant="outline">Dari RSS</Badge>
+            )}
           </div>
         </div>
         <a

@@ -119,6 +119,12 @@ async function main() {
       const title = item?.title ?? c.summary.slice(0, 150);
       const fetched = await fetchArticleText(c.source_url);
       out.fallback = !fetched.text;
+      const enrichSource = fetched.text
+        ? "article"
+        : [item?.title, item?.summary, c.summary].some(Boolean)
+          ? "rss"
+          : "empty";
+      const fetchedLen = fetched.text?.length ?? null;
       const text =
         fetched.text ??
         [item?.title, item?.summary, c.summary].filter(Boolean).join("\n");
@@ -152,6 +158,8 @@ async function main() {
               llm_summary: result.summary,
               llm_school: result.school,
               llm_sppg: result.sppg,
+              enrich_source: enrichSource,
+              fetched_len: fetchedLen,
             })
             .eq("id", item.id);
         }

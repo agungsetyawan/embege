@@ -78,6 +78,7 @@ Lessons already paid for in debug time. Follow them.
 **Cron**
 - Cron runs in Supabase (`pg_cron` + `pg_net`), not in Vercel. `pg_net` lives in the `net` schema, not `extensions`.
 - Cron endpoints must be idempotent (`url_hash` dedup) and answer in under 60 seconds. Cap enrich batch size via `app_settings.enrich_batch` (enrich makes up to 2 Gemini calls per item, so the batch sizes the 60-second budget).
+- Google News redirects resolve at crawl, never at enrich (2 extra requests per URL would blow the 60-second budget). Crawl caps decodes per run with a delay between calls; a failed decode keeps the feed link and never fails the run. The decode targets Google's internal RPC and can break without warning — symptom is `decoded:0` with rising `enrich_source='rss'`.
 
 **Database**
 - RLS: public reads `regions` and published `cases` only. Public writes go only through the `submit_case_report()` RPC (1 report per case per IP per hour). Every other write needs an authenticated admin.
@@ -96,6 +97,7 @@ Lessons already paid for in debug time. Follow them.
 - `school`/`sppg` are verbatim from the article (several joined with `'; '`, max 500 chars), `null` when not mentioned explicitly — never guessed. Applied updates carry them over (`?? target`), same as victims.
 - Human curation stays required before anything publishes.
 - `fetchArticleText` uses browser-compatible request headers. Some outlets reject non-browser clients with 403 — never simplify it back to a single header.
+- `enrich_source='rss'` (Dari RSS badge) means the LLM only saw the snippet, not the article — treat it as thin curation. The batchexecute decode needs exact form-urlencoded headers or Google answers 400 — never simplify them either.
 
 **Language**
 - Identifiers and code comments in English. User-facing strings (UI copy, aria-labels, metadata, LLM prompts) stay in natural Indonesian.

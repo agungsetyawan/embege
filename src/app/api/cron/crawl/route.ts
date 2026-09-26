@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import Parser from "rss-parser";
-import { titleHash } from "@/lib/enrich";
+import { resolvePublisherUrl, titleHash } from "@/lib/enrich";
 import { requiredEnv } from "@/lib/env";
 import { isHttpUrl } from "@/lib/validate";
 
@@ -19,6 +19,11 @@ const parser = new Parser({
 // indexing. One-line change if the window ever needs tuning.
 const GOOGLE_NEWS_WINDOW = "3d";
 
+// Google News decode budget: ~0.3s per URL plus a polite delay between calls
+// (429s lock out for ~30 min). Keeps the run inside the 60s cron window.
+const MAX_DECODE_PER_RUN = 15;
+const DECODE_DELAY_MS = 1500;
+
 function googleNewsUrl(keyword: string): string {
   const params = new URLSearchParams({
     q: `${keyword} when:${GOOGLE_NEWS_WINDOW}`,
@@ -30,10 +35,10 @@ function googleNewsUrl(keyword: string): string {
 }
 
 // Google wraps the publisher URL in a redirect link
-// (news.google.com/rss/articles/CBMi...). The link is stable per article, so
-// it dedups by url_hash like any other URL, and browsers follow it to the
-// publisher when a visitor clicks "Sumber". No server-side resolve: the page
-// is a JS app with an encrypted payload, so fetch can never see the target.
+// (news.google.com/rss/articles/CBMi...). The redirect is resolved
+// server-side at crawl (batchexecute RPC): the publisher URL goes into url
+// so enrichment can fetch the article text, the feed link stays in raw_url.
+// Unresolved links keep the Google URL and enrich falls back to the snippet.
 
 type Region = { id: string; province: string; district: string };
 
@@ -132,11 +137,10 @@ export async function GET(req: Request) {
       const { title, media } = splitPublisher(item.title, item.source);
       const text = `${item.title} ${item.snippet}`;
       return {
-        url_hash: createHash("sha256").update(link).digest("hex"),
+        link,
         title: title.slice(0, 500),
         title_hash: titleHash(title),
         summary: item.snippet.slice(0, 1000) || null,
-        url: link,
         media,
         published_at: item.isoDate
           ? new Date(item.isoDate).toISOString()
@@ -169,11 +173,42 @@ export async function GET(req: Request) {
     return true;
   });
 
+  // Resolve Google News redirects to publisher URLs so enrichment can fetch
+  // the article text. Unresolved links keep the feed link (RSS fallback).
+  let decoded = 0;
+  const resolved = [];
+  for (const r of fresh) {
+    let url = r.link;
+    if (decoded < MAX_DECODE_PER_RUN) {
+      url = await resolvePublisherUrl(r.link);
+      decoded++;
+      await new Promise((resolve) => setTimeout(resolve, DECODE_DELAY_MS));
+    }
+    resolved.push({
+      url_hash: createHash("sha256").update(url).digest("hex"),
+      title: r.title,
+      title_hash: r.title_hash,
+      summary: r.summary,
+      url,
+      raw_url: r.link,
+      media: r.media,
+      published_at: r.published_at,
+      guessed_region_id: r.guessed_region_id,
+    });
+  }
+  // Two feed links can resolve to one publisher URL: keep the earliest.
+  const seenPublisher = new Set<string>();
+  const deduped = resolved.filter((r) => {
+    if (seenPublisher.has(r.url_hash)) return false;
+    seenPublisher.add(r.url_hash);
+    return true;
+  });
+
   let inserted = 0;
-  if (fresh.length > 0) {
+  if (deduped.length > 0) {
     const { data, error } = await supabase
       .from("crawl_items")
-      .upsert(fresh, { onConflict: "url_hash", ignoreDuplicates: true })
+      .upsert(deduped, { onConflict: "url_hash", ignoreDuplicates: true })
       .select("id");
     if (!error) inserted = data?.length ?? 0;
   }
@@ -182,5 +217,6 @@ export async function GET(req: Request) {
     fetched: seen.size,
     inserted,
     skippedTitleDupes,
+    decoded,
   });
 }

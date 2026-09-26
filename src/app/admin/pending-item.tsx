@@ -49,6 +49,7 @@ export type PendingItemData = {
   llm_school: string | null;
   llm_sppg: string | null;
   geo_confidence: number | null;
+  enrich_source: string | null;
   duplicate_of_case_id: string | null;
   duplicate_confidence: number | null;
   duplicate_reason: string | null;
@@ -125,6 +126,9 @@ export function PendingItem({
                 <Sparkles />
                 Ringkasan otomatis
               </Badge>
+            )}
+            {item.enrich_source === "rss" && (
+              <Badge variant="outline">Dari RSS</Badge>
             )}
             {guessed && (
               <Badge variant="outline">

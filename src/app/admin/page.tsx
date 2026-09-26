@@ -101,7 +101,7 @@ export default async function AdminPage({
           let query = supabase
             .from("crawl_items")
             .select(
-              "id,title,summary,url,media,published_at,llm_summary,llm_reject_reason",
+              "id,title,summary,url,media,published_at,llm_summary,llm_reject_reason,enrich_source",
               { count: "exact" },
             )
             .eq("status", "rejected")
@@ -152,7 +152,7 @@ export default async function AdminPage({
               let query = supabase
                 .from("crawl_items")
                 .select(
-                  "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,geo_confidence,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
+                  "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,geo_confidence,enrich_source,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
                   { count: "exact" },
                 )
                 .eq("status", "pending");
