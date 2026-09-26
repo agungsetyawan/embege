@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Case data page placeholder during filter navigation and pagination.
 export default function CasesLoading() {
   return (
-    <main
+    <section
       className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4"
       aria-busy="true"
       aria-label="Memuat halaman kasus"
@@ -17,6 +17,6 @@ export default function CasesLoading() {
         </div>
         <Skeleton className="h-96 w-full" />
       </div>
-    </main>
+    </section>
   );
 }

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createClient } from "@/lib/supabase/server";
-import { AdminHeader } from "../admin-header";
 import {
   addKeyword,
   addSetting,
@@ -39,9 +38,7 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4">
-      <AdminHeader active="settings" title="Pengaturan" email={user.email} />
-
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4">
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Umum</h2>
         <Frame stacked>
@@ -143,6 +140,6 @@ export default async function SettingsPage() {
           </SubmitButton>
         </form>
       </section>
-    </main>
+    </div>
   );
 }

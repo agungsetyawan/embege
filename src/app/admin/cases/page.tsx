@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { NavLinkStatus } from "@/components/ui/nav-link-status";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/validate";
-import { AdminHeader } from "../admin-header";
 import { type CaseRow, CasesTable } from "./cases-table";
 
 const PAGE_SIZES = [10, 20, 50];
@@ -98,8 +97,7 @@ export default async function CasesAdminPage({
   const items = (rows ?? []) as unknown as CaseRow[];
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4">
-      <AdminHeader active="cases" title="Data Kasus" email={user.email} />
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4">
       <form
         action="/admin/cases"
         method="get"
@@ -200,6 +198,6 @@ export default async function CasesAdminPage({
           regions={regions ?? []}
         />
       )}
-    </main>
+    </div>
   );
 }

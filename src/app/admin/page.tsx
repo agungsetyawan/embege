@@ -1,11 +1,9 @@
 import { Inbox } from "lucide-react";
 import { redirect } from "next/navigation";
-import { Badge } from "@/components/reui/badge";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { IconStack } from "@/components/reui/icon-stack";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/validate";
-import { AdminHeader } from "./admin-header";
 import { DeletedItem, type DeletedItemData } from "./deleted-item";
 import {
   type DuplicateCase,
@@ -52,31 +50,6 @@ export default async function AdminPage({
   const PAGE_SIZE = 20;
   const rawPage = Number(params.page);
   const wantPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
-
-  const [
-    { count: pendingCount },
-    { count: autoCount },
-    { count: reportCount },
-    { count: deletedCount },
-  ] = await Promise.all([
-    supabase
-      .from("crawl_items")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending"),
-    supabase
-      .from("crawl_items")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "rejected")
-      .eq("llm_is_relevant", false),
-    supabase
-      .from("case_reports")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "open"),
-    supabase
-      .from("cases")
-      .select("id", { count: "exact", head: true })
-      .not("deleted_at", "is", null),
-  ]);
 
   // One search box across all queue columns (OR), same sanitizing as
   // /admin/cases. Badge counts above stay global; the list query carries
@@ -246,28 +219,14 @@ export default async function AdminPage({
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
-      <AdminHeader
-        active={tab}
-        title="Kurasi Berita"
-        meta={
-          <>
-            <Badge variant="secondary">{pendingCount ?? 0} antre</Badge>
-            <Badge variant="outline">{autoCount ?? 0} ditolak otomatis</Badge>
-            <Badge variant="outline">{reportCount ?? 0} laporan</Badge>
-            <Badge variant="outline">{deletedCount ?? 0} terhapus</Badge>
-          </>
-        }
-        email={user.email}
-      >
-        <QueueFilters
-          key={tab}
-          initialQ={q}
-          initialRegionId={region}
-          tab={tab}
-          regions={regions ?? []}
-        />
-      </AdminHeader>
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
+      <QueueFilters
+        key={tab}
+        initialQ={q}
+        initialRegionId={region}
+        tab={tab}
+        regions={regions ?? []}
+      />
       {(items?.length ?? 0) === 0 ? (
         <Frame>
           <FramePanel className="flex flex-col items-center gap-1.5 py-8 text-center">
@@ -344,6 +303,6 @@ export default async function AdminPage({
           className="sticky bottom-0 z-30 -mx-4 -mb-4 border-t border-border bg-background/95 px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur"
         />
       )}
-    </main>
+    </div>
   );
 }

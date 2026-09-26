@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Admin page placeholder during tab navigation and pagination.
 export default function AdminLoading() {
   return (
-    <main
+    <section
       className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4"
       aria-busy="true"
       aria-label="Memuat halaman admin"
@@ -33,6 +33,6 @@ export default function AdminLoading() {
           </FramePanel>
         ))}
       </Frame>
-    </main>
+    </section>
   );
 }

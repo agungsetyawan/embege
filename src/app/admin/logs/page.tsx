@@ -4,7 +4,6 @@ import { Badge } from "@/components/reui/badge";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { IconStack } from "@/components/reui/icon-stack";
 import { createClient } from "@/lib/supabase/server";
-import { AdminHeader } from "../admin-header";
 import { QueuePagination } from "../queue-pagination";
 
 type CronLogRow = {
@@ -78,13 +77,11 @@ export default async function LogsPage({
   const pageQuery = (p: number) => `/admin/logs?page=${p}`;
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
-      <AdminHeader
-        active="logs"
-        title="Cron Logs"
-        description="Cron HTTP responses from the last 6 hours. Old rows are deleted automatically by pg_net."
-        email={user.email}
-      />
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
+      <p className="text-sm text-muted-foreground">
+        Cron HTTP responses from the last 6 hours. Old rows are deleted
+        automatically by pg_net.
+      </p>
       {logs.length === 0 ? (
         <Frame>
           <FramePanel className="flex flex-col items-center gap-1.5 py-8 text-center">
@@ -140,6 +137,6 @@ export default async function LogsPage({
           className="sticky bottom-0 z-30 -mx-4 -mb-4 border-t border-border bg-background/95 px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur"
         />
       )}
-    </main>
+    </div>
   );
 }

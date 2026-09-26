@@ -111,6 +111,8 @@ Lessons already paid for in debug time. Follow them.
 - Hover-reveal bubbles inside the map card (`group-hover:visible`) must be `absolute`: an `invisible` element still occupies layout space and will block clicks on overlapping controls (paid for by the attribution note covering zoom-out).
 - Deep links drive the map through `?region_id=&date=`: validate with `isUuid`/`isDateString`, ignore invalid params, and clear both params when the drawer closes.
 - The forwarded `MapContainer` ref only resolves a commit after mount. Never gate a flight on it; report readiness with a `useMap()` probe inside the container instead.
+- shadcn primitives need their theme tokens in `globals.css` or they render unstyled: the sidebar ships `bg-sidebar`/`text-sidebar-foreground` classes that resolve to nothing without the `--sidebar-*` vars (paid for by the transparent mobile Sheet).
+- Never install a duplicate hook from a registry when one exists: `use-mobile.ts` is only a name alias over the existing `use-media-query` hook because `ui/sidebar` imports that name.
 
 **Changelog**
 - Keep `CHANGELOG.md` current: one dated section per release (newest first), one bullet per change, one short past-tense sentence per bullet, entries in plain English.
