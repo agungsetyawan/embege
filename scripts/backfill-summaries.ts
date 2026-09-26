@@ -119,15 +119,14 @@ async function main() {
       const title = item?.title ?? c.summary.slice(0, 150);
       const fetched = await fetchArticleText(c.source_url);
       out.fallback = !fetched.text;
+      const fallback = [item?.title, item?.summary, c.summary].filter(Boolean);
       const enrichSource = fetched.text
         ? "article"
-        : [item?.title, item?.summary, c.summary].some(Boolean)
+        : fallback.length
           ? "rss"
           : "empty";
       const fetchedLen = fetched.text?.length ?? null;
-      const text =
-        fetched.text ??
-        [item?.title, item?.summary, c.summary].filter(Boolean).join("\n");
+      const text = fetched.text ?? fallback.join("\n");
       const result = await enrichWithGemini(title, text);
       if (!result) {
         out.reason = "llm-gagal";

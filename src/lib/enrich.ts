@@ -5,6 +5,26 @@ import { requiredEnv } from "@/lib/env";
 export const DEFAULT_MAX_TEXT = 10000;
 export const DEFAULT_MAX_HTML = 1500000;
 
+const BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+const BROWSER_HEADERS = {
+  "User-Agent": BROWSER_UA,
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language": "id-ID,id;q=0.9,en;q=0.8",
+  "Upgrade-Insecure-Requests": "1",
+};
+
+// fetch with a 10s abort timeout. Caller checks res.ok.
+async function timedFetch(url: string, init: RequestInit = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Lowercase host, no query/fragment/trailing slash. Invalid -> null.
 function normalizeCanonical(raw: string): string | null {
   let parsed: URL;
@@ -53,20 +73,9 @@ export async function fetchArticleText(
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return none;
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 10000);
-    const res = await fetch(parsed.toString(), {
-      signal: ctrl.signal,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "id-ID,id;q=0.9,en;q=0.8",
-        Referer: "https://www.google.com/",
-        "Upgrade-Insecure-Requests": "1",
-      },
-    }).finally(() => clearTimeout(timer));
+    const res = await timedFetch(parsed.toString(), {
+      headers: { ...BROWSER_HEADERS, Referer: "https://www.google.com/" },
+    });
     if (!res.ok || !res.headers.get("content-type")?.includes("html"))
       return none;
     const len = Number(res.headers.get("content-length") ?? "");
@@ -107,22 +116,13 @@ export async function resolvePublisherUrl(raw: string): Promise<string> {
   } catch {
     return raw;
   }
-  const ua =
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 10000);
-    const page = await fetch(`https://news.google.com/rss/articles/${id}`, {
-      signal: ctrl.signal,
-      headers: {
-        "User-Agent": ua,
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "id-ID,id;q=0.9,en;q=0.8",
-        Cookie: "CONSENT=PENDING+987",
-        "Upgrade-Insecure-Requests": "1",
+    const page = await timedFetch(
+      `https://news.google.com/rss/articles/${id}`,
+      {
+        headers: { ...BROWSER_HEADERS, Cookie: "CONSENT=PENDING+987" },
       },
-    }).finally(() => clearTimeout(timer));
+    );
     if (!page.ok) return raw;
     const cookies = [
       "CONSENT=PENDING+987",
@@ -170,24 +170,21 @@ export async function resolvePublisherUrl(raw: string): Promise<string> {
       ts,
       sg,
     ]);
-    const ctrl2 = new AbortController();
-    const timer2 = setTimeout(() => ctrl2.abort(), 10000);
-    const rpc = await fetch(
+    const rpc = await timedFetch(
       "https://news.google.com/_/DotsSplashUi/data/batchexecute",
       {
         method: "POST",
-        signal: ctrl2.signal,
         headers: {
           "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
           Origin: "https://news.google.com",
           Referer: "https://news.google.com/",
           "X-Same-Domain": "1",
-          "User-Agent": ua,
+          "User-Agent": BROWSER_UA,
           Cookie: cookies.join("; "),
         },
         body: `f.req=${encodeURIComponent(JSON.stringify([[["Fbv4je", inner]]]))}`,
       },
-    ).finally(() => clearTimeout(timer2));
+    );
     if (!rpc.ok) return raw;
     const frames = JSON.parse(
       (await rpc.text()).split("\n\n")[1] ?? "",

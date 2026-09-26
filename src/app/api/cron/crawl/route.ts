@@ -175,8 +175,10 @@ export async function GET(req: Request) {
 
   // Resolve Google News redirects to publisher URLs so enrichment can fetch
   // the article text. Unresolved links keep the feed link (RSS fallback).
+  // Two feed links can resolve to one publisher URL: keep the earliest.
   let decoded = 0;
-  const resolved = [];
+  const seenPublisher = new Set<string>();
+  const deduped = [];
   for (const r of fresh) {
     let url = r.link;
     if (decoded < MAX_DECODE_PER_RUN) {
@@ -184,8 +186,11 @@ export async function GET(req: Request) {
       decoded++;
       await new Promise((resolve) => setTimeout(resolve, DECODE_DELAY_MS));
     }
-    resolved.push({
-      url_hash: createHash("sha256").update(url).digest("hex"),
+    const url_hash = createHash("sha256").update(url).digest("hex");
+    if (seenPublisher.has(url_hash)) continue;
+    seenPublisher.add(url_hash);
+    deduped.push({
+      url_hash,
       title: r.title,
       title_hash: r.title_hash,
       summary: r.summary,
@@ -196,13 +201,6 @@ export async function GET(req: Request) {
       guessed_region_id: r.guessed_region_id,
     });
   }
-  // Two feed links can resolve to one publisher URL: keep the earliest.
-  const seenPublisher = new Set<string>();
-  const deduped = resolved.filter((r) => {
-    if (seenPublisher.has(r.url_hash)) return false;
-    seenPublisher.add(r.url_hash);
-    return true;
-  });
 
   let inserted = 0;
   if (deduped.length > 0) {

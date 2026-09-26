@@ -108,19 +108,19 @@ export async function GET(req: Request) {
   const fetches = await Promise.all(
     items.map((item) => fetchArticleText(item.url, { maxText, maxHtml })),
   );
-  const texts = fetches.map((f, i) => f.text ?? items[i].summary ?? "");
-  const sources = fetches.map((f, i) =>
-    f.text
-      ? ("article" as const)
-      : items[i].summary
-        ? ("rss" as const)
-        : ("empty" as const),
-  );
-  const fetchedLens = fetches.map((f) => f.text?.length ?? null);
+  const inputs = fetches.map((f, i) => ({
+    text: f.text ?? items[i].summary ?? "",
+    source: (f.text ? "article" : items[i].summary ? "rss" : "empty") as
+      | "article"
+      | "rss"
+      | "empty",
+    fetchedLen: f.text?.length ?? null,
+    canonical: f.canonical,
+  }));
   const results = new Map<string, LlmResult>();
   await Promise.all(
     items.map(async (item, i) => {
-      const result = await enrichWithGemini(item.title, texts[i]);
+      const result = await enrichWithGemini(item.title, inputs[i].text);
       if (result) results.set(item.id, result);
     }),
   );
@@ -273,9 +273,9 @@ export async function GET(req: Request) {
       handleItem(
         item,
         results.get(item.id),
-        fetches[i].canonical,
-        sources[i],
-        fetchedLens[i],
+        inputs[i].canonical,
+        inputs[i].source,
+        inputs[i].fetchedLen,
       ),
     ),
   );
