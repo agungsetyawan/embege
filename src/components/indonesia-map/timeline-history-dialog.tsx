@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef, useTable } from "@tanstack/react-table";
-import { ChevronDown, History, MapPin } from "lucide-react";
+import { ChartColumn, ChevronDown, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -266,18 +266,18 @@ export function TimelineHistoryDialog({
       }}
     >
       <DialogTrigger
-        aria-label="Lihat linimasa hari keracunan"
+        aria-label="Lihat statistik keracunan"
         className="absolute bottom-3 left-1/2 z-1000 inline-flex h-8 -translate-x-1/2 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-medium whitespace-nowrap shadow-md transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden dark:bg-background"
       >
-        <History className="size-4" aria-hidden="true" />
-        Linimasa
+        <ChartColumn className="size-4" aria-hidden="true" />
+        Statistik
       </DialogTrigger>
       <DialogContent
         container={container}
         className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-2xl"
       >
         <DialogHeader className="shrink-0 border-b pb-3">
-          <DialogTitle>Linimasa hari keracunan</DialogTitle>
+          <DialogTitle>Statistik keracunan</DialogTitle>
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             {view !== "region" && (
               <div className="flex items-center gap-2">
@@ -305,7 +305,7 @@ export function TimelineHistoryDialog({
             <Tabs
               value={view}
               onValueChange={(v) => setView(v as View)}
-              aria-label="Pilih tampilan linimasa"
+              aria-label="Pilih tampilan statistik"
             >
               <TabsList>
                 <TabsTrigger value="list">Daftar</TabsTrigger>
@@ -318,12 +318,12 @@ export function TimelineHistoryDialog({
         <div className="min-h-0 flex-1 overflow-y-auto">
           {history.isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              Memuat linimasa…
+              Memuat statistik…
             </p>
           ) : history.isError ? (
             <div className="flex flex-col items-center gap-2 py-6">
               <p className="text-sm text-muted-foreground">
-                Linimasa gagal dimuat.
+                Statistik gagal dimuat.
               </p>
               <Button
                 variant="outline"

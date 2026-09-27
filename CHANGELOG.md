@@ -17,6 +17,7 @@ The team released the following changes:
 - Blended the map severity into a yellow-to-red gradient with a vertical hover legend.
 - Added a top-10 region chart with province and district level toggles to the timeline dialog.
 - Guarded the region aggregation against stale cached payloads missing per-area case counts.
+- Renamed the Linimasa dialog to Statistik to cover the list, trend, and region views.
 
 ## 2026-09-26
 
