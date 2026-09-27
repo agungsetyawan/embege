@@ -10,9 +10,11 @@ import type { SummaryRow } from "./types";
 export function RegionPreview({
   selected,
   geo,
+  maxCount,
 }: {
   selected: SummaryRow;
   geo: FeatureCollection;
+  maxCount: number;
 }) {
   const id = `${selected.province}/${selected.district}`;
   const feature = useMemo(
@@ -40,7 +42,7 @@ export function RegionPreview({
           return {
             color: "#2563eb",
             weight: 0.5,
-            fillColor: fillColor(selected.count),
+            fillColor: fillColor(selected.count, maxCount),
             fillOpacity: isSelected ? 0.5 : 0.05,
           };
         }}

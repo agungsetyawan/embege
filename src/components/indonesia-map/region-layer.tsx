@@ -8,10 +8,12 @@ import type { SummaryRow } from "./types";
 export function DistrictLayer({
   geo,
   byKey,
+  maxCount,
   onSelect,
 }: {
   geo: FeatureCollection;
   byKey: Map<string, SummaryRow>;
+  maxCount: number;
   onSelect: (s: SummaryRow) => void;
 }) {
   return (
@@ -30,7 +32,7 @@ export function DistrictLayer({
         return {
           color: "#2563eb",
           weight: 0.5,
-          fillColor: fillColor(n),
+          fillColor: fillColor(n, maxCount),
           fillOpacity: n > 0 ? 0.5 : 0.05,
         };
       }}

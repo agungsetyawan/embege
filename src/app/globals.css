@@ -174,18 +174,6 @@
   font-size: 12px;
   line-height: 1;
 }
-.mbg-sev-1 {
-  background-color: #eab308;
-  color: #422006;
-}
-.mbg-sev-2 {
-  background-color: #f97316;
-  color: #fff;
-}
-.mbg-sev-5 {
-  background-color: #dc2626;
-  color: #fff;
-}
 
 /* Cascader popup must beat the Leaflet panes (z 200-1000) and the map drawer
    (z-1000/1001). ReUI hardcodes z-50 on its portal positioner, and the

@@ -14,6 +14,7 @@ export function RegionDetailDrawer({
   selected,
   highlightDate,
   geo,
+  maxCount,
   isDesktop,
   container,
   onClose,
@@ -21,6 +22,7 @@ export function RegionDetailDrawer({
   selected: SummaryRow | null;
   highlightDate: string | null;
   geo: FeatureCollection;
+  maxCount: number;
   isDesktop: boolean;
   container?: HTMLElement;
   onClose: () => void;
@@ -67,7 +69,11 @@ export function RegionDetailDrawer({
             </DrawerHeader>
             <div className="min-h-0 overflow-y-auto px-4 pb-4">
               <div className="mb-4 overflow-hidden rounded-lg border">
-                <RegionPreview selected={selected} geo={geo} />
+                <RegionPreview
+                  selected={selected}
+                  geo={geo}
+                  maxCount={maxCount}
+                />
               </div>
               <CaseList
                 regionId={selected.region_id}

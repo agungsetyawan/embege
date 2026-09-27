@@ -138,6 +138,12 @@ export function IndonesiaMap() {
     () => new Map(summary.map((s) => [`${s.lat},${s.lng}`, s.count])),
     [summary],
   );
+  // Gradient anchor: the largest single-region count (cluster totals above
+  // it clamp to red).
+  const maxCount = useMemo(
+    () => summary.reduce((m, s) => Math.max(m, s.count), 0),
+    [summary],
+  );
 
   const handleSelectDot = useCallback(
     (s: SummaryRow) => {
@@ -289,11 +295,13 @@ export function IndonesiaMap() {
           <DistrictLayer
             geo={geo.data}
             byKey={byKey}
+            maxCount={maxCount}
             onSelect={handleSelectDot}
           />
           <RegionMarkers
             summary={summary}
             countByLatLng={countByLatLng}
+            maxCount={maxCount}
             onSelect={handleSelectDot}
           />
           <MapZoomControl />
@@ -315,13 +323,14 @@ export function IndonesiaMap() {
           />
         )}
         <div className="absolute bottom-3 left-3 z-1000">
-          <MapLegend />
+          <MapLegend maxCount={maxCount} />
         </div>
       </Card>
       <RegionDetailDrawer
         selected={selected}
         highlightDate={highlightDate}
         geo={geo.data}
+        maxCount={maxCount}
         isDesktop={isDesktop}
         container={cardEl ?? undefined}
         onClose={handleCloseDrawer}
