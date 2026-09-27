@@ -274,7 +274,7 @@ export function TimelineHistoryDialog({
       </DialogTrigger>
       <DialogContent
         container={container}
-        className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-2xl"
+        className="flex max-h-[85dvh] flex-col overflow-hidden sm:max-w-2xl"
       >
         <DialogHeader className="shrink-0 border-b pb-3">
           <DialogTitle>Statistik keracunan</DialogTitle>

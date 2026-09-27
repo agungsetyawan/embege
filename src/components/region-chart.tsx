@@ -25,8 +25,9 @@ const config: ChartConfig = {
   victims: { label: "Korban", color: "var(--color-accent-foreground)" },
 };
 
+// 18 uppercase chars fit the 140px axis on one line; full name in tooltip.
 function shorten(label: string): string {
-  return label.length > 24 ? `${label.slice(0, 23)}…` : label;
+  return label.length > 18 ? `${label.slice(0, 17)}…` : label;
 }
 
 export function RegionChart({ timeline }: { timeline: TimelineDay[] }) {
@@ -53,11 +54,12 @@ export function RegionChart({ timeline }: { timeline: TimelineDay[] }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto">
         <Tabs
           value={level}
           onValueChange={(v) => setLevel(v as RegionLevel)}
           aria-label="Pilih level wilayah"
+          className="shrink-0"
         >
           <TabsList>
             <TabsTrigger value="province">Provinsi</TabsTrigger>
@@ -68,6 +70,7 @@ export function RegionChart({ timeline }: { timeline: TimelineDay[] }) {
           value={metric}
           onValueChange={(v) => setMetric(v as Metric)}
           aria-label="Pilih metrik grafik"
+          className="shrink-0"
         >
           <TabsList>
             <TabsTrigger value="cases">Kasus</TabsTrigger>
@@ -79,8 +82,12 @@ export function RegionChart({ timeline }: { timeline: TimelineDay[] }) {
         {TOP_N} {level === "province" ? "provinsi" : "kabupaten/kota"} teratas
         berdasarkan {metric === "cases" ? "kasus" : "korban"}
       </p>
-      <ChartContainer config={config} className="min-h-80 w-full">
-        <BarChart data={data} layout="vertical" margin={{ left: 0, right: 8 }}>
+      <ChartContainer config={config} className="h-72 w-full">
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 8, bottom: 8, left: 0, right: 8 }}
+        >
           <CartesianGrid horizontal={false} />
           <XAxis
             type="number"
@@ -102,6 +109,7 @@ export function RegionChart({ timeline }: { timeline: TimelineDay[] }) {
             axisLine={false}
             tick={{ fontSize: 11 }}
             width={140}
+            interval={0}
             tickFormatter={shorten}
           />
           <ChartTooltip
