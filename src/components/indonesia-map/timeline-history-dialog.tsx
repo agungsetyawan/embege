@@ -47,19 +47,23 @@ const periodLabels: Record<Period, string> = {
   yearly: "Tahunan",
 };
 
-const TrendChart = dynamic(
-  () => import("@/components/trend-chart").then((m) => m.TrendChart),
-  {
-    ssr: false,
-    loading: () => (
-      <p className="py-6 text-center text-sm text-muted-foreground">
-        Memuat grafik…
-      </p>
-    ),
-  },
+const chartLoading = () => (
+  <p className="py-6 text-center text-sm text-muted-foreground">
+    Memuat grafik…
+  </p>
 );
 
-type View = "list" | "chart";
+const TrendChart = dynamic(
+  () => import("@/components/trend-chart").then((m) => m.TrendChart),
+  { ssr: false, loading: chartLoading },
+);
+
+const RegionChart = dynamic(
+  () => import("@/components/region-chart").then((m) => m.RegionChart),
+  { ssr: false, loading: chartLoading },
+);
+
+type View = "list" | "chart" | "region";
 
 function MonthGrid({
   days,
@@ -108,7 +112,7 @@ function MonthGrid({
                       type="button"
                       onClick={() => onSelectArea(regionId, day.date)}
                       aria-label={`Lihat kasus di ${areaName(a)} pada ${formatDate(day.date)}`}
-                      className="inline-flex cursor-pointer items-center gap-1 rounded-sm text-left font-medium text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-sm text-left font-medium text-primary-foreground underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden dark:text-primary"
                     >
                       <MapPin
                         className="size-3.5 shrink-0"
@@ -275,24 +279,29 @@ export function TimelineHistoryDialog({
         <DialogHeader className="shrink-0 border-b pb-3">
           <DialogTitle>Linimasa hari keracunan</DialogTitle>
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-            <div className="flex items-center gap-2">
-              <label htmlFor="period" className="text-sm text-muted-foreground">
-                Periode
-              </label>
-              <Select
-                value={period}
-                onValueChange={(value) => setPeriod(value as Period)}
-              >
-                <SelectTrigger id="period" size="sm" className="min-w-32">
-                  <SelectValue>{() => periodLabels[period]}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Mingguan</SelectItem>
-                  <SelectItem value="monthly">Bulanan</SelectItem>
-                  <SelectItem value="yearly">Tahunan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {view !== "region" && (
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="period"
+                  className="text-sm text-muted-foreground"
+                >
+                  Periode
+                </label>
+                <Select
+                  value={period}
+                  onValueChange={(value) => setPeriod(value as Period)}
+                >
+                  <SelectTrigger id="period" size="sm" className="min-w-32">
+                    <SelectValue>{() => periodLabels[period]}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Mingguan</SelectItem>
+                    <SelectItem value="monthly">Bulanan</SelectItem>
+                    <SelectItem value="yearly">Tahunan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <Tabs
               value={view}
               onValueChange={(v) => setView(v as View)}
@@ -300,7 +309,8 @@ export function TimelineHistoryDialog({
             >
               <TabsList>
                 <TabsTrigger value="list">Daftar</TabsTrigger>
-                <TabsTrigger value="chart">Grafik</TabsTrigger>
+                <TabsTrigger value="chart">Tren</TabsTrigger>
+                <TabsTrigger value="region">Wilayah</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -325,6 +335,8 @@ export function TimelineHistoryDialog({
             </div>
           ) : view === "chart" ? (
             <TrendChart groups={groups} />
+          ) : view === "region" ? (
+            <RegionChart timeline={timeline} />
           ) : groups.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Belum ada data untuk ditampilkan.

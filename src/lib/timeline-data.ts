@@ -50,8 +50,10 @@ export async function fetchTimeline(): Promise<TimelineResponse> {
       province: region?.province ?? "Wilayah tak dikenal",
       district: region?.district ?? "",
       victims: 0,
+      cases: 0,
     };
     area.victims += row.victims ?? 0;
+    area.cases += 1;
     day.areas.set(key, area);
   }
   const timeline: TimelineDay[] = [...days.entries()].map(([date, day]) => ({

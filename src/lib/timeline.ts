@@ -6,6 +6,16 @@ export type TimelineArea = {
   province: string;
   district: string;
   victims: number;
+  cases: number;
+};
+
+export type RegionLevel = "province" | "district";
+
+export type RegionGroup = {
+  key: string;
+  label: string;
+  cases: number;
+  victims: number;
 };
 
 export type TimelineDay = {
@@ -149,4 +159,29 @@ export function groupByPeriod(
 
 export function formatDay(iso: string): string {
   return format(toLocalDate(iso), "EEEE, d MMM", { locale: localeId });
+}
+
+export function groupByRegion(
+  timeline: TimelineDay[],
+  level: RegionLevel,
+): RegionGroup[] {
+  const groups = new Map<string, RegionGroup>();
+  for (const day of timeline) {
+    for (const a of day.areas) {
+      const key =
+        level === "province"
+          ? a.province
+          : (a.region_id ?? `${a.province}//${a.district}`);
+      const label = level === "province" ? a.province : areaName(a);
+      let group = groups.get(key);
+      if (!group) {
+        group = { key, label, cases: 0, victims: 0 };
+        groups.set(key, group);
+      }
+      // Old cached payloads may lack `cases`; never let undefined poison the sum.
+      group.cases += a.cases ?? 0;
+      group.victims += a.victims ?? 0;
+    }
+  }
+  return [...groups.values()];
 }

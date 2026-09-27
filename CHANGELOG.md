@@ -13,6 +13,10 @@ The team released the following changes:
 - Reshaped the admin queue loading skeleton to mirror the filter grid and curation item layout.
 - Reshaped the cases loading skeleton to mirror the filter grid and data table.
 - Added matching loading skeletons for the admin logs and settings pages.
+- Applied a lime-green and pink palette with green-for-case and pink-for-victim coding.
+- Blended the map severity into a yellow-to-red gradient with a vertical hover legend.
+- Added a top-10 region chart with province and district level toggles to the timeline dialog.
+- Guarded the region aggregation against stale cached payloads missing per-area case counts.
 
 ## 2026-09-26
 
