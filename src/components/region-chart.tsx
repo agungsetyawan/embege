@@ -30,21 +30,24 @@ function shorten(label: string): string {
   return label.length > 18 ? `${label.slice(0, 17)}…` : label;
 }
 
-export function RegionChart({ timeline }: { timeline: TimelineDay[] }) {
+export function RegionChart({ days }: { days: TimelineDay[] }) {
   const [level, setLevel] = useState<RegionLevel>("province");
   const [metric, setMetric] = useState<Metric>("cases");
 
-  const data = useMemo(() => {
-    const groups = groupByRegion(timeline, level);
+  const { rows, total } = useMemo(() => {
+    const groups = groupByRegion(days, level);
     groups.sort((a, b) => b[metric] - a[metric]);
-    return groups.slice(0, TOP_N).map((g) => ({
-      name: g.label,
-      cases: g.cases,
-      victims: g.victims,
-    }));
-  }, [timeline, level, metric]);
+    return {
+      rows: groups.slice(0, TOP_N).map((g) => ({
+        name: g.label,
+        cases: g.cases,
+        victims: g.victims,
+      })),
+      total: groups.length,
+    };
+  }, [days, level, metric]);
 
-  if (data.length === 0) {
+  if (rows.length === 0) {
     return (
       <p className="py-6 text-center text-sm text-muted-foreground">
         Belum ada data untuk ditampilkan.
@@ -78,13 +81,16 @@ export function RegionChart({ timeline }: { timeline: TimelineDay[] }) {
           </TabsList>
         </Tabs>
       </div>
-      <p className="text-sm text-muted-foreground">
-        {TOP_N} {level === "province" ? "provinsi" : "kabupaten/kota"} teratas
-        berdasarkan {metric === "cases" ? "kasus" : "korban"}
-      </p>
+      {total > TOP_N && (
+        <p className="text-sm text-muted-foreground">
+          {TOP_N} dari {total.toLocaleString("id-ID")}{" "}
+          {level === "province" ? "provinsi" : "kabupaten/kota"} berdasarkan{" "}
+          {metric === "cases" ? "kasus" : "korban"}
+        </p>
+      )}
       <ChartContainer config={config} className="h-72 w-full">
         <BarChart
-          data={data}
+          data={rows}
           layout="vertical"
           margin={{ top: 8, bottom: 8, left: 0, right: 8 }}
         >

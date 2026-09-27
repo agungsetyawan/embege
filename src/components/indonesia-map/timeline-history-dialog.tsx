@@ -47,6 +47,9 @@ const periodLabels: Record<Period, string> = {
   yearly: "Tahunan",
 };
 
+// Sentinel bucket key for the all-time region view.
+const ALL_BUCKETS = "__all__";
+
 const chartLoading = () => (
   <p className="py-6 text-center text-sm text-muted-foreground">
     Memuat grafik…
@@ -233,6 +236,7 @@ export function TimelineHistoryDialog({
   const [open, setOpen] = useState(false);
   const [period, setPeriod] = useState<Period>("monthly");
   const [view, setView] = useState<View>("list");
+  const [groupKey, setGroupKey] = useState<string>(ALL_BUCKETS);
 
   const history = useQuery({
     queryKey: ["timeline"],
@@ -245,6 +249,16 @@ export function TimelineHistoryDialog({
     () => groupByPeriod(timeline, period),
     [timeline, period],
   );
+  // Stale keys (e.g. after switching period) fall back to the latest bucket.
+  const effectiveKey =
+    groupKey === ALL_BUCKETS || groups.some((g) => g.key === groupKey)
+      ? groupKey
+      : (groups[0]?.key ?? ALL_BUCKETS);
+  const selectedGroup =
+    effectiveKey === ALL_BUCKETS
+      ? null
+      : (groups.find((g) => g.key === effectiveKey) ?? null);
+  const regionDays = selectedGroup ? selectedGroup.days : timeline;
 
   // Same destination as the map search: the map flies to the region and
   // opens its drawer, which highlights the cases of this date.
@@ -279,25 +293,59 @@ export function TimelineHistoryDialog({
         <DialogHeader className="shrink-0 border-b pb-3">
           <DialogTitle>Statistik keracunan</DialogTitle>
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-            {view !== "region" && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="period" className="text-sm text-muted-foreground">
+                Periode
+              </label>
+              <Select
+                value={period}
+                onValueChange={(value) => {
+                  setPeriod(value as Period);
+                  setGroupKey(ALL_BUCKETS);
+                }}
+              >
+                <SelectTrigger id="period" size="sm" className="min-w-32">
+                  <SelectValue>{() => periodLabels[period]}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Mingguan</SelectItem>
+                  <SelectItem value="monthly">Bulanan</SelectItem>
+                  <SelectItem value="yearly">Tahunan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {view === "region" && groups.length > 0 && (
               <div className="flex items-center gap-2">
                 <label
-                  htmlFor="period"
+                  htmlFor="bucket"
                   className="text-sm text-muted-foreground"
                 >
-                  Periode
+                  {period === "weekly"
+                    ? "Minggu"
+                    : period === "yearly"
+                      ? "Tahun"
+                      : "Bulan"}
                 </label>
                 <Select
-                  value={period}
-                  onValueChange={(value) => setPeriod(value as Period)}
+                  value={effectiveKey}
+                  onValueChange={(value) => setGroupKey(value ?? ALL_BUCKETS)}
                 >
-                  <SelectTrigger id="period" size="sm" className="min-w-32">
-                    <SelectValue>{() => periodLabels[period]}</SelectValue>
+                  <SelectTrigger id="bucket" size="sm" className="min-w-40">
+                    <SelectValue>
+                      {() =>
+                        effectiveKey === ALL_BUCKETS
+                          ? "Semua"
+                          : (selectedGroup?.label ?? "")
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="weekly">Mingguan</SelectItem>
-                    <SelectItem value="monthly">Bulanan</SelectItem>
-                    <SelectItem value="yearly">Tahunan</SelectItem>
+                    <SelectItem value={ALL_BUCKETS}>Semua</SelectItem>
+                    {groups.map((g) => (
+                      <SelectItem key={g.key} value={g.key}>
+                        {g.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -336,7 +384,7 @@ export function TimelineHistoryDialog({
           ) : view === "chart" ? (
             <TrendChart groups={groups} />
           ) : view === "region" ? (
-            <RegionChart timeline={timeline} />
+            <RegionChart days={regionDays} />
           ) : groups.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Belum ada data untuk ditampilkan.
