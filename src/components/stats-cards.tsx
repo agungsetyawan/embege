@@ -34,7 +34,11 @@ export async function StatsCards() {
         <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
-              <IconTile variant="soft" size="sm" className="text-info">
+              <IconTile
+                variant="soft"
+                size="sm"
+                className="text-primary-foreground dark:text-primary"
+              >
                 <FileText />
               </IconTile>
               <span className="text-sm font-medium text-muted-foreground">
@@ -46,7 +50,7 @@ export async function StatsCards() {
             <span className={numberClass}>
               {totalCases.toLocaleString("id-ID")}
             </span>
-            <Badge variant="info-light" size="sm" radius="full">
+            <Badge variant="primary-light" size="sm" radius="full">
               laporan terkurasi
             </Badge>
           </CardContent>
@@ -54,7 +58,11 @@ export async function StatsCards() {
         <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
-              <IconTile variant="soft" size="sm" className="text-warning">
+              <IconTile
+                variant="soft"
+                size="sm"
+                className="text-accent-foreground"
+              >
                 <Users />
               </IconTile>
               <span className="text-sm font-medium text-muted-foreground">
@@ -66,7 +74,7 @@ export async function StatsCards() {
             <span className={numberClass}>
               {totalVictims.toLocaleString("id-ID")}
             </span>
-            <Badge variant="warning-light" size="sm" radius="full">
+            <Badge variant="secondary" size="sm" radius="full">
               jiwa terdampak
             </Badge>
           </CardContent>

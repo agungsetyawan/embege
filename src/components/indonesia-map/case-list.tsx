@@ -103,7 +103,11 @@ export function CaseList({
           }`}
         >
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-            <IconTile variant="soft" size="xs" className="text-destructive">
+            <IconTile
+              variant="soft"
+              size="xs"
+              className="text-primary-foreground dark:text-primary"
+            >
               <Ambulance />
             </IconTile>
             <span>{formatCaseDate(c.occurred_on)}</span>

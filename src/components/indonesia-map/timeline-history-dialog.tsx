@@ -163,7 +163,7 @@ function MonthGrid({
       id: "cases",
       header: "Kasus",
       cell: ({ row }) => (
-        <Badge variant="destructive-light" size="sm" className="tabular-nums">
+        <Badge variant="primary-light" size="sm" className="tabular-nums">
           {row.original.cases.toLocaleString("id-ID")}
         </Badge>
       ),
@@ -178,7 +178,7 @@ function MonthGrid({
       id: "victims",
       header: "Korban",
       cell: ({ row }) => (
-        <Badge variant="outline" size="sm" className="tabular-nums">
+        <Badge variant="secondary" size="sm" className="tabular-nums">
           {row.original.victims.toLocaleString("id-ID")}
         </Badge>
       ),
@@ -336,10 +336,10 @@ export function TimelineHistoryDialog({
                   <div className="sticky top-0 z-10 bg-popover py-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-semibold">{group.label}</h3>
-                      <Badge variant="destructive-light" size="sm">
+                      <Badge variant="primary-light" size="sm">
                         {group.cases} kasus
                       </Badge>
-                      <Badge variant="outline" size="sm">
+                      <Badge variant="secondary" size="sm">
                         {group.victims.toLocaleString("id-ID")} korban
                       </Badge>
                     </div>

@@ -54,7 +54,7 @@ export function RegionDetailDrawer({
               </div>
               {selected.count > 0 && (
                 <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
-                  <Badge variant="destructive-light">
+                  <Badge variant="primary-light">
                     <Ambulance />
                     {selected.count.toLocaleString("id-ID")} kasus
                   </Badge>

@@ -79,7 +79,7 @@ export function RegionSearch({
         return (
           <span className="flex w-full items-center justify-between gap-2">
             <span className="truncate">{node.label}</span>
-            <Badge variant="destructive-light" size="sm" className="shrink-0">
+            <Badge variant="primary-light" size="sm" className="shrink-0">
               {count.toLocaleString("id-ID")} kasus
             </Badge>
           </span>

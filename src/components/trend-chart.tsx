@@ -13,10 +13,10 @@ import type { PeriodGroup } from "@/lib/timeline";
 
 type Metric = "cases" | "victims";
 
-// Solid versions of the list badges: destructive-light for cases, outline for victims.
+// Kasus mengikuti primary hijau, korban mengikuti aksen pink.
 const config: ChartConfig = {
-  cases: { label: "Kasus", color: "var(--color-destructive)" },
-  victims: { label: "Korban", color: "var(--color-muted-foreground)" },
+  cases: { label: "Kasus", color: "var(--color-primary)" },
+  victims: { label: "Korban", color: "var(--color-accent-foreground)" },
 };
 
 export function TrendChart({ groups }: { groups: PeriodGroup[] }) {
