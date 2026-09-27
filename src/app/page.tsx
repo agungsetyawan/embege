@@ -84,10 +84,7 @@ export default function Home() {
             </a>
             .
           </p>
-          <p>
-            Koordinat yang belum terverifikasi tidak dianggap fakta. Data ini
-            bukan data resmi pemerintah.
-          </p>
+          <p className="font-bold">Data ini bukan data resmi pemerintah.</p>
         </footer>
       </main>
     </>

@@ -24,7 +24,7 @@ export function MapLegend({ maxCount }: { maxCount: number }) {
             : "invisible opacity-0 group-hover:visible group-hover:opacity-100"
         }`}
       >
-        Warna menunjukkan jumlah kasus: kuning sedikit, merah banyak.
+        Warna menunjukkan jumlah kasus
       </div>
       <button
         type="button"
