@@ -117,7 +117,6 @@ export function CaseList({
               </Badge>
             )}
           </div>
-          <p className="text-sm leading-relaxed">{c.summary}</p>
           {(c.school || c.sppg) && (
             <div className="flex flex-col gap-1">
               {[
@@ -128,10 +127,10 @@ export function CaseList({
                 .map(({ key, Icon, text }) => (
                   <p
                     key={key}
-                    className="flex items-start gap-1.5 text-xs text-muted-foreground"
+                    className="flex items-start gap-1.5 text-sm leading-relaxed"
                   >
                     <Icon
-                      className="mt-0.5 size-3.5 shrink-0"
+                      className="mt-0.5 size-4 shrink-0"
                       aria-hidden="true"
                     />
                     {text}
@@ -139,24 +138,30 @@ export function CaseList({
                 ))}
             </div>
           )}
-          <a
-            href={c.source_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-sm font-medium underline underline-offset-4"
-          >
-            <ExternalLink className="size-3.5" />
-            {c.source_media}
-          </a>
-          <ButtonGroup className="ml-auto">
-            <ReportDialog caseId={c.id} />
-            <ShareButton
-              regionId={c.region_id}
-              date={c.occurred_on}
-              title={`Kasus keracunan ${formatCaseDate(c.occurred_on)}`}
-              label={`Bagikan kasus ${formatCaseDate(c.occurred_on)}`}
-            />
-          </ButtonGroup>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {c.summary}
+          </p>
+          <div className="flex items-center gap-2">
+            <a
+              href={c.source_url}
+              target="_blank"
+              rel="noreferrer"
+              title={c.source_media}
+              className="inline-flex min-w-0 flex-1 items-center gap-1 text-sm font-medium underline underline-offset-4"
+            >
+              <ExternalLink className="size-3.5 shrink-0" />
+              <span className="truncate">{c.source_media}</span>
+            </a>
+            <ButtonGroup className="shrink-0">
+              <ReportDialog caseId={c.id} />
+              <ShareButton
+                regionId={c.region_id}
+                date={c.occurred_on}
+                title={`Kasus keracunan ${formatCaseDate(c.occurred_on)}`}
+                label={`Bagikan kasus ${formatCaseDate(c.occurred_on)}`}
+              />
+            </ButtonGroup>
+          </div>
         </li>
       ))}
     </ul>
