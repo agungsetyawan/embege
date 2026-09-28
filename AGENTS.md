@@ -78,7 +78,7 @@ Lessons already paid for in debug time. Follow them.
 **Cron**
 - Cron runs in Supabase (`pg_cron` + `pg_net`), not in Vercel. `pg_net` lives in the `net` schema, not `extensions`.
 - Cron endpoints must be idempotent (`url_hash` dedup) and answer in under 60 seconds. Cap enrich batch size via `app_settings.enrich_batch` (enrich makes up to 2 Gemini calls per item, so the batch sizes the 60-second budget).
-- Google News redirects resolve at crawl, never at enrich (2 extra requests per URL would blow the 60-second budget). Crawl caps decodes per run with a delay between calls; a failed decode keeps the feed link and never fails the run. The decode targets Google's internal RPC and can break without warning — symptom is `decoded:0` with rising `enrich_source='rss'`.
+- Google News redirects resolve at crawl, never at enrich (2 extra requests per URL would blow the 60-second budget). Crawl decodes inside a per-run time budget with a delay between calls; a failed decode keeps the feed link and never fails the run, and pending items skipped by the budget are retried on later runs (enrichment columns are cleared so they enrich again with full text). The decode targets Google's internal RPC and can break without warning — symptom is `decoded:0` with rising `enrich_source='rss'`.
 
 **Database**
 - RLS: public reads `regions` and published `cases` only. Public writes go only through the `submit_case_report()` RPC (1 report per case per IP per hour). Every other write needs an authenticated admin.

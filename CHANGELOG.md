@@ -6,6 +6,7 @@ This changelog (dated list of changes) records each change to the MBG poisoning 
 
 The team released the following changes:
 
+- Switched the crawl decode cap from a fixed count to a time budget and requeued stale pending items that still pointed at Google News links.
 - Placed the source link on the same row as the Report and Share buttons with truncation for long media names.
 - Moved the school and SPPG names above the case summary and promoted them to full text while muting the summary.
 - Scoped the region chart to the selected week, month, or year bucket.

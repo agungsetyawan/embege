@@ -37,7 +37,7 @@ The list below names each layer and its role:
 
 News flows through five stages:
 
-1. The crawl job runs at minute 0 of each hour. It runs one Google News search per active keyword, filters by active keywords, resolves feed links to publisher URLs (capped per run with a delay between calls to stay inside the 60-second budget), and inserts matches into `crawl_items` with status `pending`.
+1. The crawl job runs at minute 0 of each hour. It runs one Google News search per active keyword, filters by active keywords, resolves feed links to publisher URLs (capped per run with a delay between calls to stay inside the 60-second budget; pending items skipped by the cap are retried on later runs), and inserts matches into `crawl_items` with status `pending`.
 2. The enrich job runs on its schedule every few minutes. It takes up to five pending items without a summary, fetches each article page, and calls Gemini up to twice per item (enrichment, plus a duplicate check when published candidates exist).
 3. The admin opens `/admin`, checks each item, and approves or rejects it. Approval creates a row in `cases`, or updates the linked published case for applied updates (superseded older siblings auto-reject).
 4. The public map reads published cases from `GET /api/cases`. The response stays cached for five minutes.
