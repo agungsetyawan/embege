@@ -1,6 +1,13 @@
 "use client";
 
-import { MapPin, Sparkles, TriangleAlert, Users } from "lucide-react";
+import {
+  ArrowRight,
+  MapPin,
+  Sparkles,
+  TriangleAlert,
+  Users,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import { Alert, AlertTitle } from "@/components/reui/alert";
 import { Badge } from "@/components/reui/badge";
 import {
@@ -61,6 +68,8 @@ export type DuplicateCase = {
   victims: number | null;
   occurred_on: string | null;
   source_media: string;
+  school: string | null;
+  sppg: string | null;
 };
 
 type RegionNode = CascaderNode<{ centroidOk: boolean }>;
@@ -97,6 +106,35 @@ export function renderRegionLabel(node: RegionNode) {
     );
   }
   return node.label;
+}
+
+// Mirrors the `??` fallbacks of applyItemUpdate: when `changed` is false the
+// case value stays as-is after "Terapkan update".
+function DiffRow({
+  label,
+  from,
+  to,
+  changed,
+}: {
+  label: string;
+  from: ReactNode;
+  to: ReactNode;
+  changed: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 py-2 first:pt-0 last:pb-0">
+      <span className="text-xs leading-5 text-muted-foreground">{label}</span>
+      <span className="min-w-0 text-sm leading-5 text-muted-foreground">
+        {from}
+      </span>
+      <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
+      <span
+        className={`min-w-0 text-sm leading-5 ${changed ? "" : "text-muted-foreground"}`}
+      >
+        {changed ? to : "tetap"}
+      </span>
+    </div>
+  );
 }
 
 export function PendingItem({
@@ -171,22 +209,64 @@ export function PendingItem({
         </a>
       </FrameHeader>
       {duplicate && (
-        <div className="flex flex-col gap-1 pt-2 text-sm text-muted-foreground">
-          {item.llm_victims !== null && (
-            <p>
-              Kasus terbit: {duplicate.victims ?? "?"} korban → berita ini:{" "}
-              {item.llm_victims} korban
-            </p>
-          )}
-          <p>
+        <div className="flex flex-col gap-2 pt-2">
+          <div className="divide-y rounded-md border px-3 py-2">
+            <DiffRow
+              label="Ringkasan"
+              from={<span className="line-clamp-2">{duplicate.summary}</span>}
+              to={
+                <span className="line-clamp-2">
+                  {item.llm_summary ?? "(kosong)"}
+                </span>
+              }
+              changed={item.llm_summary !== null}
+            />
+            <DiffRow
+              label="Korban"
+              from={duplicate.victims ?? "?"}
+              to={item.llm_victims ?? "?"}
+              changed={
+                item.llm_victims !== null &&
+                item.llm_victims !== duplicate.victims
+              }
+            />
+            <DiffRow
+              label="Tanggal kejadian"
+              from={duplicate.occurred_on ?? "?"}
+              to={dateDefault || "?"}
+              changed={!duplicate.occurred_on && dateDefault !== ""}
+            />
+            <DiffRow
+              label="Sekolah"
+              from={duplicate.school ?? "?"}
+              to={item.llm_school ?? "?"}
+              changed={
+                item.llm_school !== null && item.llm_school !== duplicate.school
+              }
+            />
+            <DiffRow
+              label="SPPG/dapur"
+              from={duplicate.sppg ?? "?"}
+              to={item.llm_sppg ?? "?"}
+              changed={
+                item.llm_sppg !== null && item.llm_sppg !== duplicate.sppg
+              }
+            />
+            <DiffRow
+              label="Sumber"
+              from={duplicate.source_media}
+              to={item.media}
+              changed={item.media !== duplicate.source_media}
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
             {item.duplicate_reason ??
-              "Peristiwa sama dengan kasus yang sudah terbit."}{" "}
-            <span className="line-clamp-2">
-              ({duplicate.source_media}: {duplicate.summary})
-            </span>
+              "Peristiwa sama dengan kasus yang sudah terbit."}
           </p>
-          <p>
-            Ini update dari kasus terbit. Terapkan untuk update, jangan Setujui.
+          <p className="text-sm text-muted-foreground">
+            Form di atas hanya berlaku saat Setujui. Terapkan update memakai
+            nilai berita pada tabel, bukan isi form. Jangan Setujui untuk
+            peristiwa yang sama.
           </p>
         </div>
       )}

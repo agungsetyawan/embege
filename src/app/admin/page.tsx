@@ -212,7 +212,7 @@ export default async function AdminPage({
     if (ids.length > 0) {
       const { data: dupCases } = await supabase
         .from("cases")
-        .select("id,summary,victims,occurred_on,source_media")
+        .select("id,summary,victims,occurred_on,source_media,school,sppg")
         .in("id", [...new Set(ids)]);
       for (const c of dupCases ?? []) duplicatesByItem.set(c.id, c);
     }
