@@ -20,8 +20,9 @@ const parser = new Parser({
 const GOOGLE_NEWS_WINDOW = "3d";
 
 // Google News decode budget: ~0.3s per URL plus a polite delay between calls
-// (429s lock out for ~30 min). Keeps the run inside the 60s cron window.
-const MAX_DECODE_PER_RUN = 15;
+// (429s lock out for ~30 min). Time-based from run start, so slow RSS fetching
+// eats into the decode allowance instead of blowing the 60s cron window.
+const DECODE_BUDGET_MS = 45000;
 const DECODE_DELAY_MS = 1500;
 
 function googleNewsUrl(keyword: string): string {
@@ -81,6 +82,7 @@ export async function GET(req: Request) {
   if (auth !== `Bearer ${requiredEnv("CRON_SECRET")}`) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
+  const startedAt = Date.now();
 
   const supabase = createClient(
     requiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
@@ -181,7 +183,7 @@ export async function GET(req: Request) {
   const deduped = [];
   for (const r of fresh) {
     let url = r.link;
-    if (decoded < MAX_DECODE_PER_RUN) {
+    if (Date.now() - startedAt < DECODE_BUDGET_MS) {
       url = await resolvePublisherUrl(r.link);
       decoded++;
       await new Promise((resolve) => setTimeout(resolve, DECODE_DELAY_MS));
@@ -210,11 +212,68 @@ export async function GET(req: Request) {
       .select("id");
     if (!error) inserted = data?.length ?? 0;
   }
+
+  // Catch-up: resolve redirects that earlier runs skipped when the decode
+  // budget ran out. Pending items only; curated rows keep their data. A
+  // failed decode keeps the feed link and retries on the next run.
+  let requeued = 0;
+  const { data: stuck } = await supabase
+    .from("crawl_items")
+    .select("id,url,enrich_source")
+    .eq("status", "pending")
+    .like("url", "https://news.google.com/rss/articles/%")
+    .or("llm_summary.is.null,enrich_source.eq.rss")
+    .order("created_at", { ascending: true })
+    // ponytail: bounds the read when the decode RPC is down; budget caps work.
+    .limit(100);
+  for (const item of stuck ?? []) {
+    if (Date.now() - startedAt >= DECODE_BUDGET_MS) break;
+    const oldUrl = item.url as string;
+    const url = await resolvePublisherUrl(oldUrl);
+    if (url !== oldUrl) {
+      const url_hash = createHash("sha256").update(url).digest("hex");
+      const { data: clash } = await supabase
+        .from("crawl_items")
+        .select("id")
+        .eq("url_hash", url_hash)
+        .neq("id", item.id as string)
+        .limit(1);
+      if (!clash || clash.length === 0) {
+        // Snippet-enriched rows go through enrichment again with the article.
+        const patch: Record<string, unknown> = { url, url_hash };
+        if (item.enrich_source === "rss") {
+          Object.assign(patch, {
+            llm_summary: null,
+            llm_is_relevant: null,
+            llm_reject_reason: null,
+            llm_victims: null,
+            llm_school: null,
+            llm_sppg: null,
+            geo_confidence: null,
+            canonical_hash: null,
+            enrich_source: null,
+            fetched_len: null,
+            duplicate_of_case_id: null,
+            duplicate_confidence: null,
+            duplicate_reason: null,
+          });
+        }
+        const { error } = await supabase
+          .from("crawl_items")
+          .update(patch)
+          .eq("id", item.id as string);
+        if (!error) requeued++;
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, DECODE_DELAY_MS));
+  }
+
   return Response.json({
     keywords: keywords.length,
     fetched: seen.size,
     inserted,
     skippedTitleDupes,
     decoded,
+    requeued,
   });
 }
