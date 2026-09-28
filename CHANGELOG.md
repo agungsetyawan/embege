@@ -10,6 +10,7 @@ The team released the following changes:
 - Moved the school and SPPG names above the case summary and promoted them to full text while muting the summary.
 - Scoped the region chart to the selected week, month, or year bucket.
 - Added an all-time default option to the region chart bucket filter.
+- Switched the statistics view switcher to the underline tabs style.
 
 ## 2026-09-27
 

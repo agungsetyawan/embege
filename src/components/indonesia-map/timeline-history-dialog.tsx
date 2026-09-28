@@ -292,6 +292,17 @@ export function TimelineHistoryDialog({
       >
         <DialogHeader className="shrink-0 border-b pb-3">
           <DialogTitle>Statistik keracunan</DialogTitle>
+          <Tabs
+            value={view}
+            onValueChange={(v) => setView(v as View)}
+            aria-label="Pilih tampilan statistik"
+          >
+            <TabsList variant="line" className="w-full">
+              <TabsTrigger value="list">Daftar</TabsTrigger>
+              <TabsTrigger value="chart">Tren</TabsTrigger>
+              <TabsTrigger value="region">Wilayah</TabsTrigger>
+            </TabsList>
+          </Tabs>
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <div className="flex items-center gap-2">
               <label htmlFor="period" className="text-sm text-muted-foreground">
@@ -350,17 +361,6 @@ export function TimelineHistoryDialog({
                 </Select>
               </div>
             )}
-            <Tabs
-              value={view}
-              onValueChange={(v) => setView(v as View)}
-              aria-label="Pilih tampilan statistik"
-            >
-              <TabsList>
-                <TabsTrigger value="list">Daftar</TabsTrigger>
-                <TabsTrigger value="chart">Tren</TabsTrigger>
-                <TabsTrigger value="region">Wilayah</TabsTrigger>
-              </TabsList>
-            </Tabs>
           </div>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
