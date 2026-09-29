@@ -235,8 +235,11 @@ export function IndonesiaMap() {
     router.replace(pathname, { scroll: false });
   }, [router, pathname]);
 
-  if (geo.isLoading || data.isLoading) return <IndonesiaMapSkeleton />;
-  if (geo.isError || data.isError || !geo.data || !data.data) {
+  // Map shell mounts as soon as the JS arrives so tile requests start
+  // immediately; the case overlay joins when /api/cases resolves instead
+  // of gating the whole first paint on it (mobile LCP resourceLoadDelay).
+  if (geo.isLoading) return <IndonesiaMapSkeleton />;
+  if (geo.isError || !geo.data) {
     return (
       <Alert variant="destructive">
         <TriangleAlert />
@@ -247,7 +250,6 @@ export function IndonesiaMap() {
             size="sm"
             onClick={() => {
               void geo.refetch();
-              void data.refetch();
             }}
           >
             Coba lagi
@@ -292,18 +294,22 @@ export function IndonesiaMap() {
           <TileLayer url={tiles.overlayUrl} />
           <DimOutsideIndonesia geo={geo.data} />
           <MapReadyProbe onReady={handleMapReady} />
-          <DistrictLayer
-            geo={geo.data}
-            byKey={byKey}
-            maxCount={maxCount}
-            onSelect={handleSelectDot}
-          />
-          <RegionMarkers
-            summary={summary}
-            countByLatLng={countByLatLng}
-            maxCount={maxCount}
-            onSelect={handleSelectDot}
-          />
+          {data.data && (
+            <>
+              <DistrictLayer
+                geo={geo.data}
+                byKey={byKey}
+                maxCount={maxCount}
+                onSelect={handleSelectDot}
+              />
+              <RegionMarkers
+                summary={summary}
+                countByLatLng={countByLatLng}
+                maxCount={maxCount}
+                onSelect={handleSelectDot}
+              />
+            </>
+          )}
           <MapZoomControl />
           <MapToolbar
             expanded={expanded}
@@ -315,16 +321,31 @@ export function IndonesiaMap() {
           container={cardEl ?? undefined}
           onOpenChange={setHistoryOpen}
         />
-        {!selected && (
+        {!selected && data.data && (
           <RegionSearch
             rows={allSummary}
             container={cardEl ?? undefined}
             onSelect={handleSelectSearch}
           />
         )}
-        <div className="absolute bottom-3 left-3 z-1000">
-          <MapLegend maxCount={maxCount} />
-        </div>
+        {data.data ? (
+          <div className="absolute bottom-3 left-3 z-1000">
+            <MapLegend maxCount={maxCount} />
+          </div>
+        ) : (
+          data.isError && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="absolute bottom-3 left-1/2 z-1000 -translate-x-1/2 shadow-md"
+              onClick={() => {
+                void data.refetch();
+              }}
+            >
+              Coba lagi
+            </Button>
+          )
+        )}
       </Card>
       <RegionDetailDrawer
         selected={selected}
