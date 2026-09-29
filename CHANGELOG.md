@@ -8,6 +8,7 @@ The team released the following changes:
 
 - Added a preconnect hint for the Esri tile host to shorten map tile connection setup.
 - Mounted the map shell before case data resolves to cut the mobile LCP delay.
+- Made the stats strip full-bleed on mobile with edge-to-edge horizontal scrolling.
 
 ## 2026-09-28
 

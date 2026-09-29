@@ -5,6 +5,7 @@ import { IconTile } from "@/components/reui/icon-tile";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { buildFootnote, countSafeDays, formatDate } from "@/lib/timeline";
 import { fetchTimeline } from "@/lib/timeline-data";
+import { StatsScroll } from "./stats-scroll";
 
 export async function StatsCards() {
   const data = await fetchTimeline().catch(() => null);
@@ -29,9 +30,9 @@ export async function StatsCards() {
     "text-xl font-semibold tracking-tight tabular-nums sm:text-2xl";
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0">
-        <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
+    <div className="flex flex-col gap-1 -mx-4 lg:mx-0">
+      <StatsScroll>
+        <Card size="sm" className="min-w-[160px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
               <IconTile
@@ -55,7 +56,7 @@ export async function StatsCards() {
             </Badge>
           </CardContent>
         </Card>
-        <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
+        <Card size="sm" className="min-w-[160px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
               <IconTile
@@ -79,7 +80,7 @@ export async function StatsCards() {
             </Badge>
           </CardContent>
         </Card>
-        <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
+        <Card size="sm" className="min-w-[160px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
               <IconTile variant="soft" size="sm" className="text-destructive">
@@ -99,7 +100,7 @@ export async function StatsCards() {
             </Badge>
           </CardContent>
         </Card>
-        <Card size="sm" className="min-w-[170px] snap-start gap-2 lg:min-w-0">
+        <Card size="sm" className="min-w-[160px] snap-start gap-2 lg:min-w-0">
           <CardHeader>
             <span className="flex items-center gap-2">
               <IconTile variant="soft" size="sm" className="text-success">
@@ -119,8 +120,12 @@ export async function StatsCards() {
             </Badge>
           </CardContent>
         </Card>
-      </div>
-      {footnote && <p className="text-xs text-muted-foreground">*{footnote}</p>}
+      </StatsScroll>
+      {footnote && (
+        <p className="px-4 text-xs text-muted-foreground lg:px-0">
+          *{footnote}
+        </p>
+      )}
     </div>
   );
 }
