@@ -88,6 +88,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="preconnect" href="https://server.arcgisonline.com" />
+      </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <QueryProvider>
