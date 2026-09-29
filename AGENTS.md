@@ -120,6 +120,7 @@ Lessons already paid for in debug time. Follow them.
 
 **Verification bar**
 - `npm run lint` and `npm run build` stay green. Check browser output with chrome-devtools (clean console plus screenshot). Test cron endpoints with and without the secret.
+- Lint runs on Biome (`npm run lint`), never `rtk lint`: the rtk wrapper assumes ESLint and this repo has no ESLint config, so it fails with a JSON parse error (paid for by the repeated lint loop).
 
 ## 6. Tech Stack (pinned)
 
