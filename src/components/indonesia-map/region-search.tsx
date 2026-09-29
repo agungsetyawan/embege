@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "../reui/badge";
 import {
   Cascader,
@@ -57,12 +57,18 @@ export function RegionSearch({
   onSelect: (s: SummaryRow) => void;
 }) {
   const [cascaderKey, setCascaderKey] = useState(0);
-  const tree = useMemo(() => buildRegionSearchTree(rows), [rows]);
+  // Built on first open, not on mount, so the grouping stays off first paint.
+  const [tree, setTree] = useState<RegionSearchNode[] | null>(null);
+
+  // Refresh only after the first open; before that there is nothing to refresh.
+  useEffect(() => {
+    setTree((t) => (t ? buildRegionSearchTree(rows) : t));
+  }, [rows]);
 
   return (
     <Cascader
       key={cascaderKey}
-      items={tree}
+      items={tree ?? []}
       searchScope="deep"
       indicator={false}
       onValueChange={(value) => {
@@ -70,8 +76,10 @@ export function RegionSearch({
         if (row) onSelect(row);
       }}
       onOpenChange={(open) => {
+        // Build synchronously before the panel renders: no empty flash.
+        if (open) setTree((t) => t ?? buildRegionSearchTree(rows));
         // Reset query and path so the next open starts clean.
-        if (!open) setCascaderKey((k) => k + 1);
+        else setCascaderKey((k) => k + 1);
       }}
       renderLabel={(node) => {
         const count = (node.data as { count?: number } | undefined)?.count;
