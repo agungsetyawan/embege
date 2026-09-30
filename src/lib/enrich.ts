@@ -261,7 +261,7 @@ function parseLlmResult(parsed: unknown): LlmResult | null {
 }
 
 const CURATOR_PROMPT =
-  "Kamu kurator berita Indonesia tentang keracunan program MBG (Makan Bergizi Gratis). Relevan (is_poison_related=true) HANYA jika berita melaporkan peristiwa keracunan atau dugaan keracunan yang dikaitkan dengan MBG: korban mual/muntah/diare/dirawat usai makan MBG, jumlah korban, hasil lab, penanganan korban. Tolak (false) untuk kebijakan/anggaran/sosialisasi/pemasok, pernyataan politik, opini/usulan tanpa peristiwa korban baru, klarifikasi hoaks tanpa korban, menu/prestasi umum MBG. Jika ragu, pilih true dengan relevance_confidence rendah. victims = jumlah korban peristiwa keracunan MBG dalam berita, HANYA jika disebut angka eksplisit (contoh: 748 santri, 16 siswa dirawat); null jika tidak disebut atau samar (puluhan, banyak, sejumlah). Jika beberapa angka muncul, ambil total korban peristiwanya (5 intensif dari 100 terdampak berarti 100); jika ada update angka, ambil yang terbaru. school = nama sekolah yang keracunan plus detail bila disebut (jenjang, alamat, korban per sekolah), verbatim dari berita, beberapa sekolah gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. sppg = nama SPPG/dapur MBG pemasok plus wilayah/penyedia bila disebut, verbatim dari berita, beberapa gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. Jawab HANYA JSON valid, tanpa markdown.";
+  "Kamu kurator berita Indonesia tentang keracunan program MBG (Makan Bergizi Gratis). Relevan (is_poison_related=true) HANYA jika berita melaporkan peristiwa keracunan atau dugaan keracunan yang dikaitkan dengan MBG: korban mual/muntah/diare/dirawat usai makan MBG, jumlah korban, hasil lab, penanganan korban. Tolak (false) untuk kebijakan/anggaran/sosialisasi/pemasok, pernyataan politik, opini/usulan tanpa peristiwa korban baru, klarifikasi hoaks tanpa korban, menu/prestasi umum MBG. Jika ragu, pilih true dengan relevance_confidence rendah. summary = ringkasan 1-2 kalimat bahasa Indonesia, maks 500 karakter, fokus pada peristiwanya (apa, di mana, berapa korban). province/district = nama resmi provinsi dan kabupaten/kota kejadian (ejaan resmi, contoh: JAWA BARAT, BOGOR, KOTA BANDUNG); null bila tidak disebut eksplisit atau samar, jangan tebak. confidence = keyakinanmu pada province/district (rendah bila lokasi samar); relevance_confidence = keyakinanmu pada is_poison_related (rendah bila ragu). reject_reason = alasan penolakan singkat, wajib diisi bila is_poison_related=false. victims = jumlah korban peristiwa keracunan MBG dalam berita, HANYA jika disebut angka eksplisit (contoh: 748 santri, 16 siswa dirawat); null jika tidak disebut atau samar (puluhan, banyak, sejumlah). Jika beberapa angka muncul, ambil total korban peristiwanya (5 intensif dari 100 terdampak berarti 100); jika ada update angka, ambil yang terbaru. school = nama sekolah yang keracunan plus detail bila disebut (jenjang, alamat, korban per sekolah), verbatim dari berita, beberapa sekolah gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. sppg = nama SPPG/dapur MBG pemasok plus wilayah/penyedia bila disebut, verbatim dari berita, beberapa gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. Jawab HANYA JSON valid, tanpa markdown.";
 
 const ITEM_SCHEMA = {
   type: "OBJECT",
@@ -331,7 +331,7 @@ export type DuplicateResult = {
 };
 
 const DEDUP_PROMPT =
-  "Kamu pembanding berita keracunan MBG. Diberi satu berita baru dan daftar kasus yang sudah terbit (sama kabupaten/kota, tanggal berdekatan). Duplikat (is_duplicate=true) HANYA jika peristiwa sama: lokasi dan tanggal kejadian cocok dan korban sekelompok (toleransi beda angka karena update). Jika berita baru membawa angka korban lebih baru atau detail perkembangan dari peristiwa yang sama, tetap is_duplicate=true tapi is_update=true. Jika lokasi beda, tanggal beda jauh (>7 hari tanpa kaitan eksplisit), atau peristiwa berbeda, is_duplicate=false. duplicate_of_case_id = id kandidat yang cocok, null jika bukan duplikat. Jawab HANYA JSON valid, tanpa markdown.";
+  "Kamu pembanding berita keracunan MBG. Diberi satu berita baru (beserta tanggal terbitnya) dan daftar kasus yang sudah terbit (sama kabupaten/kota, tanggal berdekatan). Duplikat (is_duplicate=true) HANYA jika peristiwa sama: lokasi dan tanggal kejadian cocok dan korban sekelompok (angka boleh beda karena update bertahap atau rincian per sekolah, selama sekolah dan tanggalnya sama). Jika berita baru membawa perkembangan dari peristiwa yang sama (angka korban terbaru, korban pulang/sembuh, hasil lab, tersangka, penutupan dapur), tetap is_duplicate=true tapi is_update=true. Liputan ulang tanpa info baru: is_duplicate=true tapi is_update=false. Jika lokasi beda, tanggal beda jauh tanpa kaitan eksplisit, atau peristiwa berbeda, is_duplicate=false. duplicate_of_case_id = id SATU kandidat yang paling cocok, null jika bukan duplikat. reason = alasan singkat perbandinganmu, wajib diisi. confidence = keyakinanmu pada penilaian ini (rendah bila tanggal '?', ringkasan tipis, atau nama sekolah beda). Jawab HANYA JSON valid, tanpa markdown.";
 
 const DEDUP_SCHEMA = {
   type: "OBJECT",
@@ -375,6 +375,7 @@ export async function checkDuplicateWithGemini(
   title: string,
   summary: string,
   candidates: DuplicateCandidate[],
+  publishedOn: string | null = null,
 ): Promise<DuplicateResult | null> {
   try {
     const lines = candidates.map(
@@ -386,7 +387,7 @@ export async function checkDuplicateWithGemini(
         {
           parts: [
             {
-              text: `Berita baru: ${title} — ${summary.slice(0, 1000)}\nKandidat:\n${lines.join("\n")}`,
+              text: `Berita baru (terbit ${publishedOn ?? "?"}): ${title} — ${summary.slice(0, 1000)}\nKandidat:\n${lines.join("\n")}`,
             },
           ],
         },

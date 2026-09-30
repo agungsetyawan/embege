@@ -235,6 +235,7 @@ export async function GET(req: Request) {
             item.title,
             result.summary,
             published,
+            anchor,
           );
           if (dup?.isDuplicate && dup.duplicateOfCaseId) {
             update.duplicate_of_case_id = dup.duplicateOfCaseId;
