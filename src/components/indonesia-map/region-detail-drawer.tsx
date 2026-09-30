@@ -68,7 +68,7 @@ export function RegionDetailDrawer({
               )}
             </DrawerHeader>
             <div className="min-h-0 overflow-y-auto px-4 pb-4">
-              <div className="mb-4 overflow-hidden rounded-lg border">
+              <div className="mb-1 overflow-hidden rounded-lg border">
                 <RegionPreview
                   selected={selected}
                   geo={geo}

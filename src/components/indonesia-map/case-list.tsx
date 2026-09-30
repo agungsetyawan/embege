@@ -96,7 +96,7 @@ export function CaseList({
         <li
           key={c.id}
           data-occurred-on={c.occurred_on?.slice(0, 10) ?? ""}
-          className={`flex flex-col gap-1 border-t py-3 first:border-t-0 first:pt-0${
+          className={`flex flex-col gap-1 border-t py-3 first:border-t-0${
             highlightDate && c.occurred_on?.slice(0, 10) === highlightDate
               ? " -mx-2 rounded-lg bg-accent px-2 ring-1 ring-border"
               : ""
