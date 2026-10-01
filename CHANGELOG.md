@@ -2,6 +2,12 @@
 
 This changelog (dated list of changes) records each change to the MBG poisoning map app. A district (kabupaten or kota area) is the second level of local government in Indonesia. Enrichment (AI summary and district step) fills each pending item before human review.
 
+## 2026-10-01
+
+The team released the following changes:
+
+- Moved the Terhapus queue tab into the admin sidebar as a shortcut to the /admin/cases deleted filter.
+
 ## 2026-09-30
 
 The team released the following changes:

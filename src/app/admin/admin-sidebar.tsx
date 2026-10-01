@@ -46,7 +46,8 @@ export type AdminNavItem = {
   countKey?: keyof AdminCounts;
 };
 
-// Queue keys are ?tab= values, data keys are pathnames; isNavActive covers both.
+// Queue keys are ?tab= values, data keys are pathnames, except "deleted"
+// which aliases /admin/cases?status=deleted; isNavActive covers all three.
 export const ADMIN_NAV: { label?: string; items: AdminNavItem[] }[] = [
   {
     label: "Kurasi",
@@ -72,16 +73,10 @@ export const ADMIN_NAV: { label?: string; items: AdminNavItem[] }[] = [
         icon: Flag,
         countKey: "reports",
       },
-      {
-        key: "deleted",
-        label: "Terhapus",
-        href: "/admin?tab=deleted",
-        icon: Trash2,
-        countKey: "deleted",
-      },
     ],
   },
   {
+    label: "Data",
     items: [
       {
         key: "/admin/cases",
@@ -89,6 +84,18 @@ export const ADMIN_NAV: { label?: string; items: AdminNavItem[] }[] = [
         href: "/admin/cases",
         icon: Database,
       },
+      {
+        key: "deleted",
+        label: "Terhapus",
+        href: "/admin/cases?status=deleted",
+        icon: Trash2,
+        countKey: "deleted",
+      },
+    ],
+  },
+  {
+    label: "Pengaturan",
+    items: [
       {
         key: "/admin/settings",
         label: "Pengaturan",
@@ -105,20 +112,33 @@ export const ADMIN_NAV: { label?: string; items: AdminNavItem[] }[] = [
   },
 ];
 
-function isNavActive(pathname: string, tab: string, key: string) {
+function isNavActive(
+  pathname: string,
+  tab: string,
+  status: string,
+  key: string,
+) {
+  if (pathname === "/admin/cases" && status === "deleted")
+    return key === "deleted";
   return pathname === "/admin" ? tab === key : key === pathname;
 }
 
-export function findActiveNavItem(pathname: string, tab: string) {
+export function findActiveNavItem(
+  pathname: string,
+  tab: string,
+  status: string,
+) {
   return ADMIN_NAV.flatMap((group) => group.items).find((item) =>
-    isNavActive(pathname, tab, item.key),
+    isNavActive(pathname, tab, status, item.key),
   );
 }
 
 function NavGroups({ counts }: { counts: AdminCounts }) {
   const pathname = usePathname();
-  const tab = useSearchParams().get("tab") ?? "pending";
-  const activeKey = findActiveNavItem(pathname, tab)?.key;
+  const params = useSearchParams();
+  const tab = params.get("tab") ?? "pending";
+  const status = params.get("status") ?? "";
+  const activeKey = findActiveNavItem(pathname, tab, status)?.key;
 
   return (
     <>

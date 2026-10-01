@@ -15,7 +15,7 @@ import type { RegionOption } from "./pending-item";
 const selectClass =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring disabled:opacity-50 dark:bg-input/30";
 
-export type QueueTab = "pending" | "rejected" | "reports" | "deleted";
+export type QueueTab = "pending" | "rejected" | "reports";
 
 // Single search box across all queue columns + wilayah filter. Search is
 // debounced into ?q= via router.replace (no history spam); the server

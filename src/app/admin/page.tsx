@@ -4,7 +4,6 @@ import { Frame, FramePanel } from "@/components/reui/frame";
 import { IconStack } from "@/components/reui/icon-stack";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/validate";
-import { DeletedItem, type DeletedItemData } from "./deleted-item";
 import {
   type DuplicateCase,
   PendingItem,
@@ -32,14 +31,15 @@ export default async function AdminPage({
   if (!user) redirect("/admin/login");
 
   const params = await searchParams;
+  // Legacy ?tab=deleted now lives at /admin/cases?status=deleted.
+  if (params.tab === "deleted") redirect("/admin/cases?status=deleted");
+
   const tab: QueueTab =
     params.tab === "rejected"
       ? "rejected"
       : params.tab === "reports"
         ? "reports"
-        : params.tab === "deleted"
-          ? "deleted"
-          : "pending";
+        : "pending";
   const q = (params.q ?? "").trim().slice(0, 200);
   const region = isUuid(params.regionId ?? "")
     ? (params.regionId as string)
@@ -103,41 +103,23 @@ export default async function AdminPage({
               .order("created_at", { ascending: false })
               .range(from, to);
           })()
-        : tab === "deleted"
-          ? (() => {
-              let query = supabase
-                .from("cases")
-                .select(
-                  "id,summary,victims,occurred_on,source_media,source_url,deleted_at,region:regions(province,district)",
-                  { count: "exact" },
-                )
-                .not("deleted_at", "is", null);
-              if (region) query = query.eq("region_id", region);
-              if (safe)
-                query = query.or(
-                  `summary.ilike.%${safe}%,source_media.ilike.%${safe}%,source_url.ilike.%${safe}%`,
-                );
-              return query
-                .order("deleted_at", { ascending: false })
-                .range(from, to);
-            })()
-          : (() => {
-              let query = supabase
-                .from("crawl_items")
-                .select(
-                  "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,geo_confidence,enrich_source,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
-                  { count: "exact" },
-                )
-                .eq("status", "pending");
-              if (region) query = query.eq("guessed_region_id", region);
-              if (safe) query = query.or(crawlOr(safe));
-              return query
-                .order("published_at", {
-                  ascending: false,
-                  nullsFirst: false,
-                })
-                .range(from, to);
-            })();
+        : (() => {
+            let query = supabase
+              .from("crawl_items")
+              .select(
+                "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,geo_confidence,enrich_source,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
+                { count: "exact" },
+              )
+              .eq("status", "pending");
+            if (region) query = query.eq("guessed_region_id", region);
+            if (safe) query = query.or(crawlOr(safe));
+            return query
+              .order("published_at", {
+                ascending: false,
+                nullsFirst: false,
+              })
+              .range(from, to);
+          })();
   const [first, { data: regions }] = await Promise.all([
     buildList((wantPage - 1) * PAGE_SIZE, wantPage * PAGE_SIZE - 1),
     supabase
@@ -240,9 +222,7 @@ export default async function AdminPage({
                   ? "Belum ada berita yang ditolak otomatis."
                   : tab === "reports"
                     ? "Belum ada laporan masuk."
-                    : tab === "deleted"
-                      ? "Tidak ada case yang dihapus."
-                      : "Antrean bersih."}
+                    : "Antrean bersih."}
             </p>
             {filtering ? (
               <p className="text-sm text-muted-foreground">
@@ -274,23 +254,19 @@ export default async function AdminPage({
                     />
                   ),
                 )
-              : tab === "deleted"
-                ? (items as unknown as DeletedItemData[] | undefined)?.map(
-                    (item) => <DeletedItem key={item.id} item={item} />,
-                  )
-                : (items as PendingItemData[] | undefined)?.map((item) => (
-                    <PendingItem
-                      key={item.id}
-                      item={item}
-                      regions={regions ?? []}
-                      duplicate={
-                        item.duplicate_of_case_id
-                          ? (duplicatesByItem.get(item.duplicate_of_case_id) ??
-                            null)
-                          : null
-                      }
-                    />
-                  ))}
+              : (items as PendingItemData[] | undefined)?.map((item) => (
+                  <PendingItem
+                    key={item.id}
+                    item={item}
+                    regions={regions ?? []}
+                    duplicate={
+                      item.duplicate_of_case_id
+                        ? (duplicatesByItem.get(item.duplicate_of_case_id) ??
+                          null)
+                        : null
+                    }
+                  />
+                ))}
         </Frame>
       )}
       {totalPages > 1 && (

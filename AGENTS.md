@@ -84,7 +84,7 @@ Lessons already paid for in debug time. Follow them.
 - RLS: public reads `regions` and published `cases` only. Public writes go only through the `submit_case_report()` RPC (1 report per case per IP per hour). Every other write needs an authenticated admin.
 - Public server-side reads use `createAnonClient` (anon key, no cookies) so the route stays static/ISR. The cookie-based `createClient` is for admin/session paths only — `cookies()` forces the route dynamic and kills caching.
 - Public server-side queries use the anon key so RLS still applies. Service-role is for cron only.
-- `cases.deleted_at` is a soft delete: hidden from all public reads and the `case_summary` view, restorable from the admin Terhapus tab and the `/admin/cases` status filter.
+- `cases.deleted_at` is a soft delete: hidden from all public reads and the `case_summary` view, restorable from the admin Terhapus entry (`/admin/cases?status=deleted`).
 - Every admin Server Action that writes to the database must record the actor via the `log()` helper returned by `requireAdmin()` into `admin_audit_log`. Logging is best-effort and never fails the action.
 - `centroid_ok=false` means coordinates are unverified. Never treat them as facts.
 - Keywords of five letters or fewer match whole words only. Longer ones match substrings.

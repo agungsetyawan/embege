@@ -16,8 +16,10 @@ import { type AdminCounts, findActiveNavItem } from "./admin-sidebar";
 
 function SectionBreadcrumb({ counts }: { counts: AdminCounts }) {
   const pathname = usePathname();
-  const tab = useSearchParams().get("tab") ?? "pending";
-  const item = findActiveNavItem(pathname, tab);
+  const params = useSearchParams();
+  const tab = params.get("tab") ?? "pending";
+  const status = params.get("status") ?? "";
+  const item = findActiveNavItem(pathname, tab, status);
   const section = item?.label ?? "Antrean";
   const count = item?.countKey ? counts[item.countKey] : null;
 
