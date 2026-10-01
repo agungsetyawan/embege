@@ -107,7 +107,7 @@ export default async function AdminPage({
             let query = supabase
               .from("crawl_items")
               .select(
-                "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,geo_confidence,enrich_source,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
+                "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,llm_occurred_on,geo_confidence,enrich_source,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
                 { count: "exact" },
               )
               .eq("status", "pending");

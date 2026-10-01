@@ -110,7 +110,7 @@ export async function applyItemUpdate(formData: FormData) {
   const { data: item } = await supabase
     .from("crawl_items")
     .select(
-      "status,url,media,published_at,llm_summary,llm_victims,llm_school,llm_sppg,duplicate_of_case_id",
+      "status,url,media,published_at,llm_summary,llm_victims,llm_school,llm_sppg,llm_occurred_on,duplicate_of_case_id",
     )
     .eq("id", itemId)
     .single();
@@ -132,9 +132,13 @@ export async function applyItemUpdate(formData: FormData) {
       victims,
       school: item.llm_school ?? target.school,
       sppg: item.llm_sppg ?? target.sppg,
-      // The news date is not the event date: only fill an empty one.
+      // The news date is not the event date: only fill an empty one,
+      // preferring the LLM-extracted event date over the publish date.
       occurred_on:
-        target.occurred_on ?? item.published_at?.slice(0, 10) ?? null,
+        target.occurred_on ??
+        item.llm_occurred_on ??
+        item.published_at?.slice(0, 10) ??
+        null,
       summary: item.llm_summary,
       source_url: item.url,
       source_media: item.media,

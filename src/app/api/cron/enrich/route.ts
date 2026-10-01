@@ -120,7 +120,8 @@ export async function GET(req: Request) {
   const results = new Map<string, LlmResult>();
   await Promise.all(
     items.map(async (item, i) => {
-      const result = await enrichWithGemini(item.title, inputs[i].text);
+      const anchor = item.published_at ? item.published_at.slice(0, 10) : null;
+      const result = await enrichWithGemini(item.title, inputs[i].text, anchor);
       if (result) results.set(item.id, result);
     }),
   );
@@ -134,6 +135,13 @@ export async function GET(req: Request) {
   ): Promise<"enriched" | "rejected" | "duplicate" | "failed"> => {
     try {
       if (!result) return "failed";
+      const anchor = item.published_at ? item.published_at.slice(0, 10) : null;
+      // The event date cannot be after the news date: cap hallucinations/future dates.
+      const cap = anchor ?? new Date().toISOString().slice(0, 10);
+      const occurredOn =
+        result.occurredOn && result.occurredOn <= cap
+          ? result.occurredOn
+          : null;
       const cHash = sha256OrNull(canonical);
       const rejectedBase = {
         status: "rejected",
@@ -141,6 +149,7 @@ export async function GET(req: Request) {
         llm_is_relevant: false,
         llm_school: result.school,
         llm_sppg: result.sppg,
+        llm_occurred_on: occurredOn,
         canonical_hash: cHash,
         enrich_source: source,
         fetched_len: fetchedLen,
@@ -186,6 +195,7 @@ export async function GET(req: Request) {
         llm_victims: number | null;
         llm_school?: string | null;
         llm_sppg?: string | null;
+        llm_occurred_on?: string | null;
         guessed_region_id?: string | null;
         geo_confidence?: number | null;
         canonical_hash?: string | null;
@@ -200,6 +210,7 @@ export async function GET(req: Request) {
         llm_victims: result.victims,
         llm_school: result.school,
         llm_sppg: result.sppg,
+        llm_occurred_on: occurredOn,
         canonical_hash: cHash,
         enrich_source: source,
         fetched_len: fetchedLen,
@@ -214,7 +225,6 @@ export async function GET(req: Request) {
       // Dedup against published cases: same region, occurred_on near the
       // item date. LLM verifies; confident same-event (not an update) rejects.
       const regionId = update.guessed_region_id ?? item.guessed_region_id;
-      const anchor = item.published_at ? item.published_at.slice(0, 10) : null;
       if (regionId && anchor) {
         const from = new Date(anchor);
         from.setDate(from.getDate() - windowDays);

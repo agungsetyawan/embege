@@ -6,6 +6,7 @@ This changelog (dated list of changes) records each change to the MBG poisoning 
 
 The team released the following changes:
 
+- Extracted the event date from article text via the curator model and prefilled the queue date field with it, falling back to the publish date.
 - Moved the Terhapus queue tab into the admin sidebar as a shortcut to the /admin/cases deleted filter.
 
 ## 2026-09-30

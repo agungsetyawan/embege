@@ -249,6 +249,7 @@ export async function GET(req: Request) {
             llm_victims: null,
             llm_school: null,
             llm_sppg: null,
+            llm_occurred_on: null,
             geo_confidence: null,
             canonical_hash: null,
             enrich_source: null,

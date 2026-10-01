@@ -215,6 +215,7 @@ export type LlmResult = {
   victims: number | null;
   school: string | null;
   sppg: string | null;
+  occurredOn: string | null;
 };
 
 // Normalize one LLM JSON object into LlmResult. Validation failure -> null.
@@ -231,10 +232,20 @@ function parseLlmResult(parsed: unknown): LlmResult | null {
   const victimsRaw = Number(p.victims);
   const cleanText = (v: unknown) =>
     typeof v === "string" && v.trim() ? v.trim().slice(0, 500) : null;
+  // ponytail: format-only check here; future-capping needs published_at, done at the enrich route.
+  const rawDate =
+    typeof p.occurred_on === "string" ? p.occurred_on.trim() : null;
+  const occurredOn =
+    rawDate &&
+    /^\d{4}-\d{2}-\d{2}$/.test(rawDate) &&
+    !Number.isNaN(Date.parse(rawDate))
+      ? rawDate
+      : null;
   return {
     summary: summary.slice(0, 1000),
     school: cleanText(p.school),
     sppg: cleanText(p.sppg),
+    occurredOn,
     province:
       typeof p.province === "string" && p.province.trim()
         ? p.province.trim()
@@ -261,7 +272,7 @@ function parseLlmResult(parsed: unknown): LlmResult | null {
 }
 
 const CURATOR_PROMPT =
-  "Kamu kurator berita Indonesia tentang keracunan program MBG (Makan Bergizi Gratis). Relevan (is_poison_related=true) HANYA jika berita melaporkan peristiwa keracunan atau dugaan keracunan yang dikaitkan dengan MBG: korban mual/muntah/diare/dirawat usai makan MBG, jumlah korban, hasil lab, penanganan korban. Tolak (false) untuk kebijakan/anggaran/sosialisasi/pemasok, pernyataan politik, opini/usulan tanpa peristiwa korban baru, klarifikasi hoaks tanpa korban, menu/prestasi umum MBG. Jika ragu, pilih true dengan relevance_confidence rendah. summary = ringkasan 1-2 kalimat bahasa Indonesia, maks 500 karakter, fokus pada peristiwanya (apa, di mana, berapa korban). province/district = nama resmi provinsi dan kabupaten/kota kejadian (ejaan resmi, contoh: JAWA BARAT, BOGOR, KOTA BANDUNG); null bila tidak disebut eksplisit atau samar, jangan tebak. confidence = keyakinanmu pada province/district (rendah bila lokasi samar); relevance_confidence = keyakinanmu pada is_poison_related (rendah bila ragu). reject_reason = alasan penolakan singkat, wajib diisi bila is_poison_related=false. victims = jumlah korban peristiwa keracunan MBG dalam berita, HANYA jika disebut angka eksplisit (contoh: 748 santri, 16 siswa dirawat); null jika tidak disebut atau samar (puluhan, banyak, sejumlah). Jika beberapa angka muncul, ambil total korban peristiwanya (5 intensif dari 100 terdampak berarti 100); jika ada update angka, ambil yang terbaru. school = nama sekolah yang keracunan plus detail bila disebut (jenjang, alamat, korban per sekolah), verbatim dari berita, beberapa sekolah gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. sppg = nama SPPG/dapur MBG pemasok plus wilayah/penyedia bila disebut, verbatim dari berita, beberapa gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. Jawab HANYA JSON valid, tanpa markdown.";
+  "Kamu kurator berita Indonesia tentang keracunan program MBG (Makan Bergizi Gratis). Relevan (is_poison_related=true) HANYA jika berita melaporkan peristiwa keracunan atau dugaan keracunan yang dikaitkan dengan MBG: korban mual/muntah/diare/dirawat usai makan MBG, jumlah korban, hasil lab, penanganan korban. Tolak (false) untuk kebijakan/anggaran/sosialisasi/pemasok, pernyataan politik, opini/usulan tanpa peristiwa korban baru, klarifikasi hoaks tanpa korban, menu/prestasi umum MBG. Jika ragu, pilih true dengan relevance_confidence rendah. summary = ringkasan 1-2 kalimat bahasa Indonesia, maks 500 karakter, fokus pada peristiwanya (apa, di mana, berapa korban). province/district = nama resmi provinsi dan kabupaten/kota kejadian (ejaan resmi, contoh: JAWA BARAT, BOGOR, KOTA BANDUNG); null bila tidak disebut eksplisit atau samar, jangan tebak. confidence = keyakinanmu pada province/district (rendah bila lokasi samar); relevance_confidence = keyakinanmu pada is_poison_related (rendah bila ragu). reject_reason = alasan penolakan singkat, wajib diisi bila is_poison_related=false. victims = jumlah korban peristiwa keracunan MBG dalam berita, HANYA jika disebut angka eksplisit (contoh: 748 santri, 16 siswa dirawat); null jika tidak disebut atau samar (puluhan, banyak, sejumlah). Jika beberapa angka muncul, ambil total korban peristiwanya (5 intensif dari 100 terdampak berarti 100); jika ada update angka, ambil yang terbaru. school = nama sekolah yang keracunan plus detail bila disebut (jenjang, alamat, korban per sekolah), verbatim dari berita, beberapa sekolah gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. sppg = nama SPPG/dapur MBG pemasok plus wilayah/penyedia bila disebut, verbatim dari berita, beberapa gabung dengan '; ', null bila tidak disebut eksplisit dan jangan tebak. occurred_on = tanggal kejadian peristiwa keracunannya (BUKAN tanggal terbit berita), format YYYY-MM-DD; tanggal relatif (kemarin, Senin lalu, pekan lalu) diurai berpatokan pada tanggal terbit yang diberikan di pesan; null bila tidak disebut atau samar dan jangan tebak. Jawab HANYA JSON valid, tanpa markdown.";
 
 const ITEM_SCHEMA = {
   type: "OBJECT",
@@ -276,6 +287,7 @@ const ITEM_SCHEMA = {
     victims: { type: "INTEGER", nullable: true },
     school: { type: "STRING", nullable: true },
     sppg: { type: "STRING", nullable: true },
+    occurred_on: { type: "STRING", nullable: true },
   },
   required: [
     "summary",
@@ -404,10 +416,19 @@ export async function checkDuplicateWithGemini(
 export async function enrichWithGemini(
   title: string,
   text: string,
+  publishedOn: string | null = null,
 ): Promise<LlmResult | null> {
   try {
     const parsed = await callGemini(
-      [{ parts: [{ text: `Judul: ${title}\nIsi: ${text}` }] }],
+      [
+        {
+          parts: [
+            {
+              text: `Judul: ${title}\nTanggal terbit: ${publishedOn ?? "?"}\nIsi: ${text}`,
+            },
+          ],
+        },
+      ],
       ITEM_SCHEMA,
     );
     return parsed ? parseLlmResult(parsed) : null;

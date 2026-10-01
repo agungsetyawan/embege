@@ -55,6 +55,7 @@ export type PendingItemData = {
   llm_victims: number | null;
   llm_school: string | null;
   llm_sppg: string | null;
+  llm_occurred_on: string | null;
   geo_confidence: number | null;
   enrich_source: string | null;
   duplicate_of_case_id: string | null;
@@ -147,7 +148,9 @@ export function PendingItem({
   duplicate: DuplicateCase | null;
 }) {
   const guessed = regions.find((r) => r.id === item.guessed_region_id);
-  const dateDefault = item.published_at ? item.published_at.slice(0, 10) : "";
+  // Prefer the LLM-extracted event date; fall back to the publish date.
+  const dateDefault =
+    item.llm_occurred_on ?? item.published_at?.slice(0, 10) ?? "";
   const tree = buildRegionTree(regions);
 
   return (
@@ -156,7 +159,7 @@ export function PendingItem({
         <div className="flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
             <Badge variant="secondary">{item.media}</Badge>
-            {item.published_at && <span>{dateDefault}</span>}
+            {item.published_at && <span>{item.published_at.slice(0, 10)}</span>}
           </div>
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
             {item.llm_summary && (
