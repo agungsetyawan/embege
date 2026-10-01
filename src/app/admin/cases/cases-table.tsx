@@ -296,10 +296,15 @@ export function CasesTable({
   const onSortingChange: OnChangeFn<SortingState> = (updater) => {
     const next = typeof updater === "function" ? updater(sorting) : updater;
     const first = next[0];
+    // ponytail: header clear = toggle arah kolom aktif, bukan reset ke URL yang sama (klik mati)
+    const current = sorting[0];
     const patch =
       first && ["occurred_on", "created_at", "victims"].includes(first.id)
         ? { sort: first.id, order: first.desc ? "desc" : "asc" }
-        : { sort: "occurred_on", order: "desc" };
+        : {
+            sort: current?.id ?? "occurred_on",
+            order: current?.desc ? "asc" : "desc",
+          };
     pushWith(router, kept, { sort, order, per }, patch);
   };
 
