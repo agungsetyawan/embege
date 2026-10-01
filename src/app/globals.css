@@ -4,8 +4,14 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Base UI sets the valued data-orientation attribute; bare variants must match it too. */
-@custom-variant data-horizontal (&:where([data-horizontal], [data-orientation="horizontal"]));
-@custom-variant data-vertical (&:where([data-vertical], [data-orientation="vertical"]));
+@custom-variant data-horizontal (&:where(
+    [data-horizontal],
+    [data-orientation="horizontal"]
+  ));
+@custom-variant data-vertical (&:where(
+    [data-vertical],
+    [data-orientation="vertical"]
+  ));
 
 :root {
   --radius: 0.625rem;
