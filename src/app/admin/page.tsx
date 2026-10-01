@@ -9,6 +9,7 @@ import {
   PendingItem,
   type PendingItemData,
 } from "./pending-item";
+import { PipelineButtons } from "./pipeline-buttons";
 import { QueueFilters, type QueueTab } from "./queue-filters";
 import { QueuePagination } from "./queue-pagination";
 import { RejectedItem, type RejectedItemData } from "./rejected-item";
@@ -202,6 +203,7 @@ export default async function AdminPage({
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
+      <PipelineButtons />
       <QueueFilters
         key={tab}
         initialQ={q}

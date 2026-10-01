@@ -1,6 +1,7 @@
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Toaster } from "sonner";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -96,6 +97,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <QueryProvider>
             <NavigationProgress />
             {children}
+            <Toaster richColors />
           </QueryProvider>
         </ThemeProvider>
         <Analytics />
