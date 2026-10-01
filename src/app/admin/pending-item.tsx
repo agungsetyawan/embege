@@ -307,7 +307,10 @@ export function PendingItem({
                   />
                 }
               >
-                <CascaderValue placeholder="Pilih kabupaten/kota" />
+                <CascaderValue
+                  placeholder="Pilih kabupaten/kota"
+                  display="leaf"
+                />
               </CascaderTrigger>
               <CascaderContent>
                 <CascaderPanel>
@@ -347,9 +350,10 @@ export function PendingItem({
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor={`school-${item.id}`}>Sekolah</Label>
-              <Input
+              <Textarea
                 id={`school-${item.id}`}
                 name="school"
+                rows={2}
                 maxLength={500}
                 autoComplete="off"
                 placeholder="Nama sekolah bila disebut"
@@ -358,9 +362,10 @@ export function PendingItem({
             </div>
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor={`sppg-${item.id}`}>SPPG/dapur</Label>
-              <Input
+              <Textarea
                 id={`sppg-${item.id}`}
                 name="sppg"
+                rows={2}
                 maxLength={500}
                 autoComplete="off"
                 placeholder="Nama SPPG bila disebut"

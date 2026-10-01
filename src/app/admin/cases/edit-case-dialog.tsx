@@ -50,9 +50,9 @@ export function EditCaseDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Ubah case</DialogTitle>
+          <DialogTitle>Ubah kasus</DialogTitle>
         </DialogHeader>
         <form
           action={updateCase}
@@ -87,7 +87,10 @@ export function EditCaseDialog({
                   />
                 }
               >
-                <CascaderValue placeholder="Pilih kabupaten/kota" />
+                <CascaderValue
+                  placeholder="Pilih kabupaten/kota"
+                  display="leaf"
+                />
               </CascaderTrigger>
               <CascaderContent>
                 <CascaderPanel>
@@ -128,9 +131,10 @@ export function EditCaseDialog({
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor={`edit-school-${row.id}`}>Sekolah</Label>
-              <Input
+              <Textarea
                 id={`edit-school-${row.id}`}
                 name="school"
+                rows={2}
                 maxLength={500}
                 autoComplete="off"
                 defaultValue={row.school ?? undefined}
@@ -138,9 +142,10 @@ export function EditCaseDialog({
             </div>
             <div className="flex flex-1 flex-col gap-1.5">
               <Label htmlFor={`edit-sppg-${row.id}`}>SPPG/dapur</Label>
-              <Input
+              <Textarea
                 id={`edit-sppg-${row.id}`}
                 name="sppg"
+                rows={2}
                 maxLength={500}
                 autoComplete="off"
                 defaultValue={row.sppg ?? undefined}

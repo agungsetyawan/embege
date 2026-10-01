@@ -8,6 +8,10 @@ The team released the following changes:
 
 - Extracted the event date from article text via the curator model and prefilled the queue date field with it, falling back to the publish date.
 - Moved the Terhapus queue tab into the admin sidebar as a shortcut to the /admin/cases deleted filter.
+- Showed only the district name in the region picker trigger of the edit case dialog and the curation queue.
+- Switched the school and SPPG fields to two-line text areas so multi-school values stay visible.
+- Capped the edit case dialog height to the viewport with scrolling and renamed its title to Ubah kasus.
+- Toggled the active sort direction when clearing sorting in the admin cases table.
 
 ## 2026-09-30
 
