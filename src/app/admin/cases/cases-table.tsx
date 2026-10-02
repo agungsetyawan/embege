@@ -122,6 +122,7 @@ export function CasesTable({
       {
         id: "occurred_on",
         accessorKey: "occurred_on",
+        enableResizing: false,
         meta: headerCenter,
         size: 105,
         header: ({ column }) => (
@@ -138,10 +139,11 @@ export function CasesTable({
         accessorKey: "summary",
         enableSorting: false,
         meta: { fillWidth: true, ...headerCenter },
+        size: 220,
         minSize: 220,
         header: "Ringkasan",
         cell: ({ row }) => (
-          <div className="flex max-w-md flex-col">
+          <div className="flex flex-col">
             <p className="truncate text-sm" title={row.original.summary}>
               {row.original.summary}
             </p>
@@ -161,12 +163,13 @@ export function CasesTable({
         enableSorting: false,
         meta: headerCenter,
         size: 150,
+        minSize: 150,
         header: "Wilayah",
         cell: ({ row }) => {
           const r = row.original.region;
           if (!r) return <span className="text-sm">-</span>;
           return (
-            <span className="flex max-w-44 items-center gap-1 text-sm">
+            <span className="flex items-center gap-1 text-sm">
               <span className="truncate">
                 {r.district ? `${r.district}, ` : ""}
                 {r.province}
@@ -184,7 +187,8 @@ export function CasesTable({
       {
         id: "victims",
         accessorKey: "victims",
-        meta: headerCenter,
+        enableResizing: false,
+        meta: { ...headerCenter, cellClassName: "text-right" },
         size: 88,
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Korban" />
@@ -199,6 +203,7 @@ export function CasesTable({
         id: "source",
         accessorKey: "source_media",
         enableSorting: false,
+        enableResizing: false,
         meta: headerCenter,
         size: 130,
         header: "Sumber",
@@ -207,7 +212,7 @@ export function CasesTable({
             href={row.original.source_url}
             target="_blank"
             rel="noreferrer"
-            className="flex max-w-40 items-center gap-1 text-sm underline underline-offset-4"
+            className="flex items-center gap-1 text-sm underline underline-offset-4"
           >
             <span className="truncate">{row.original.source_media}</span>
             <ExternalLink className="size-3 shrink-0" />
@@ -218,8 +223,9 @@ export function CasesTable({
         id: "published",
         accessorKey: "published",
         enableSorting: false,
-        meta: headerCenter,
-        size: 80,
+        enableResizing: false,
+        meta: { ...headerCenter, cellClassName: "text-center" },
+        size: 68,
         header: "Terbit",
         cell: ({ row }) =>
           row.original.published ? (
@@ -231,14 +237,14 @@ export function CasesTable({
       {
         id: "aksi",
         enableSorting: false,
+        enableResizing: false,
         meta: headerCenter,
-        size: 132,
-        minSize: 132,
+        size: 140,
         header: "Aksi",
         cell: ({ row }) => {
           const c = row.original;
           return (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center justify-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -340,6 +346,7 @@ export function CasesTable({
         <DataGrid
           table={table}
           recordCount={total}
+          tableLayout={{ columnsResizable: true }}
           i18n={{
             labels: {
               rowsPerPage: "Baris per halaman",
