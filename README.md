@@ -16,6 +16,8 @@ Anyone can report a wrong victim count or a wrong date on a published case from 
 
 The enrichment step calls the Gemini API for pending items. It writes a short neutral summary, a district guess with a confidence score, and the school and SPPG names mentioned in the article (verbatim, null when absent, never guessed). The code checks the guess against the district table and drops guesses that do not match. It then compares the item against published cases in the same district and date window; same-event news is auto-rejected at high confidence, while suspected victim-count updates stay queued with a duplicate badge. Failures fall back to the RSS snippet and the text match. Each run records whether the LLM saw the full article or only the snippet (`enrich_source`, `fetched_len`); snippet-based items carry a Dari RSS badge in the admin queue.
 
+Every published case is downloadable as CSV (`/data/kasus-mbg.csv`) or JSON (`/data/kasus-mbg.json`), regenerated every five minutes. Each district with cases also has a static page at `/wilayah/[slug]` (for example `/wilayah/kota-bandung`) listed in the sitemap. A case can show extra news sources from the `case_sources()` RPC: curator-approved items linked to the case and crawl items auto-rejected as its duplicates.
+
 The settings page edits keywords, batch size, and cron schedules without a new deploy.
 
 ## Tech Stack

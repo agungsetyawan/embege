@@ -1,14 +1,6 @@
-export type CaseRow = {
-  id: string;
-  occurred_on: string | null;
-  victims: number | null;
-  summary: string;
-  school: string | null;
-  sppg: string | null;
-  source_url: string;
-  source_media: string;
-  region_id: string;
-};
+import type { PublicCase } from "@/lib/public-cases";
+
+export type CaseRow = PublicCase;
 
 export type SummaryRow = {
   region_id: string;
