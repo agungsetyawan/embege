@@ -14,6 +14,7 @@ The team released the following changes:
 - Added Otomatis and Manual tabs to the admin Ditolak page so items rejected by an admin are listed too.
 - Showed separate auto and manual rejected counts on the Ditolak sidebar badge.
 - Showed the summary, region, victims, school, and SPPG on rejected items in the same order as the queue.
+- Retried the article fetch up to three times, an hour apart, for queued items enriched from the RSS snippet only.
 
 ## 2026-10-02
 
