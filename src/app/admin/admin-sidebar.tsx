@@ -33,7 +33,7 @@ import { signOut } from "./actions";
 
 export type AdminCounts = {
   pending: number;
-  auto: number;
+  rejected: string;
   reports: number;
   deleted: number;
 };
@@ -64,7 +64,7 @@ export const ADMIN_NAV: { label?: string; items: AdminNavItem[] }[] = [
         label: "Ditolak",
         href: "/admin?tab=rejected",
         icon: XCircle,
-        countKey: "auto",
+        countKey: "rejected",
       },
       {
         key: "reports",
@@ -120,6 +120,8 @@ function isNavActive(
 ) {
   if (pathname === "/admin/cases" && status === "deleted")
     return key === "deleted";
+  // ?tab=manual is a sub-tab of Ditolak.
+  if (pathname === "/admin" && tab === "manual") return key === "rejected";
   return pathname === "/admin" ? tab === key : key === pathname;
 }
 

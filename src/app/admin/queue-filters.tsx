@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NavLinkStatus } from "@/components/ui/nav-link-status";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { RegionOption } from "./pending-item";
 
 // Same native-select styling as /admin/cases (duplicated: that constant
@@ -15,7 +16,7 @@ import type { RegionOption } from "./pending-item";
 const selectClass =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring disabled:opacity-50 dark:bg-input/30";
 
-export type QueueTab = "pending" | "rejected" | "reports";
+export type QueueTab = "pending" | "rejected" | "manual" | "reports";
 
 // Single search box across all queue columns + wilayah filter. Search is
 // debounced into ?q= via router.replace (no history spam); the server
@@ -115,5 +116,22 @@ export function QueueFilters({
         </Button>
       </div>
     </div>
+  );
+}
+
+// Otomatis/Manual switch inside the Ditolak page; filters reset on switch.
+export function RejectedTabs({ tab }: { tab: "rejected" | "manual" }) {
+  const router = useRouter();
+  return (
+    <Tabs
+      value={tab}
+      onValueChange={(v) => router.push(`/admin?tab=${v}`)}
+      aria-label="Jenis penolakan"
+    >
+      <TabsList>
+        <TabsTrigger value="rejected">Otomatis</TabsTrigger>
+        <TabsTrigger value="manual">Manual</TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 }

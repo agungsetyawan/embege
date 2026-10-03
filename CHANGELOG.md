@@ -11,6 +11,9 @@ The team released the following changes:
 - Listed the district pages that have cases in the sitemap.
 - Showed extra news sources per case, from curator-approved items and auto-rejected duplicates.
 - Fixed the missing top-border reset on the first case in the case list.
+- Added Otomatis and Manual tabs to the admin Ditolak page so items rejected by an admin are listed too.
+- Showed separate auto and manual rejected counts on the Ditolak sidebar badge.
+- Showed the summary, region, victims, school, and SPPG on rejected items in the same order as the queue.
 
 ## 2026-10-02
 
