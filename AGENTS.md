@@ -97,7 +97,7 @@ Lessons already paid for in debug time. Follow them.
 - `school`/`sppg` are verbatim from the article (several joined with `'; '`, max 500 chars), `null` when not mentioned explicitly — never guessed. Applied updates carry them over (`?? target`), same as victims.
 - Human curation stays required before anything publishes.
 - `fetchArticleText` uses browser-compatible request headers. Some outlets reject non-browser clients with 403 — never simplify it back to a single header.
-- `enrich_source='rss'` (Dari RSS badge) means the LLM only saw the snippet, not the article — treat it as thin curation. The batchexecute decode needs exact form-urlencoded headers or Google answers 400 — never simplify them either.
+- `enrich_source='rss'` (Dari RSS badge) means the LLM only saw the snippet, not the article — treat it as thin curation. Pending `rss` items with a publisher URL retry the article fetch in enrich (max 3, at least 1 hour apart via `fetch_retries`/`last_fetch_at`), only in leftover batch slots so the 60-second budget holds; a failed retry skips Gemini. Google News links stay with the crawl decode catch-up. The batchexecute decode needs exact form-urlencoded headers or Google answers 400 — never simplify them either.
 
 **Language**
 - Identifiers and code comments in English. User-facing strings (UI copy, aria-labels, metadata, LLM prompts) stay in natural Indonesian.
