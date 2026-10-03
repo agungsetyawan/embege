@@ -20,6 +20,7 @@ import { ButtonGroup } from "../ui/button-group";
 import { Skeleton } from "../ui/skeleton";
 import { CASE_STALE_TIME, fetchRegionCases } from "./api";
 import { ShareButton } from "./share-button";
+import type { CaseRow } from "./types";
 
 const ReportDialog = dynamic(
   () => import("../report-dialog").then((m) => m.ReportDialog),
@@ -36,14 +37,18 @@ function formatCaseDate(iso: string | null): string {
 export function CaseList({
   regionId,
   highlightDate,
+  initialCases,
 }: {
   regionId: string;
   highlightDate?: string | null;
+  // Server-fetched cases (region page) so the list renders in the HTML.
+  initialCases?: CaseRow[];
 }) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["cases", regionId],
     queryFn: () => fetchRegionCases(regionId),
     staleTime: CASE_STALE_TIME,
+    initialData: initialCases && { cases: initialCases },
   });
   const listRef = useRef<HTMLUListElement | null>(null);
 
@@ -96,9 +101,9 @@ export function CaseList({
         <li
           key={c.id}
           data-occurred-on={c.occurred_on?.slice(0, 10) ?? ""}
-          className={`flex flex-col gap-1 border-t py-3 first:border-t-0${
+          className={`flex flex-col gap-1 border-t py-3 first:border-t-0 ${
             highlightDate && c.occurred_on?.slice(0, 10) === highlightDate
-              ? " -mx-2 rounded-lg bg-accent px-2 ring-1 ring-border"
+              ? "-mx-2 rounded-lg bg-accent px-2 ring-1 ring-border"
               : ""
           }`}
         >
@@ -162,6 +167,30 @@ export function CaseList({
               />
             </ButtonGroup>
           </div>
+          {/* Optional chain: CDN-cached payloads from before sources existed. */}
+          {c.sources?.length ? (
+            <details className="text-sm">
+              <summary className="cursor-pointer text-muted-foreground">
+                Diberitakan juga oleh {c.sources.length} sumber lain
+              </summary>
+              <ul className="mt-1 flex flex-col gap-1 pl-4">
+                {c.sources.map((s) => (
+                  <li key={s.url}>
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={s.media}
+                      className="inline-flex max-w-full items-center gap-1 underline underline-offset-4"
+                    >
+                      <ExternalLink className="size-3.5 shrink-0" />
+                      <span className="truncate">{s.media}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
         </li>
       ))}
     </ul>

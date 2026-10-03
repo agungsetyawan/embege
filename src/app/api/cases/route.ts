@@ -1,3 +1,4 @@
+import { fetchPublicCases } from "@/lib/public-cases";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/validate";
 
@@ -24,19 +25,10 @@ export async function GET(req: Request) {
     if (!isUuid(regionId)) {
       return Response.json({ cases: [] }, CACHE);
     }
-    const { data: cases, error } = await supabase
-      .from("cases")
-      .select(
-        "id,occurred_on,victims,summary,school,sppg,source_url,source_media,region_id",
-      )
-      .eq("published", true)
-      .is("deleted_at", null)
-      .eq("region_id", regionId)
-      .order("occurred_on", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false });
-    if (error)
+    const cases = await fetchPublicCases(supabase, regionId).catch(() => null);
+    if (!cases)
       return Response.json({ error: "failed to load data" }, { status: 500 });
-    return Response.json({ cases: cases ?? [] }, CACHE);
+    return Response.json({ cases }, CACHE);
   }
 
   // All 514 regions, including zero-case ones (for map search).

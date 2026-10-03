@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import { Suspense } from "react";
 import { IndonesiaMapLazy } from "@/components/indonesia-map-lazy";
 import { StatsCards } from "@/components/stats-cards";
@@ -83,6 +84,25 @@ export default function Home() {
               daftar kasus keracunan di Wikipedia
             </a>
             .
+          </p>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Download className="size-3.5" aria-hidden="true" />
+            Unduh data kasus:
+            <a
+              href="/data/kasus-mbg.csv"
+              download
+              className="underline underline-offset-4"
+            >
+              CSV
+            </a>
+            <a
+              href="/data/kasus-mbg.json"
+              download
+              className="underline underline-offset-4"
+            >
+              JSON
+            </a>
+            <span>Mohon cantumkan sumber saat menggunakan data ini.</span>
           </p>
           <p className="font-bold">Data ini bukan data resmi pemerintah.</p>
         </footer>
