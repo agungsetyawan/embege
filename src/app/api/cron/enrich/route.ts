@@ -21,6 +21,10 @@ const AUTO_REJECT_MIN_CONFIDENCE = 0.8;
 const DEDUP_MIN_CONFIDENCE = 0.9;
 const DEDUP_CANDIDATES = 5;
 const DEFAULT_DEDUP_WINDOW_DAYS = 7;
+// Snippet-only items retry the article fetch a few times, an hour apart, so a
+// transient 403/timeout does not leave them on the RSS snippet for good.
+const MAX_FETCH_RETRIES = 3;
+const FETCH_RETRY_GAP_MS = 60 * 60 * 1000;
 
 // Match the LLM output against the regions table (uppercase, KOTA-prefix tolerant).
 function matchRegion(
@@ -84,19 +88,39 @@ export async function GET(req: Request) {
     100000,
   );
 
-  const [{ data: items }, { data: regions }] = await Promise.all([
+  const columns =
+    "id,title,summary,url,published_at,guessed_region_id,fetch_retries";
+  const [{ data: fresh }, { data: regions }] = await Promise.all([
     supabase
       .from("crawl_items")
-      .select("id,title,summary,url,published_at,guessed_region_id")
+      .select(columns)
       .eq("status", "pending")
       .is("llm_summary", null)
       .order("created_at", { ascending: true })
       .limit(batch),
     supabase.from("regions").select("id,district"),
   ]);
-  if (!items || !regions) {
+  if (!fresh || !regions) {
     return Response.json({ error: "gagal membaca data" }, { status: 500 });
   }
+  // Leftover batch slots go to snippet-only items due for another fetch.
+  // Google News links are left to the crawl decode catch-up.
+  let retries: typeof fresh = [];
+  if (fresh.length < batch) {
+    const due = new Date(Date.now() - FETCH_RETRY_GAP_MS).toISOString();
+    const { data } = await supabase
+      .from("crawl_items")
+      .select(columns)
+      .eq("status", "pending")
+      .eq("enrich_source", "rss")
+      .not("url", "like", "https://news.google.com/%")
+      .lt("fetch_retries", MAX_FETCH_RETRIES)
+      .or(`last_fetch_at.is.null,last_fetch_at.lt.${due}`)
+      .order("created_at", { ascending: true })
+      .limit(batch - fresh.length);
+    retries = data ?? [];
+  }
+  const now = new Date().toISOString();
 
   let enriched = 0;
   let autoRejected = 0;
@@ -105,8 +129,24 @@ export async function GET(req: Request) {
 
   // Fetch article texts in parallel (I/O bound), then enrich each item in
   // its own isolated Gemini call, all in parallel.
-  const fetches = await Promise.all(
-    items.map((item) => fetchArticleText(item.url, { maxText, maxHtml })),
+  const all = [...fresh, ...retries];
+  const allFetches = await Promise.all(
+    all.map((item) => fetchArticleText(item.url, { maxText, maxHtml })),
+  );
+  // A retry that still gets no article keeps its snippet enrichment: count
+  // the attempt and skip Gemini.
+  const keep = all.map((_, i) => i < fresh.length || !!allFetches[i].text);
+  const items = all.filter((_, i) => keep[i]);
+  const fetches = allFetches.filter((_, i) => keep[i]);
+  const stillThin = all.filter((_, i) => !keep[i]);
+  const refetchFailed = stillThin.length;
+  await Promise.all(
+    stillThin.map((item) =>
+      supabase
+        .from("crawl_items")
+        .update({ fetch_retries: item.fetch_retries + 1, last_fetch_at: now })
+        .eq("id", item.id),
+    ),
   );
   const inputs = fetches.map((f, i) => ({
     text: f.text ?? items[i].summary ?? "",
@@ -153,6 +193,7 @@ export async function GET(req: Request) {
         canonical_hash: cHash,
         enrich_source: source,
         fetched_len: fetchedLen,
+        last_fetch_at: now,
       };
       // High-confidence non-MBG-poisoning news: auto-reject.
       if (
@@ -201,6 +242,7 @@ export async function GET(req: Request) {
         canonical_hash?: string | null;
         enrich_source?: string | null;
         fetched_len?: number | null;
+        last_fetch_at?: string;
         duplicate_of_case_id?: string | null;
         duplicate_confidence?: number | null;
         duplicate_reason?: string | null;
@@ -214,6 +256,12 @@ export async function GET(req: Request) {
         canonical_hash: cHash,
         enrich_source: source,
         fetched_len: fetchedLen,
+        last_fetch_at: now,
+        // Cleared so a re-enrich (fetch retry) drops stale values.
+        geo_confidence: null,
+        duplicate_of_case_id: null,
+        duplicate_confidence: null,
+        duplicate_reason: null,
       };
       if (candidate) {
         update.geo_confidence = result.confidence;
@@ -297,10 +345,11 @@ export async function GET(req: Request) {
     else failed++;
   }
   return Response.json({
-    processed: items.length,
+    processed: all.length,
     enriched,
     autoRejected,
     duplicateRejected,
     failed,
+    refetchFailed,
   });
 }
