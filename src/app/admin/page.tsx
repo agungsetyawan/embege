@@ -10,7 +10,7 @@ import {
   type PendingItemData,
 } from "./pending-item";
 import { PipelineButtons } from "./pipeline-buttons";
-import { QueueFilters, type QueueTab } from "./queue-filters";
+import { QueueFilters, type QueueTab, RejectedTabs } from "./queue-filters";
 import { QueuePagination } from "./queue-pagination";
 import { RejectedItem, type RejectedItemData } from "./rejected-item";
 import { type CaseTwin, ReportItem, type ReportItemData } from "./report-item";
@@ -36,11 +36,12 @@ export default async function AdminPage({
   if (params.tab === "deleted") redirect("/admin/cases?status=deleted");
 
   const tab: QueueTab =
-    params.tab === "rejected"
-      ? "rejected"
+    params.tab === "rejected" || params.tab === "manual"
+      ? params.tab
       : params.tab === "reports"
         ? "reports"
         : "pending";
+  const isRejectedTab = tab === "rejected" || tab === "manual";
   const q = (params.q ?? "").trim().slice(0, 200);
   const region = isUuid(params.regionId ?? "")
     ? (params.regionId as string)
@@ -70,16 +71,21 @@ export default async function AdminPage({
       .map((c) => `${c}.ilike.%${s}%`)
       .join(",");
   const buildList = (from: number, to: number) =>
-    tab === "rejected"
+    isRejectedTab
       ? (() => {
           let query = supabase
             .from("crawl_items")
             .select(
-              "id,title,summary,url,media,published_at,llm_summary,llm_reject_reason,enrich_source",
+              "id,title,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,llm_reject_reason,enrich_source",
               { count: "exact" },
             )
-            .eq("status", "rejected")
-            .eq("llm_is_relevant", false);
+            .eq("status", "rejected");
+          // Every auto-reject (LLM, duplicate, superseded) sets
+          // llm_is_relevant=false; a manual reject leaves it true/null.
+          query =
+            tab === "rejected"
+              ? query.eq("llm_is_relevant", false)
+              : query.not("llm_is_relevant", "is", false);
           if (region) query = query.eq("guessed_region_id", region);
           if (safe) query = query.or(crawlOr(safe));
           return query
@@ -108,7 +114,7 @@ export default async function AdminPage({
             let query = supabase
               .from("crawl_items")
               .select(
-                "id,title,summary,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,llm_occurred_on,geo_confidence,enrich_source,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
+                "id,title,url,media,published_at,guessed_region_id,llm_summary,llm_victims,llm_school,llm_sppg,llm_occurred_on,geo_confidence,enrich_source,duplicate_of_case_id,duplicate_confidence,duplicate_reason",
                 { count: "exact" },
               )
               .eq("status", "pending");
@@ -204,6 +210,7 @@ export default async function AdminPage({
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-4">
       <PipelineButtons />
+      {isRejectedTab && <RejectedTabs tab={tab} />}
       <QueueFilters
         key={tab}
         initialQ={q}
@@ -222,9 +229,11 @@ export default async function AdminPage({
                 ? "Tidak ada hasil yang cocok."
                 : tab === "rejected"
                   ? "Belum ada berita yang ditolak otomatis."
-                  : tab === "reports"
-                    ? "Belum ada laporan masuk."
-                    : "Antrean bersih."}
+                  : tab === "manual"
+                    ? "Belum ada berita yang ditolak admin."
+                    : tab === "reports"
+                      ? "Belum ada laporan masuk."
+                      : "Antrean bersih."}
             </p>
             {filtering ? (
               <p className="text-sm text-muted-foreground">
@@ -241,9 +250,14 @@ export default async function AdminPage({
         </Frame>
       ) : (
         <Frame stacked>
-          {tab === "rejected"
+          {isRejectedTab
             ? (items as RejectedItemData[] | undefined)?.map((item) => (
-                <RejectedItem key={item.id} item={item} />
+                <RejectedItem
+                  key={item.id}
+                  item={item}
+                  manual={tab === "manual"}
+                  region={regions?.find((r) => r.id === item.guessed_region_id)}
+                />
               ))
             : tab === "reports"
               ? (items as unknown as ReportItemData[] | undefined)?.map(

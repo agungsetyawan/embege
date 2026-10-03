@@ -23,6 +23,7 @@ export default async function AdminLayout({
   const [
     { count: pendingCount },
     { count: autoCount },
+    { count: manualCount },
     { count: reportCount },
     { count: deletedCount },
   ] = await Promise.all([
@@ -36,6 +37,11 @@ export default async function AdminLayout({
       .eq("status", "rejected")
       .eq("llm_is_relevant", false),
     supabase
+      .from("crawl_items")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "rejected")
+      .not("llm_is_relevant", "is", false),
+    supabase
       .from("case_reports")
       .select("id", { count: "exact", head: true })
       .eq("status", "open"),
@@ -47,7 +53,8 @@ export default async function AdminLayout({
 
   const counts = {
     pending: pendingCount ?? 0,
-    auto: autoCount ?? 0,
+    // Otomatis / manual, kept apart (same split as the Ditolak tabs).
+    rejected: `${autoCount ?? 0} / ${manualCount ?? 0}`,
     reports: reportCount ?? 0,
     deleted: deletedCount ?? 0,
   };
