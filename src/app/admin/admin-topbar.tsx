@@ -12,7 +12,11 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { type AdminCounts, findActiveNavItem } from "./admin-sidebar";
+import {
+  ADMIN_NAV,
+  type AdminCounts,
+  findActiveNavItem,
+} from "./admin-sidebar";
 
 function SectionBreadcrumb({ counts }: { counts: AdminCounts }) {
   const pathname = usePathname();
@@ -20,6 +24,8 @@ function SectionBreadcrumb({ counts }: { counts: AdminCounts }) {
   const tab = params.get("tab") ?? "pending";
   const status = params.get("status") ?? "";
   const item = findActiveNavItem(pathname, tab, status);
+  const group =
+    ADMIN_NAV.find((g) => item && g.items.includes(item)) ?? ADMIN_NAV[0];
   const section = item?.label ?? "Antrean";
   const count = item?.countKey ? counts[item.countKey] : null;
 
@@ -27,8 +33,8 @@ function SectionBreadcrumb({ counts }: { counts: AdminCounts }) {
     <Breadcrumb className="min-w-0">
       <BreadcrumbList className="flex-nowrap">
         <BreadcrumbItem className="min-w-0">
-          <BreadcrumbLink href="/admin" className="truncate">
-            Admin
+          <BreadcrumbLink href={group.items[0].href} className="truncate">
+            {group.label}
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
