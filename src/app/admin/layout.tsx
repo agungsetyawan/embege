@@ -3,6 +3,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { createClient } from "@/lib/supabase/server";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminTopbar } from "./admin-topbar";
+import { AdminWebMcp } from "./admin-webmcp";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -61,6 +62,7 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
+      <AdminWebMcp />
       <AdminSidebar counts={counts} email={user.email} />
       <SidebarInset>
         <AdminTopbar counts={counts} />
