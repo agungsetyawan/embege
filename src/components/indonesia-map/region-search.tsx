@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import { groupByProvince } from "../region-picker";
 import { Badge } from "../reui/badge";
 import {
   Cascader,
@@ -26,25 +27,12 @@ import type { SummaryRow } from "./types";
 type RegionSearchNode = CascaderNode<{ count: number }>;
 
 function buildRegionSearchTree(rows: SummaryRow[]): RegionSearchNode[] {
-  const byProvince = new Map<string, RegionSearchNode>();
-  for (const r of rows) {
-    let province = byProvince.get(r.province);
-    if (!province) {
-      province = {
-        value: `prov:${r.province}`,
-        label: r.province,
-        children: [],
-      };
-      byProvince.set(r.province, province);
-    }
-    province.children?.push({
-      value: r.region_id,
-      label: r.district ?? r.province,
-      keywords: [r.district, r.province],
-      data: { count: r.count },
-    });
-  }
-  return [...byProvince.values()];
+  return groupByProvince(rows, (r) => ({
+    value: r.region_id,
+    label: r.district ?? r.province,
+    keywords: [r.district, r.province],
+    data: { count: r.count },
+  }));
 }
 
 export function RegionSearch({

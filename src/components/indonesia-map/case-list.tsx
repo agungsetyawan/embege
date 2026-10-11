@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
+import type { PublicCase } from "@/lib/public-cases";
 import { Alert, AlertAction, AlertTitle } from "../reui/alert";
 import { Badge } from "../reui/badge";
 import { IconTile } from "../reui/icon-tile";
@@ -20,7 +21,6 @@ import { ButtonGroup } from "../ui/button-group";
 import { Skeleton } from "../ui/skeleton";
 import { CASE_STALE_TIME, fetchRegionCases } from "./api";
 import { ShareButton } from "./share-button";
-import type { CaseRow } from "./types";
 
 const ReportDialog = dynamic(
   () => import("../report-dialog").then((m) => m.ReportDialog),
@@ -42,7 +42,7 @@ export function CaseList({
   regionId: string;
   highlightDate?: string | null;
   // Server-fetched cases (region page) so the list renders in the HTML.
-  initialCases?: CaseRow[];
+  initialCases?: PublicCase[];
 }) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["cases", regionId],

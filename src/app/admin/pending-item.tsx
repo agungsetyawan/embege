@@ -8,40 +8,16 @@ import {
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { type RegionOption, RegionPicker } from "@/components/region-picker";
 import { Alert, AlertTitle } from "@/components/reui/alert";
 import { Badge } from "@/components/reui/badge";
-import {
-  Cascader,
-  CascaderContent,
-  CascaderEmpty,
-  CascaderList,
-  CascaderPanel,
-  CascaderStatus,
-  CascaderTrigger,
-} from "@/components/reui/cascader/cascader";
-import { CascaderItems } from "@/components/reui/cascader/cascader-item";
-import {
-  CascaderBreadcrumb,
-  CascaderInput,
-  CascaderNav,
-  CascaderValue,
-} from "@/components/reui/cascader/cascader-nav";
-import type { CascaderNode } from "@/components/reui/cascader/cascader-types";
 import { FrameFooter, FrameHeader, FramePanel } from "@/components/reui/frame";
-import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormSubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import { applyItemUpdate, approveItem, rejectItem } from "./actions";
-
-export type RegionOption = {
-  id: string;
-  province: string;
-  district: string;
-  centroid_ok: boolean;
-};
 
 export type PendingItemData = {
   id: string;
@@ -72,42 +48,6 @@ export type DuplicateCase = {
   school: string | null;
   sppg: string | null;
 };
-
-type RegionNode = CascaderNode<{ centroidOk: boolean }>;
-
-export function buildRegionTree(regions: RegionOption[]): RegionNode[] {
-  const byProvince = new Map<string, RegionNode>();
-  for (const r of regions) {
-    let province = byProvince.get(r.province);
-    if (!province) {
-      province = {
-        value: `prov:${r.province}`,
-        label: r.province,
-        children: [],
-      };
-      byProvince.set(r.province, province);
-    }
-    province.children?.push({
-      value: r.id,
-      label: r.district ? `${r.district}, ${r.province}` : r.province,
-      keywords: [r.district, r.province],
-      data: { centroidOk: r.centroid_ok },
-    });
-  }
-  return [...byProvince.values()];
-}
-
-export function renderRegionLabel(node: RegionNode) {
-  if (node.data && !node.data.centroidOk) {
-    return (
-      <span className="flex items-center gap-1">
-        {node.label}
-        <TriangleAlert className="size-3.5 shrink-0 text-amber-500" />
-      </span>
-    );
-  }
-  return node.label;
-}
 
 // Mirrors the `??` fallbacks of applyItemUpdate: when `changed` is false the
 // case value stays as-is after "Terapkan update".
@@ -151,7 +91,6 @@ export function PendingItem({
   // Prefer the LLM-extracted event date; fall back to the publish date.
   const dateDefault =
     item.llm_occurred_on ?? item.published_at?.slice(0, 10) ?? "";
-  const tree = buildRegionTree(regions);
 
   return (
     <FramePanel>
@@ -282,50 +221,12 @@ export function PendingItem({
           <input type="hidden" name="itemId" value={item.id} />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={`region-${item.id}`}>Kabupaten/Kota</Label>
-            <Cascader
-              items={tree}
-              name="regionId"
+            <RegionPicker
+              regions={regions}
               id={`region-${item.id}`}
               defaultValue={item.guessed_region_id ?? undefined}
-              searchScope="deep"
-              renderLabel={renderRegionLabel}
-              labels={{
-                search: (parent) =>
-                  parent ? `Cari di ${parent}...` : "Ketik nama daerah",
-                back: "Kembali",
-                empty: "Tidak ada daerah yang cocok.",
-                keyboardHint: () =>
-                  "Gunakan panah Kanan untuk membuka cabang dan panah Kiri untuk kembali.",
-              }}
-            >
-              <CascaderTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    type="button"
-                    className="w-full justify-between font-normal"
-                  />
-                }
-              >
-                <CascaderValue
-                  placeholder="Pilih kabupaten/kota"
-                  display="leaf"
-                />
-              </CascaderTrigger>
-              <CascaderContent>
-                <CascaderPanel>
-                  <CascaderNav>
-                    <CascaderBreadcrumb />
-                    <CascaderInput />
-                  </CascaderNav>
-                  <CascaderEmpty />
-                  <CascaderList maxHeight={288}>
-                    <CascaderItems />
-                  </CascaderList>
-                  <CascaderStatus />
-                </CascaderPanel>
-              </CascaderContent>
-            </Cascader>
+              display="leaf"
+            />
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1.5">

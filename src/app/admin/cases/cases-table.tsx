@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import type { RegionOption } from "@/components/region-picker";
 import { Badge } from "@/components/reui/badge";
 import {
   DataGrid,
@@ -37,7 +38,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { restoreCase } from "../actions";
-import type { RegionOption } from "../pending-item";
 import { deleteCase } from "./actions";
 import { EditCaseDialog } from "./edit-case-dialog";
 import { HistoryDialog } from "./history-dialog";

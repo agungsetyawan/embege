@@ -1,6 +1,7 @@
 "use client";
 
 import { Bot, MapPin, RotateCcw, Users, UserX } from "lucide-react";
+import type { RegionOption } from "@/components/region-picker";
 import { Badge } from "@/components/reui/badge";
 import {
   FrameFooter,
@@ -10,7 +11,6 @@ import {
 } from "@/components/reui/frame";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { restoreItem } from "./actions";
-import type { RegionOption } from "./pending-item";
 
 export type RejectedItemData = {
   id: string;

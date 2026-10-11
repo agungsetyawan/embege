@@ -4,12 +4,12 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import type { RegionOption } from "@/components/region-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NavLinkStatus } from "@/components/ui/nav-link-status";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { RegionOption } from "./pending-item";
 
 // Same native-select styling as /admin/cases (duplicated: that constant
 // lives in a server file, so it cannot be imported here).

@@ -17,12 +17,7 @@ import {
 } from "@/lib/enrich";
 import { requiredEnv } from "@/lib/env";
 
-// ponytail: tiny dotenv loader, no new dependency for a one-off script.
-for (const line of readFileSync(".env.local", "utf8").split("\n")) {
-  const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
-  if (m && !process.env[m[1]])
-    process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
-}
+process.loadEnvFile(".env.local");
 
 const arg = (name: string, def: string) => {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));

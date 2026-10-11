@@ -9,7 +9,6 @@ import { isUuid } from "@/lib/validate";
 // - no param: per-region summary (514 short rows, for choropleth + markers)
 // - ?region_id=: cases of that region only, fetched when the popup opens
 export const dynamic = "force-dynamic";
-export const revalidate = 300;
 
 const CACHE = {
   headers: {

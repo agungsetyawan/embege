@@ -1,26 +1,10 @@
 "use client";
 
 import { Flag, MapPin, Trash2, Users } from "lucide-react";
+import { type RegionOption, RegionPicker } from "@/components/region-picker";
 import { REPORT_REASONS } from "@/components/report-dialog";
 import { Badge } from "@/components/reui/badge";
-import {
-  Cascader,
-  CascaderContent,
-  CascaderEmpty,
-  CascaderList,
-  CascaderPanel,
-  CascaderStatus,
-  CascaderTrigger,
-} from "@/components/reui/cascader/cascader";
-import { CascaderItems } from "@/components/reui/cascader/cascader-item";
-import {
-  CascaderBreadcrumb,
-  CascaderInput,
-  CascaderNav,
-  CascaderValue,
-} from "@/components/reui/cascader/cascader-nav";
 import { FrameFooter, FrameHeader, FramePanel } from "@/components/reui/frame";
-import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,11 +16,6 @@ import {
   moveReportCase,
   resolveReport,
 } from "./actions";
-import {
-  buildRegionTree,
-  type RegionOption,
-  renderRegionLabel,
-} from "./pending-item";
 
 export type ReportItemData = {
   id: string;
@@ -124,7 +103,6 @@ export function ReportItem({
       : caseData.victims !== null
         ? String(caseData.victims)
         : "";
-  const tree = buildRegionTree(regions);
 
   return (
     <FramePanel>
@@ -197,46 +175,7 @@ export function ReportItem({
               <Label htmlFor={`region-${report.id}`}>
                 Pindah ke wilayah baru
               </Label>
-              <Cascader
-                items={tree}
-                name="regionId"
-                id={`region-${report.id}`}
-                searchScope="deep"
-                renderLabel={renderRegionLabel}
-                labels={{
-                  search: (parent) =>
-                    parent ? `Cari di ${parent}...` : "Ketik nama daerah",
-                  back: "Kembali",
-                  empty: "Tidak ada daerah yang cocok.",
-                  keyboardHint: () =>
-                    "Gunakan panah Kanan untuk membuka cabang dan panah Kiri untuk kembali.",
-                }}
-              >
-                <CascaderTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      type="button"
-                      className="w-full justify-between font-normal"
-                    />
-                  }
-                >
-                  <CascaderValue placeholder="Pilih kabupaten/kota" />
-                </CascaderTrigger>
-                <CascaderContent>
-                  <CascaderPanel>
-                    <CascaderNav>
-                      <CascaderBreadcrumb />
-                      <CascaderInput />
-                    </CascaderNav>
-                    <CascaderEmpty />
-                    <CascaderList maxHeight={288}>
-                      <CascaderItems />
-                    </CascaderList>
-                    <CascaderStatus />
-                  </CascaderPanel>
-                </CascaderContent>
-              </Cascader>
+              <RegionPicker regions={regions} id={`region-${report.id}`} />
             </div>
           </form>
         )}

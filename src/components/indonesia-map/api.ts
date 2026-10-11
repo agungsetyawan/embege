@@ -1,6 +1,7 @@
 import type { FeatureCollection } from "geojson";
+import type { PublicCase } from "@/lib/public-cases";
 import type { TimelineResponse } from "@/lib/timeline";
-import type { CaseRow, SummaryRow } from "./types";
+import type { SummaryRow } from "./types";
 
 export const CASE_STALE_TIME = 5 * 60 * 1000;
 
@@ -20,7 +21,7 @@ export async function fetchSummary(): Promise<{ summary: SummaryRow[] }> {
 
 export async function fetchRegionCases(
   regionId: string,
-): Promise<{ cases: CaseRow[] }> {
+): Promise<{ cases: PublicCase[] }> {
   const res = await fetch(`/api/cases?region_id=${regionId}`);
   if (!res.ok) throw new Error("Failed to load case data");
   return res.json();

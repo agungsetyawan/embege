@@ -1,21 +1,6 @@
 "use client";
 
-import {
-  Cascader,
-  CascaderContent,
-  CascaderEmpty,
-  CascaderList,
-  CascaderPanel,
-  CascaderStatus,
-  CascaderTrigger,
-} from "@/components/reui/cascader/cascader";
-import { CascaderItems } from "@/components/reui/cascader/cascader-item";
-import {
-  CascaderBreadcrumb,
-  CascaderInput,
-  CascaderNav,
-  CascaderValue,
-} from "@/components/reui/cascader/cascader-nav";
+import { type RegionOption, RegionPicker } from "@/components/region-picker";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import {
@@ -29,11 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  buildRegionTree,
-  type RegionOption,
-  renderRegionLabel,
-} from "../pending-item";
 import { updateCase } from "./actions";
 import type { CaseRow } from "./cases-table";
 
@@ -46,8 +26,6 @@ export function EditCaseDialog({
   regions: RegionOption[];
   onClose: () => void;
 }) {
-  const tree = buildRegionTree(regions);
-
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
@@ -62,50 +40,12 @@ export function EditCaseDialog({
           <input type="hidden" name="caseId" value={row.id} />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={`edit-region-${row.id}`}>Kabupaten/Kota</Label>
-            <Cascader
-              items={tree}
-              name="regionId"
+            <RegionPicker
+              regions={regions}
               id={`edit-region-${row.id}`}
               defaultValue={row.region_id}
-              searchScope="deep"
-              renderLabel={renderRegionLabel}
-              labels={{
-                search: (parent) =>
-                  parent ? `Cari di ${parent}...` : "Ketik nama daerah",
-                back: "Kembali",
-                empty: "Tidak ada daerah yang cocok.",
-                keyboardHint: () =>
-                  "Gunakan panah Kanan untuk membuka cabang dan panah Kiri untuk kembali.",
-              }}
-            >
-              <CascaderTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    type="button"
-                    className="w-full justify-between font-normal"
-                  />
-                }
-              >
-                <CascaderValue
-                  placeholder="Pilih kabupaten/kota"
-                  display="leaf"
-                />
-              </CascaderTrigger>
-              <CascaderContent>
-                <CascaderPanel>
-                  <CascaderNav>
-                    <CascaderBreadcrumb />
-                    <CascaderInput />
-                  </CascaderNav>
-                  <CascaderEmpty />
-                  <CascaderList maxHeight={288}>
-                    <CascaderItems />
-                  </CascaderList>
-                  <CascaderStatus />
-                </CascaderPanel>
-              </CascaderContent>
-            </Cascader>
+              display="leaf"
+            />
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1.5">
