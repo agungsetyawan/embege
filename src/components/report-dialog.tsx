@@ -1,7 +1,7 @@
 "use client";
 
 import { Flag } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -150,6 +150,14 @@ export function ReportDialog({ caseId }: { caseId: string }) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const sentId = useId();
+
+  // The focused submit button unmounts on success; move focus to Tutup so the
+  // thank-you text (its description) is read and focus does not fall to body.
+  useEffect(() => {
+    if (status === "sent") closeRef.current?.focus();
+  }, [status]);
 
   function reset() {
     setForm(initialState);
@@ -218,11 +226,15 @@ export function ReportDialog({ caseId }: { caseId: string }) {
         </DrawerHeader>
         {status === "sent" ? (
           <div className="flex flex-1 flex-col gap-3 px-4 py-2">
-            <p className="text-sm">
+            <p id={sentId} className="text-sm">
               Terima kasih. Laporanmu sudah kami terima dan akan ditinjau.
             </p>
             <DrawerFooter className="px-0">
-              <DrawerClose render={<Button variant="outline" />}>
+              <DrawerClose
+                ref={closeRef}
+                aria-describedby={sentId}
+                render={<Button variant="outline" />}
+              >
                 Tutup
               </DrawerClose>
             </DrawerFooter>

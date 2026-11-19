@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, Share2 } from "lucide-react";
-import { useState } from "react";
+import { Check, Share2, X } from "lucide-react";
+import { useRef, useState } from "react";
 import { isDateString } from "@/lib/validate";
 import { Button } from "../ui/button";
 
@@ -37,9 +37,22 @@ export function ShareButton({
     failed: "Failed",
   }[state];
 
+  const [message, setMessage] = useState("");
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const lastMessage = useRef("");
+
   const flash = (next: "copied" | "failed") => {
+    clearTimeout(timer.current);
     setState(next);
-    setTimeout(() => setState("idle"), 2000);
+    let text = next === "copied" ? "Tautan disalin" : "Gagal menyalin tautan";
+    // VoiceOver skips a repeat of the previous message; a no-break space makes it differ.
+    if (text === lastMessage.current) text += " ";
+    lastMessage.current = text;
+    setMessage(text);
+    timer.current = setTimeout(() => {
+      setState("idle");
+      setMessage("");
+    }, 2000);
   };
 
   const handleShare = async () => {
@@ -63,19 +76,25 @@ export function ShareButton({
   };
 
   return (
-    <Button
-      variant={variant}
-      size={iconOnly ? "icon-sm" : "sm"}
-      onClick={() => void handleShare()}
-      aria-label={label}
-      className={className}
-    >
-      {state === "copied" ? (
-        <Check className="size-3.5" />
-      ) : (
-        <Share2 className="size-3.5" />
-      )}
-      {!iconOnly && stateText}
-    </Button>
+    <>
+      <Button
+        variant={variant}
+        size={iconOnly ? "icon-sm" : "sm"}
+        onClick={() => void handleShare()}
+        aria-label={label}
+        className={className}
+      >
+        {state === "copied" ? (
+          <Check className="size-3.5" />
+        ) : state === "failed" ? (
+          <X className="size-3.5" />
+        ) : (
+          <Share2 className="size-3.5" />
+        )}
+        {!iconOnly && stateText}
+      </Button>
+      {/* Outside the button: a live region inside a button is not reliably announced. */}
+      <output className="sr-only">{message}</output>
+    </>
   );
 }
