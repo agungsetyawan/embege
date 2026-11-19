@@ -12,6 +12,10 @@ The team released the following changes:
 - Translated the Report and Share button labels and their copy states to Indonesian.
 - Stopped the theme and full-map toggles from restyling all district polygons and markers, so each toggle responds in about 100 ms instead of 500 ms on a throttled phone.
 - Mounted the map tiles before the district boundaries finish loading, so the first map paint no longer waits for the GeoJSON file.
+- Rendered the Statistik list in the background and skipped unchanged day grids, so switching to Mingguan takes about 400 ms instead of 3.7 seconds on a throttled phone.
+- Stopped marker clicks from refetching the home page when the URL has no query, which sometimes reloaded the whole page.
+- Gave each map marker its full name ("1 kasus di X, Y") for screen readers instead of only the count.
+- Kept the admin edit dialog open until the save succeeds and showed why a save failed, instead of closing and dropping the edit silently.
 
 ## 2026-11-19
 

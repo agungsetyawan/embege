@@ -149,7 +149,10 @@ export function IndonesiaMap() {
       // Manual picks own the drawer: drop any URL-driven highlight.
       setHighlightDate(null);
       appliedUrlRef.current = null;
-      router.replace(pathname, { scroll: false });
+      // Only when there is a query to clear: a replace to the same URL still
+      // fetches the RSC payload, and when that fetch stalls Next falls back
+      // to a full page reload (seen on marker clicks).
+      if (window.location.search) router.replace(pathname, { scroll: false });
       setSelected(s);
       mapRef.current?.panTo([s.lat, s.lng]);
     },
@@ -232,7 +235,7 @@ export function IndonesiaMap() {
     setSelected(null);
     setHighlightDate(null);
     appliedUrlRef.current = null;
-    router.replace(pathname, { scroll: false });
+    if (window.location.search) router.replace(pathname, { scroll: false });
   }, [router, pathname]);
 
   // Map shell mounts as soon as the JS arrives so tile requests (the LCP

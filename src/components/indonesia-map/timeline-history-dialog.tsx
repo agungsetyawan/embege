@@ -5,7 +5,7 @@ import { type ColumnDef, useTable } from "@tanstack/react-table";
 import { ChartColumn, ChevronDown, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import { Badge } from "@/components/reui/badge";
 import {
   DataGrid,
@@ -68,7 +68,9 @@ const RegionChart = dynamic(
 
 type View = "list" | "chart" | "region";
 
-function MonthGrid({
+// memo: the dialog re-renders on every tab, period, and open change, and up
+// to ~70 grids re-rendering made each of those clicks take 300-500 ms.
+const MonthGrid = memo(function MonthGrid({
   days,
   onSelectArea,
 }: {
@@ -219,7 +221,7 @@ function MonthGrid({
       </DataGridContainer>
     </DataGrid>
   );
-}
+});
 
 // Poisoning-days timeline inside the map card. The pill button stays visible
 // at the bottom center of the map; data + DataGrid + chart load only on open.
@@ -259,17 +261,27 @@ export function TimelineHistoryDialog({
       ? null
       : (groups.find((g) => g.key === effectiveKey) ?? null);
   const regionDays = selectedGroup ? selectedGroup.days : timeline;
+  // The weekly list mounts one DataGrid per week (~70, about 3 s at 4x CPU
+  // throttling). Render the content in the background so the period select
+  // and the tabs answer at once; the old content stays dimmed meanwhile.
+  const listGroups = useDeferredValue(groups);
+  const contentView = useDeferredValue(view);
+  const stale = listGroups !== groups || contentView !== view;
 
   // Same destination as the map search: the map flies to the region and
   // opens its drawer, which highlights the cases of this date.
-  const handleSelectArea = (regionId: string, date: string) => {
-    setOpen(false);
-    const query = new URLSearchParams({
-      region_id: regionId,
-      date,
-    }).toString();
-    router.replace(`?${query}`, { scroll: false });
-  };
+  // Stable identity so the memoized MonthGrid rows skip re-renders.
+  const handleSelectArea = useCallback(
+    (regionId: string, date: string) => {
+      setOpen(false);
+      const query = new URLSearchParams({
+        region_id: regionId,
+        date,
+      }).toString();
+      router.replace(`?${query}`, { scroll: false });
+    },
+    [router],
+  );
 
   return (
     <Dialog
@@ -363,7 +375,10 @@ export function TimelineHistoryDialog({
             )}
           </div>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div
+          aria-busy={stale}
+          className={`min-h-0 flex-1 overflow-y-auto ${stale ? "opacity-60" : ""}`}
+        >
           {history.isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Memuat statistik…
@@ -381,9 +396,9 @@ export function TimelineHistoryDialog({
                 Coba lagi
               </Button>
             </div>
-          ) : view === "chart" ? (
-            <TrendChart groups={groups} />
-          ) : view === "region" ? (
+          ) : contentView === "chart" ? (
+            <TrendChart groups={listGroups} />
+          ) : contentView === "region" ? (
             <RegionChart days={regionDays} />
           ) : groups.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
@@ -391,7 +406,7 @@ export function TimelineHistoryDialog({
             </p>
           ) : (
             <div className="flex flex-col gap-5">
-              {groups.map((group) => (
+              {listGroups.map((group) => (
                 <section key={group.key} aria-label={group.label}>
                   <div className="sticky top-0 z-10 bg-popover py-2">
                     <div className="flex flex-wrap items-center gap-2">

@@ -19,7 +19,10 @@ function parseDate(raw: string): string | null | undefined {
 }
 
 // Full edit of a case from /admin/cases. Records changed fields + actor.
-export async function updateCase(formData: FormData) {
+// Returns an error message for the admin, or undefined when saved or unchanged.
+export async function updateCase(
+  formData: FormData,
+): Promise<string | undefined> {
   const { supabase, user, log } = await requireAdmin();
   const caseId = String(formData.get("caseId"));
   const regionId = String(formData.get("regionId"));
@@ -28,15 +31,21 @@ export async function updateCase(formData: FormData) {
   const sourceMedia = String(formData.get("sourceMedia") ?? "").trim();
   const schoolRaw = String(formData.get("school") ?? "").trim();
   const sppgRaw = String(formData.get("sppg") ?? "").trim();
-  if (!isUuid(caseId) || !isUuid(regionId)) return;
-  if (!summary || summary.length > 5000) return;
-  if (!isHttpUrl(sourceUrl) || sourceUrl.length > 2000) return;
-  if (!sourceMedia || sourceMedia.length > 200) return;
-  if (schoolRaw.length > 500 || sppgRaw.length > 500) return;
+  if (!isUuid(caseId)) return "Kasus tidak ditemukan.";
+  if (!isUuid(regionId)) return "Pilih kabupaten/kota.";
+  if (!summary || summary.length > 5000)
+    return "Ringkasan wajib diisi, maksimal 5000 karakter.";
+  if (!isHttpUrl(sourceUrl) || sourceUrl.length > 2000)
+    return "URL sumber harus diawali http:// atau https://, maksimal 2000 karakter.";
+  if (!sourceMedia || sourceMedia.length > 200)
+    return "Media sumber wajib diisi, maksimal 200 karakter.";
+  if (schoolRaw.length > 500 || sppgRaw.length > 500)
+    return "Sekolah dan SPPG maksimal 500 karakter.";
 
   const victims = parseVictims(String(formData.get("victims") ?? ""));
   const occurredOn = parseDate(String(formData.get("occurredOn") ?? ""));
-  if (victims === undefined || occurredOn === undefined) return;
+  if (victims === undefined) return "Jumlah korban harus 0 sampai 9999.";
+  if (occurredOn === undefined) return "Tanggal kejadian tidak valid.";
   const published = formData.get("published") === "on";
 
   const school = schoolRaw === "" ? null : schoolRaw;
@@ -48,7 +57,7 @@ export async function updateCase(formData: FormData) {
     )
     .eq("id", caseId)
     .single();
-  if (!before) return;
+  if (!before) return "Kasus tidak ditemukan.";
 
   const after = {
     region_id: regionId,
@@ -77,7 +86,7 @@ export async function updateCase(formData: FormData) {
       updated_by_email: user.email ?? null,
     })
     .eq("id", caseId);
-  if (error) return;
+  if (error) return "Gagal menyimpan. Coba lagi.";
 
   await log({
     action: "case.update",

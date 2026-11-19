@@ -93,7 +93,7 @@ function formTool(
   name: string,
   description: string,
   properties: Record<string, object>,
-  action: (fd: FormData) => Promise<void>,
+  action: (fd: FormData) => Promise<unknown>,
   confirmText?: (input: Input) => string,
 ): Tool {
   return {
@@ -108,9 +108,10 @@ function formTool(
     execute: async (input) => {
       if (confirmText && !window.confirm(confirmText(input)))
         return { ok: false, message: "Dibatalkan admin." };
-      await action(toForm(input));
-      // ponytail: actions return void and drop invalid input silently;
-      // return a result from each action if agents need real error codes.
+      const error = await action(toForm(input));
+      // updateCase returns an error message; the other actions still return
+      // void and drop invalid input silently.
+      if (typeof error === "string") return { ok: false, message: error };
       return {
         ok: true,
         message:

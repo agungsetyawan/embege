@@ -60,7 +60,10 @@ export function dotIcon(count: number, max: number): L.DivIcon {
   const cached = dotCache.get(key);
   if (cached) return cached;
   const icon = L.divIcon({
-    html: `<div class="mbg-dot" style="background-color:${severityColor(count, max)};color:${severityText(count, max)}"><span>${count}</span></div>`,
+    // aria-hidden: the visible count would otherwise become the marker's
+    // accessible name ("1"); hidden, the name falls back to the Marker
+    // title ("1 kasus di X, Y").
+    html: `<div class="mbg-dot" aria-hidden="true" style="background-color:${severityColor(count, max)};color:${severityText(count, max)}"><span>${count}</span></div>`,
     className: "mbg-dot-wrap",
     iconSize: L.point(26, 26, true),
   });

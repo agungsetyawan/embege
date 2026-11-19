@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { type RegionOption, RegionPicker } from "@/components/region-picker";
 import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { FormSubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import { updateCase } from "./actions";
 import type { CaseRow } from "./cases-table";
@@ -26,15 +27,19 @@ export function EditCaseDialog({
   regions: RegionOption[];
   onClose: () => void;
 }) {
+  const [error, setError] = useState<string>();
+  const formId = `edit-case-${row.id}`;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Ubah kasus</DialogTitle>
         </DialogHeader>
+        {/* No form action: React resets uncontrolled fields after one, which
+            would wipe the admin's edits when the save fails. */}
         <form
-          action={updateCase}
-          onSubmit={onClose}
+          id={formId}
+          onSubmit={(e) => e.preventDefault()}
           className="flex flex-col gap-3"
         >
           <input type="hidden" name="caseId" value={row.id} />
@@ -98,6 +103,7 @@ export function EditCaseDialog({
               id={`edit-summary-${row.id}`}
               name="summary"
               required
+              maxLength={5000}
               rows={3}
               defaultValue={row.summary}
             />
@@ -109,6 +115,7 @@ export function EditCaseDialog({
                 id={`edit-media-${row.id}`}
                 name="sourceMedia"
                 required
+                maxLength={200}
                 defaultValue={row.source_media}
               />
             </div>
@@ -119,6 +126,7 @@ export function EditCaseDialog({
                 name="sourceUrl"
                 type="url"
                 required
+                maxLength={2000}
                 defaultValue={row.source_url}
               />
             </div>
@@ -136,13 +144,26 @@ export function EditCaseDialog({
             />
             Terbitkan ke publik
           </label>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
           <DialogFooter>
             <Button type="button" variant="outline" size="sm" onClick={onClose}>
               Batal
             </Button>
-            <SubmitButton size="sm" type="submit">
+            <FormSubmitButton
+              size="sm"
+              formId={formId}
+              action={async (formData) => {
+                const message = await updateCase(formData);
+                if (message) setError(message);
+                else onClose();
+              }}
+            >
               Simpan
-            </SubmitButton>
+            </FormSubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>
