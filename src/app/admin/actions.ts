@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { type AdminLogEntry, logAdminAction } from "@/lib/audit";
 import { createClient } from "@/lib/supabase/server";
-import { isUuid } from "@/lib/validate";
+import { isUuid, parseDate, parseVictims } from "@/lib/validate";
 
 // Write actions return an error message for the admin (shown as a toast),
 // or undefined when the write went through. A failed write is never logged.
@@ -42,19 +42,9 @@ export async function approveItem(
   if (schoolRaw.length > 500 || sppgRaw.length > 500)
     return "Sekolah dan SPPG maksimal 500 karakter.";
 
-  const victims = victimsRaw === "" ? null : Number(victimsRaw);
-  if (
-    victims !== null &&
-    (!Number.isInteger(victims) || victims < 0 || victims > 9999)
-  )
-    return "Jumlah korban harus 0 sampai 9999.";
-  const occurredOn =
-    occurredRaw === ""
-      ? null
-      : /^\d{4}-\d{2}-\d{2}$/.test(occurredRaw) &&
-          !Number.isNaN(Date.parse(occurredRaw))
-        ? occurredRaw
-        : undefined;
+  const victims = parseVictims(victimsRaw);
+  if (victims === undefined) return "Jumlah korban harus 0 sampai 9999.";
+  const occurredOn = parseDate(occurredRaw);
   if (occurredOn === undefined) return "Tanggal kejadian tidak valid.";
 
   const { data: item } = await supabase
@@ -380,19 +370,9 @@ export async function applyReportFix(
   if (!isUuid(reportId)) return INVALID;
   const victimsRaw = String(formData.get("victims") ?? "");
   const occurredRaw = String(formData.get("occurredOn") ?? "");
-  const victims = victimsRaw === "" ? null : Number(victimsRaw);
-  if (
-    victims !== null &&
-    (!Number.isInteger(victims) || victims < 0 || victims > 9999)
-  )
-    return "Jumlah korban harus 0 sampai 9999.";
-  const occurredOn =
-    occurredRaw === ""
-      ? null
-      : /^\d{4}-\d{2}-\d{2}$/.test(occurredRaw) &&
-          !Number.isNaN(Date.parse(occurredRaw))
-        ? occurredRaw
-        : undefined;
+  const victims = parseVictims(victimsRaw);
+  if (victims === undefined) return "Jumlah korban harus 0 sampai 9999.";
+  const occurredOn = parseDate(occurredRaw);
   if (occurredOn === undefined) return "Tanggal kejadian tidak valid.";
 
   const { data: report } = await supabase

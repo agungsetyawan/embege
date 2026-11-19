@@ -1,22 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isHttpUrl, isUuid } from "@/lib/validate";
+import { isHttpUrl, isUuid, parseDate, parseVictims } from "@/lib/validate";
 import { requireAdmin } from "../actions";
-
-function parseVictims(raw: string): number | null | undefined {
-  if (raw === "") return null;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n < 0 || n > 9999) return undefined;
-  return n;
-}
-
-function parseDate(raw: string): string | null | undefined {
-  if (raw === "") return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw) && !Number.isNaN(Date.parse(raw)))
-    return raw;
-  return undefined;
-}
 
 // Full edit of a case from /admin/cases. Records changed fields + actor.
 // Returns an error message for the admin, or undefined when saved or unchanged.

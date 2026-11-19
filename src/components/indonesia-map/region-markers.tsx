@@ -8,8 +8,8 @@ import "react-leaflet-cluster/dist/assets/MarkerCluster.css";
 import { clusterIcon, dotIcon } from "./severity";
 import type { SummaryRow } from "./types";
 
-// memo: new dotIcon objects make react-leaflet call setIcon on every marker,
-// so skip re-renders that do not change the summary.
+// memo: the inline eventHandlers object makes react-leaflet rebind every
+// marker's click handler on each render (dotIcon itself is cached).
 export const RegionMarkers = memo(function RegionMarkers({
   summary,
   countByLatLng,
