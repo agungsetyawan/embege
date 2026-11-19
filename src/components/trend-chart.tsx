@@ -29,7 +29,7 @@ export function TrendChart({ groups }: { groups: PeriodGroup[] }) {
     );
   }
   // Chronological (oldest first) on the x-axis; the list view keeps newest first.
-  const data = [...groups].reverse().map((g) => ({
+  const data = groups.toReversed().map((g) => ({
     label: g.label,
     cases: g.cases,
     victims: g.victims,

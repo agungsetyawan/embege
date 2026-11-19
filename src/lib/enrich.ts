@@ -15,14 +15,8 @@ const BROWSER_HEADERS = {
 };
 
 // fetch with a 10s abort timeout. Caller checks res.ok.
-async function timedFetch(url: string, init: RequestInit = {}) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 10000);
-  try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
-  } finally {
-    clearTimeout(timer);
-  }
+function timedFetch(url: string, init: RequestInit = {}) {
+  return fetch(url, { ...init, signal: AbortSignal.timeout(10000) });
 }
 
 // Lowercase host, no query/fragment/trailing slash. Invalid -> null.

@@ -46,7 +46,7 @@ type Region = { id: string; province: string; district: string };
 function guessRegion(text: string, regions: Region[]): string | null {
   const upper = text.toUpperCase();
   // Longest names first so "KOTA BANDUNG" wins over "BANDUNG".
-  const sorted = [...regions].sort(
+  const sorted = regions.toSorted(
     (a, b) => b.district.length - a.district.length,
   );
   for (const r of sorted) {
