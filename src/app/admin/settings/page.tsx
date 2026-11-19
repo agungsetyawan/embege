@@ -3,7 +3,7 @@ import { Badge } from "@/components/reui/badge";
 import { Frame, FramePanel } from "@/components/reui/frame";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { ActionForm, SubmitButton } from "@/components/ui/submit-button";
 import { createClient } from "@/lib/supabase/server";
 import {
   addKeyword,
@@ -51,7 +51,7 @@ export default async function SettingsPage() {
                     {HINTS[s.key]}
                   </p>
                 )}
-                <form action={updateSetting} className="flex gap-2">
+                <ActionForm action={updateSetting} className="flex gap-2">
                   <input type="hidden" name="key" value={s.key} />
                   <Input
                     name="value"
@@ -62,14 +62,14 @@ export default async function SettingsPage() {
                   <SubmitButton type="submit" variant="outline">
                     Simpan
                   </SubmitButton>
-                </form>
+                </ActionForm>
               </div>
             </FramePanel>
           ))}
           <FramePanel>
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-semibold">Pengaturan baru</span>
-              <form action={addSetting} className="flex gap-2">
+              <ActionForm action={addSetting} className="flex gap-2">
                 <Input
                   name="key"
                   required
@@ -85,7 +85,7 @@ export default async function SettingsPage() {
                 <SubmitButton type="submit" variant="outline">
                   Tambah
                 </SubmitButton>
-              </form>
+              </ActionForm>
             </div>
           </FramePanel>
           <FramePanel>
@@ -112,23 +112,23 @@ export default async function SettingsPage() {
                 <Badge variant={k.active ? "secondary" : "outline"}>
                   {k.active ? "Aktif" : "Mati"}
                 </Badge>
-                <form action={toggleKeyword}>
+                <ActionForm action={toggleKeyword}>
                   <input type="hidden" name="id" value={k.id} />
                   <SubmitButton type="submit" variant="outline" size="sm">
                     {k.active ? "Matikan" : "Aktifkan"}
                   </SubmitButton>
-                </form>
-                <form action={deleteKeyword}>
+                </ActionForm>
+                <ActionForm action={deleteKeyword}>
                   <input type="hidden" name="id" value={k.id} />
                   <SubmitButton type="submit" variant="outline" size="sm">
                     Hapus
                   </SubmitButton>
-                </form>
+                </ActionForm>
               </div>
             </FramePanel>
           ))}
         </Frame>
-        <form action={addKeyword} className="flex gap-2">
+        <ActionForm action={addKeyword} className="flex gap-2">
           <Input
             name="keyword"
             required
@@ -138,7 +138,7 @@ export default async function SettingsPage() {
           <SubmitButton type="submit" variant="outline">
             Tambah
           </SubmitButton>
-        </form>
+        </ActionForm>
       </section>
     </div>
   );

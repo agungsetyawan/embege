@@ -8,7 +8,7 @@ import { FrameFooter, FrameHeader, FramePanel } from "@/components/reui/frame";
 import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FormSubmitButton } from "@/components/ui/submit-button";
+import { ActionForm, FormSubmitButton } from "@/components/ui/submit-button";
 import {
   applyReportFix,
   deleteReportedCase,
@@ -165,7 +165,7 @@ export function ReportItem({
         )}
 
         {report.reason === "location" && (
-          <form
+          <ActionForm
             id={`move-${report.id}`}
             action={moveReportCase}
             className="flex flex-col gap-2"
@@ -177,17 +177,17 @@ export function ReportItem({
               </Label>
               <RegionPicker regions={regions} id={`region-${report.id}`} />
             </div>
-          </form>
+          </ActionForm>
         )}
 
         {report.reason === "duplicate" && (
           <div className="flex flex-col gap-2">
             <Label>Kembaran yang mungkin</Label>
             <TwinList twins={twins} />
-            <form id={`delete-${report.id}`} action={deleteReportedCase}>
+            <ActionForm id={`delete-${report.id}`} action={deleteReportedCase}>
               <input type="hidden" name="caseId" value={caseData.id} />
               <input type="hidden" name="reportId" value={report.id} />
-            </form>
+            </ActionForm>
             <p className="text-xs text-muted-foreground">
               Menghapus case terlapor di atas. Bisa dipulihkan lewat tab
               Terhapus.
@@ -196,7 +196,7 @@ export function ReportItem({
         )}
 
         {report.reason !== "location" && report.reason !== "duplicate" && (
-          <form
+          <ActionForm
             id={`fix-${report.id}`}
             action={applyReportFix}
             className="flex flex-col gap-2"
@@ -224,15 +224,15 @@ export function ReportItem({
                 />
               </div>
             </div>
-          </form>
+          </ActionForm>
         )}
 
-        <form id={`resolve-${report.id}`} action={resolveReport}>
+        <ActionForm id={`resolve-${report.id}`} action={resolveReport}>
           <input type="hidden" name="reportId" value={report.id} />
-        </form>
-        <form id={`dismiss-${report.id}`} action={dismissReport}>
+        </ActionForm>
+        <ActionForm id={`dismiss-${report.id}`} action={dismissReport}>
           <input type="hidden" name="reportId" value={report.id} />
-        </form>
+        </ActionForm>
       </div>
       <FrameFooter className="flex-row flex-wrap justify-end gap-2 p-0">
         <FormSubmitButton

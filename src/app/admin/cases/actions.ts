@@ -97,10 +97,12 @@ export async function updateCase(
   revalidatePath("/admin/cases");
 }
 
-export async function deleteCase(formData: FormData) {
+export async function deleteCase(
+  formData: FormData,
+): Promise<string | undefined> {
   const { supabase, user, log } = await requireAdmin();
   const caseId = String(formData.get("caseId"));
-  if (!isUuid(caseId)) return;
+  if (!isUuid(caseId)) return "Kasus tidak ditemukan.";
   const now = new Date().toISOString();
   const { error } = await supabase
     .from("cases")
@@ -110,7 +112,7 @@ export async function deleteCase(formData: FormData) {
       updated_by_email: user.email ?? null,
     })
     .eq("id", caseId);
-  if (error) return;
+  if (error) return "Gagal menghapus. Coba lagi.";
   await log({
     action: "case.delete",
     table: "cases",

@@ -37,6 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ActionForm } from "@/components/ui/submit-button";
 import { restoreCase } from "../actions";
 import { deleteCase } from "./actions";
 import { EditCaseDialog } from "./edit-case-dialog";
@@ -262,7 +263,7 @@ export function CasesTable({
                 <History className="size-3.5" />
               </Button>
               {c.deleted_at ? (
-                <form action={restoreCase}>
+                <ActionForm action={restoreCase}>
                   <input type="hidden" name="caseId" value={c.id} />
                   <Button
                     variant="ghost"
@@ -272,7 +273,7 @@ export function CasesTable({
                   >
                     <RotateCcw className="size-3.5" />
                   </Button>
-                </form>
+                </ActionForm>
               ) : (
                 <Button
                   variant="ghost"
@@ -406,7 +407,7 @@ function ConfirmDeleteDialog({
         <p className="text-xs text-muted-foreground">
           Dihapus lunak, bisa dipulihkan dari filter Terhapus.
         </p>
-        <form action={deleteCase} onSubmit={onClose}>
+        <ActionForm action={deleteCase} onSubmit={onClose}>
           <input type="hidden" name="caseId" value={row.id} />
           <DialogFooter>
             <Button type="button" variant="outline" size="sm" onClick={onClose}>
@@ -416,7 +417,7 @@ function ConfirmDeleteDialog({
               Hapus
             </Button>
           </DialogFooter>
-        </form>
+        </ActionForm>
       </DialogContent>
     </Dialog>
   );

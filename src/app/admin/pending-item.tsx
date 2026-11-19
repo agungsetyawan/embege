@@ -15,7 +15,7 @@ import { FrameFooter, FrameHeader, FramePanel } from "@/components/reui/frame";
 import { DateField } from "@/components/ui/date-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FormSubmitButton } from "@/components/ui/submit-button";
+import { ActionForm, FormSubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import { applyItemUpdate, approveItem, rejectItem } from "./actions";
 
@@ -213,7 +213,7 @@ export function PendingItem({
         </div>
       )}
       <div className="flex flex-col py-4">
-        <form
+        <ActionForm
           id={`approve-${item.id}`}
           action={approveItem}
           className="flex flex-col gap-2"
@@ -284,13 +284,13 @@ export function PendingItem({
               defaultValue={item.llm_summary ?? item.summary ?? ""}
             />
           </div>
-        </form>
-        <form id={`reject-${item.id}`} action={rejectItem}>
+        </ActionForm>
+        <ActionForm id={`reject-${item.id}`} action={rejectItem}>
           <input type="hidden" name="itemId" value={item.id} />
-        </form>
-        <form id={`apply-update-${item.id}`} action={applyItemUpdate}>
+        </ActionForm>
+        <ActionForm id={`apply-update-${item.id}`} action={applyItemUpdate}>
           <input type="hidden" name="itemId" value={item.id} />
-        </form>
+        </ActionForm>
         {guessed && !guessed.centroid_ok && (
           <Alert variant="warning">
             <TriangleAlert />

@@ -108,15 +108,10 @@ function formTool(
     execute: async (input) => {
       if (confirmText && !window.confirm(confirmText(input)))
         return { ok: false, message: "Dibatalkan admin." };
+      // Write actions return an error message when they fail.
       const error = await action(toForm(input));
-      // updateCase returns an error message; the other actions still return
-      // void and drop invalid input silently.
       if (typeof error === "string") return { ok: false, message: error };
-      return {
-        ok: true,
-        message:
-          "Terkirim. Input yang tidak valid diabaikan tanpa error, jadi cek ulang lewat tool baca.",
-      };
+      return { ok: true, message: "Berhasil." };
     },
   };
 }

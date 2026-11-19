@@ -16,6 +16,8 @@ The team released the following changes:
 - Stopped marker clicks from refetching the home page when the URL has no query, which sometimes reloaded the whole page.
 - Gave each map marker its full name ("1 kasus di X, Y") for screen readers instead of only the count.
 - Kept the admin edit dialog open until the save succeeds and showed why a save failed, instead of closing and dropping the edit silently.
+- Made every admin action check its database write, skip the audit log entry when the write fails, and show the reason as a toast.
+- Rolled back the new case when approving an item fails halfway, so a retry no longer creates a twin case.
 
 ## 2026-11-19
 

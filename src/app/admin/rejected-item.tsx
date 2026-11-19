@@ -9,7 +9,7 @@ import {
   FramePanel,
   FrameTitle,
 } from "@/components/reui/frame";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { ActionForm, SubmitButton } from "@/components/ui/submit-button";
 import { restoreItem } from "./actions";
 
 export type RejectedItemData = {
@@ -100,13 +100,16 @@ export function RejectedItem({
             )}
           </div>
         </div>
-        <form action={restoreItem} className="shrink-0 self-end sm:self-auto">
+        <ActionForm
+          action={restoreItem}
+          className="shrink-0 self-end sm:self-auto"
+        >
           <input type="hidden" name="itemId" value={item.id} />
           <SubmitButton type="submit" variant="outline">
             <RotateCcw data-icon="inline-start" />
             Kembalikan
           </SubmitButton>
-        </form>
+        </ActionForm>
       </FrameFooter>
     </FramePanel>
   );
