@@ -10,6 +10,8 @@ The team released the following changes:
 - Kept the share copy state visible when the button is clicked again within two seconds.
 - Moved focus to the Tutup button after a report is sent, so screen readers read the thank-you message.
 - Translated the Report and Share button labels and their copy states to Indonesian.
+- Stopped the theme and full-map toggles from restyling all district polygons and markers, so each toggle responds in about 100 ms instead of 500 ms on a throttled phone.
+- Mounted the map tiles before the district boundaries finish loading, so the first map paint no longer waits for the GeoJSON file.
 
 ## 2026-11-19
 

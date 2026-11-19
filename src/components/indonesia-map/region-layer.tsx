@@ -1,11 +1,15 @@
 "use client";
 
 import type { FeatureCollection } from "geojson";
+import { memo } from "react";
 import { GeoJSON } from "react-leaflet";
 import { fillColor } from "./severity";
 import type { SummaryRow } from "./types";
 
-export function DistrictLayer({
+// memo: a new style function makes react-leaflet call setStyle on all 515
+// paths. Without it every map state change (theme, full-map, drawer) costs
+// ~400 ms at 4x CPU throttling.
+export const DistrictLayer = memo(function DistrictLayer({
   geo,
   byKey,
   maxCount,
@@ -38,4 +42,4 @@ export function DistrictLayer({
       }}
     />
   );
-}
+});

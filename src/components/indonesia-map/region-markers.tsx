@@ -1,13 +1,16 @@
 "use client";
 
 import type * as L from "leaflet";
+import { memo } from "react";
 import { Marker } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import "react-leaflet-cluster/dist/assets/MarkerCluster.css";
 import { clusterIcon, dotIcon } from "./severity";
 import type { SummaryRow } from "./types";
 
-export function RegionMarkers({
+// memo: new dotIcon objects make react-leaflet call setIcon on every marker,
+// so skip re-renders that do not change the summary.
+export const RegionMarkers = memo(function RegionMarkers({
   summary,
   countByLatLng,
   maxCount,
@@ -43,4 +46,4 @@ export function RegionMarkers({
       ))}
     </MarkerClusterGroup>
   );
-}
+});

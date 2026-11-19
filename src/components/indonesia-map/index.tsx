@@ -18,7 +18,6 @@ import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { isDateString, isUuid } from "@/lib/validate";
-import { IndonesiaMapSkeleton } from "../indonesia-map-skeleton";
 import { Alert, AlertAction, AlertTitle } from "../reui/alert";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
@@ -208,8 +207,9 @@ export function IndonesiaMap() {
   // Same flight as search, plus the highlight date for the drawer.
   const applyFromUrl = useCallback(
     (regionId: string | null, date: string | null) => {
-      // No retry mark before the map exists: the flight needs the instance.
-      if (!mapReady) return;
+      // No retry mark before the map and boundaries exist: the flight needs
+      // the instance, and the district polygon for its bounds.
+      if (!mapReady || !geo.data) return;
       if (!regionId || !isUuid(regionId)) {
         appliedUrlRef.current = null;
         return;
@@ -225,7 +225,7 @@ export function IndonesiaMap() {
       // The click happened up in the stats cards; bring the map into view.
       cardEl?.scrollIntoView({ behavior: "smooth", block: "center" });
     },
-    [allSummary, handleSelectSearch, cardEl, mapReady],
+    [allSummary, handleSelectSearch, cardEl, mapReady, geo.data],
   );
 
   const handleCloseDrawer = useCallback(() => {
@@ -235,11 +235,11 @@ export function IndonesiaMap() {
     router.replace(pathname, { scroll: false });
   }, [router, pathname]);
 
-  // Map shell mounts as soon as the JS arrives so tile requests start
-  // immediately; the case overlay joins when /api/cases resolves instead
-  // of gating the whole first paint on it (mobile LCP resourceLoadDelay).
-  if (geo.isLoading) return <IndonesiaMapSkeleton />;
-  if (geo.isError || !geo.data) {
+  // Map shell mounts as soon as the JS arrives so tile requests (the LCP
+  // element) start immediately; the boundaries join when the GeoJSON
+  // resolves and the case overlay when /api/cases resolves, instead of
+  // gating the whole first paint on them (mobile LCP resourceLoadDelay).
+  if (geo.isError) {
     return (
       <Alert variant="destructive">
         <TriangleAlert />
@@ -292,16 +292,18 @@ export function IndonesiaMap() {
             url={tiles.url}
           />
           <TileLayer url={tiles.overlayUrl} />
-          <DimOutsideIndonesia geo={geo.data} />
+          {geo.data && <DimOutsideIndonesia geo={geo.data} />}
           <MapReadyProbe onReady={handleMapReady} />
           {data.data && (
             <>
-              <DistrictLayer
-                geo={geo.data}
-                byKey={byKey}
-                maxCount={maxCount}
-                onSelect={handleSelectDot}
-              />
+              {geo.data && (
+                <DistrictLayer
+                  geo={geo.data}
+                  byKey={byKey}
+                  maxCount={maxCount}
+                  onSelect={handleSelectDot}
+                />
+              )}
               <RegionMarkers
                 summary={summary}
                 countByLatLng={countByLatLng}
@@ -347,15 +349,17 @@ export function IndonesiaMap() {
           )
         )}
       </Card>
-      <RegionDetailDrawer
-        selected={selected}
-        highlightDate={highlightDate}
-        geo={geo.data}
-        maxCount={maxCount}
-        isDesktop={isDesktop}
-        container={cardEl ?? undefined}
-        onClose={handleCloseDrawer}
-      />
+      {geo.data && (
+        <RegionDetailDrawer
+          selected={selected}
+          highlightDate={highlightDate}
+          geo={geo.data}
+          maxCount={maxCount}
+          isDesktop={isDesktop}
+          container={cardEl ?? undefined}
+          onClose={handleCloseDrawer}
+        />
+      )}
     </div>
   );
 }
