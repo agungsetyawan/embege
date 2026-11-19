@@ -43,7 +43,7 @@ function ReportTrigger(props: React.ComponentProps<typeof Button>) {
   return (
     <Button variant="outline" size="sm" {...props}>
       <Flag className="size-3.5" />
-      Report
+      Laporkan
     </Button>
   );
 }

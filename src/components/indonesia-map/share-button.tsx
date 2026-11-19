@@ -32,9 +32,9 @@ export function ShareButton({
 }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const stateText = {
-    idle: "Share",
-    copied: "Copied",
-    failed: "Failed",
+    idle: "Bagikan",
+    copied: "Disalin",
+    failed: "Gagal",
   }[state];
 
   const [message, setMessage] = useState("");

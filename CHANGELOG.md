@@ -9,6 +9,7 @@ The team released the following changes:
 - Announced the share copy result to screen readers and showed an icon when the copy fails.
 - Kept the share copy state visible when the button is clicked again within two seconds.
 - Moved focus to the Tutup button after a report is sent, so screen readers read the thank-you message.
+- Translated the Report and Share button labels and their copy states to Indonesian.
 
 ## 2026-11-19
 
